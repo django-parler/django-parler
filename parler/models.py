@@ -6,9 +6,16 @@ as it changes the behavior of the QuerySet iterator, manager methods
 and model metaclass which *django-polymorphic* also rely on.
 The following is a "crude, but effective" way to introduce multilingual support.
 """
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
+from django.db.models.base import ModelBase
+from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.translation import get_language
 from parler.utils.i18n import normalize_language_code, get_language_settings
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 class TranslatableModel(models.Model):
@@ -18,9 +25,8 @@ class TranslatableModel(models.Model):
 
     # Consider these fields "protected" or "internal" attributes.
     # Not part of the public API, but used internally in the class hierarchy.
-    _translations_field = 'translations'
+    _translations_field = None
     _translations_model = None
-    _translations_model_doesnotexist = None
 
     class Meta:
         abstract = True
@@ -80,6 +86,9 @@ class TranslatableModel(models.Model):
         """
         Fetch the translated fields model.
         """
+        if not self._translations_model or not self._translations_field:
+            raise ImproperlyConfigured("No translation is assigned to the current model!")
+
         if not language_code:
             language_code = self._current_language
 
@@ -117,7 +126,6 @@ class TranslatableModel(models.Model):
 
         # 4. Fallback?
         fallback_msg = None
-        exception_class = (self._translations_model_doesnotexist or self._translations_model.DoesNotExist)
         lang_dict = get_language_settings(language_code)
 
         if use_fallback and (lang_dict['fallback'] != language_code):
@@ -126,11 +134,11 @@ class TranslatableModel(models.Model):
             self._translations_cache[language_code] = None   # explicit marker that language query was tried before.
             try:
                 return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create)
-            except (self._translations_model_doesnotexist, exception_class):
+            except self._translations_model.DoesNotExist:
                 fallback_msg = u" (tried fallback {0})".format(lang_dict['fallback'])
 
         # None of the above, bail out!
-        raise exception_class(
+        raise self._translations_model.DoesNotExist(
             u"{0} does not have a translation for the current language!\n"
             u"{0} ID #{1}, language={2}{3}".format(self._meta.verbose_name, self.pk, language_code, fallback_msg or ''
         ))
@@ -150,11 +158,46 @@ class TranslatableModel(models.Model):
             translations.save()
 
 
+class TranslatedFieldsModelBase(ModelBase):
+    """
+    Meta-class for the translated fields model.
+    """
+    def __new__(mcs, name, bases, attrs):
+        new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
+        if bases[0] == models.Model:
+            return new_class
+
+        # Validate a manually configured class.
+        if not new_class.master or not isinstance(new_class.master, ReverseSingleRelatedObjectDescriptor):
+            msg = "{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__)
+            logger.error(msg)
+            raise TypeError(msg)
+
+        shared_model = new_class.master.field.rel.to
+        if not issubclass(shared_model, models.Model):
+            # Not supporting models.ForeignKey("tablename") yet. Can't use get_model() as the models are still being constructed.
+            msg = "{0}.master should point to a model class, can't use named field here.".format(name)
+            logger.error(msg)
+            raise TypeError(msg)
+
+        if shared_model._translations_model:
+            msg = "The model '{0}' already has an associated translation table!".format(shared_model.__name__)
+            logger.error(msg)
+            raise TypeError(msg)
+
+        # Link the translated fields model to the shared model.
+        shared_model._translations_model = new_class
+        shared_model._translations_field = new_class.master.field.rel.related_name
+
+        return new_class
+
 
 class TranslatedFieldsModel(models.Model):
     """
     Base class for the model that holds the translated fields.
     """
+    __metaclass__ = TranslatedFieldsModelBase
+
     language_code = models.CharField(max_length=15, db_index=True)
     master = None   # FK to shared model.
 
