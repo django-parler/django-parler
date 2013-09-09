@@ -189,6 +189,18 @@ class TranslatedFieldsModelBase(ModelBase):
         shared_model._translations_model = new_class
         shared_model._translations_field = new_class.master.field.rel.related_name
 
+        # Add wrappers for all translated fields to the shared models.
+        for name in new_class.get_translated_fields():
+            try:
+                # Note that the descriptor even proxies this request, so it should return our field.
+                field = getattr(shared_model, name)
+            except AttributeError:
+                # Add the proxy field for the shared field.
+                TranslatedField().contribute_to_class(shared_model, name)
+            else:
+                if not isinstance(field, models.Field) or field.model is not new_class:
+                    raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
+
         return new_class
 
 
