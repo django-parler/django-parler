@@ -1,0 +1,20 @@
+{% load i18n %}{% comment %}
+
+    Include this block at the bottom of the object-tools:
+
+    {% block object-tools %}
+      {{ block.super }}
+      {% if language_tabs %}{% include "admin/parler/language_tabs.html" %}{% endif %}
+    {% endblock %}
+
+{% endcomment %}
+{% if language_tabs %}<div class="parler-language-tabs">
+	{% for url,name,code,status in language_tabs %}
+    {% if status == 'current' %}
+      <input type="hidden" class="language_button selected" name="{{ code }}" />
+      <span class="current">{{ name }}{% if current_is_translated and allow_deletion %}<a class="deletelink" href="./delete-translation/{{ code }}/" title="{% trans 'Delete Translation' %}">&nbsp;</a>{% endif %}</span>
+    {% else %}
+      <span class="{{ status }}"><a href="{{ url }}">{{ name }}</a> {% if status == 'available' and allow_deletion %}<a class="deletelink" href="./delete-translation/{{ code }}/" title="{% trans 'Delete Translation' %}">&nbsp;</a>{% endif %}</span>
+    {% endif %}
+  {% endfor %}
+</div>{% endif %}

@@ -1,0 +1,12 @@
+include AUTHORS
+include README.rst
+include LICENSE
+recursive-include parler/locale *
+recursive-include parler/static *
+recursive-include parler/templates *.html
+global-exclude .DS_Store
+global-exclude Thumbs.db
+global-exclude Desktop.ini
+global-exclude *.swp
+global-exclude *~
+global-exclude *.bak
