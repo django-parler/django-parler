@@ -33,7 +33,7 @@ class TranslatedQuerySet(QuerySet):
 
     def language(self, language_code=None):
         """
-        Register a function which will decorate a retrieved object before it's returned.
+        Set the language code to assign to objects retrieved using this QuerySet.
         """
         if language_code is None:
             language_code = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
@@ -61,3 +61,9 @@ class TranslatedManager(models.Manager):
     """
     def get_query_set(self, *args, **kwargs):
         return TranslatedQuerySet(self.model, *args, **kwargs)
+
+    def language(self, language_code=None):
+        """
+        Set the language code to assign to objects retrieved using this Manager.
+        """
+        return self.get_query_set().language(language_code)
