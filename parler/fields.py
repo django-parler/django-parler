@@ -10,15 +10,16 @@ class TranslatedField(object):
     Proxy field attached to a model.
     This makes sure the Django admin finds an actual field for the translated attribute.
     """
-    def __init__(self, name):
-        self.name = name
+    def __init__(self):
+        self.model = None
+        self.name = None
 
     def contribute_to_class(self, cls, name):
         #super(TranslatedField, self).contribute_to_class(cls, name)
         self.model = cls
         self.name = name
 
-        # Add the descriptor for the m2m relation
+        # Add the proxy attribute
         setattr(cls, self.name, TranslatedFieldDescriptor(self))
 
 

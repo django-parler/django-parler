@@ -5,16 +5,96 @@ Integrating *django-hvad* (v0.3) turned out to be really hard,
 as it changes the behavior of the QuerySet iterator, manager methods
 and model metaclass which *django-polymorphic* also rely on.
 The following is a "crude, but effective" way to introduce multilingual support.
+
+Added on top of that, the API-suger is provided, similar to what django-hvad has.
+It's possible to create the translations model manually,
+or let it be created dynamically when using the :class:`TranslatedFields` field.
 """
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.translation import get_language
+from parler.fields import TranslatedField
 from parler.utils.i18n import normalize_language_code, get_language_settings
+import sys
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+
+class TranslationDoesNotExist(object):
+    """
+    A tagging interface to detect missing translations.
+    """
+    pass
+
+
+def create_translations_model(model, related_name, meta, **fields):
+    """
+    Dynamically create the translations model.
+    Create the translations model for the shared model 'model'.
+
+    :param related_name: The related name for the reverse FK from the translations model.
+    :param meta: A (optional) dictionary of attributes for the translations model's inner Meta class.
+    :param fields: A dictionary of fields to put on the translations model.
+
+    Two fields are enforced on the translations model:
+
+        language_code: A 15 char, db indexed field.
+        master: A ForeignKey back to the shared model.
+
+    Those two fields are unique together.
+    """
+    if not meta:
+        meta = {}
+    meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
+
+    # Create inner Meta class
+    Meta = type('Meta', (object,), meta)
+    if not hasattr(Meta, 'db_table'):
+        Meta.db_table = model._meta.db_table + '_translation'
+    Meta.app_label = model._meta.app_label
+    name = '{0}_Translation'.format(model.__name__)
+
+    attrs = {}
+    attrs.update(fields)
+    attrs['Meta'] = Meta
+    attrs['__module__'] = model.__module__
+    attrs['objects'] = models.Manager()
+    attrs['master'] = models.ForeignKey(model, related_name=related_name, editable=False, null=True)
+
+    # Create and return the new model
+    translations_model = TranslatedFieldsModelBase(name, (TranslatedFieldsModel,), attrs)
+    translations_model.DoesNotExist = type('DoesNotExist', (TranslationDoesNotExist, model.DoesNotExist, translations_model.DoesNotExist,), {})
+
+    # Register it as a global in the shared model's module.
+    # This is needed so that Translation model instances, and objects which refer to them, can be properly pickled and unpickled.
+    # The Django session and caching frameworks, in particular, depend on this behaviour.
+    mod = sys.modules[model.__module__]
+    setattr(mod, name, translations_model)
+
+    return translations_model
+
+
+class TranslatedFields(object):
+    """
+    Wrapper class to define translated fields on a model.
+
+    The field name becomes the related name of the :class:`TranslatedFieldsModel` subclass.
+    """
+    def __init__(self, meta=None, **fields):
+        self.fields = fields
+        self.meta = meta
+
+    def contribute_to_class(self, cls, name):
+        # Called from django.db.models.base.ModelBase.__new__
+        translations_model = create_translations_model(cls, name, self.meta, **self.fields)
+
+        # The metaclass (TranslatedFieldsModelBase) should configure this already:
+        assert cls._translations_model == translations_model
+        assert cls._translations_field == name
 
 
 
