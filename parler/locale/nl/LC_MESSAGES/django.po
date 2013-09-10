@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-09-09 21:01+0200\n"
+"POT-Creation-Date: 2013-09-10 22:38+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,16 +18,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin.py:80
+#: admin.py:103
 msgid "Languages"
 msgstr "Vertalingen"
 
-#: admin.py:252
+#: admin.py:294
 #, python-brace-format
 msgid "{0} translation of {1}"
 msgstr "{0} vertaling van {1}"
 
-#: admin.py:265
+#: admin.py:307
 #, python-brace-format
 msgid "{0} Translation"
 msgstr "{0} Vertaling"
