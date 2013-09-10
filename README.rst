@@ -6,9 +6,14 @@ Simple Django model translations without nasty hacks.
 Features:
 
 * Nice admin integration.
-* Separate language table, compatible with django-hvad_.
-* Compatible with django-polymorphic_ (no ORM query hacks)
-* Support both automatic or manual construction of the translations model.
+* Access translated attributes like regular attributes.
+* Automatic fallback to the default language.
+* Separate table for translated fields, compatible with django-hvad_.
+* Plays nice with others, compatible with django-polymorphic_, django-mptt_ and such:
+
+ * No ORM query hacks.
+ * Easy to combine with custom Manager or QuerySet classes.
+ * Easy to construct the translations model manually when needed.
 
 
 Installation
@@ -112,7 +117,7 @@ Translated fields can be accessed directly::
     >>> objects[0].title
     u'omelette du fromage'
 
-When an attribute is not translated yet, the default langauage
+When an attribute is not translated yet, the default language
 (set by ``PARLER_DEFAULT_LANGUAGE_CODE`` or ``PARLER_DEFAULT_LANGUAGE_CODE['default']['fallback']``)
 will be retured.
 
@@ -197,6 +202,8 @@ TODO
 * ``ModelAdmin.prepopulated_fields`` doesn't work yet (you can use ``get_prepopulated_fields()`` as workaround).
 * The admin forms use the standard form widgets instead of the admin overrides.
 * The list code currently performs one query per object. This needs to be reduced.
+* Preferably, the ``TranslatedField`` proxy on the model should behave like a ``RelatedField``,
+  if that would nicely with the ORM too.
 
 
 API
@@ -242,5 +249,6 @@ Pull requests are welcome too. :-)
 
 
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
+.. _django-mptt: https://github.com/django-mptt/django-mptt
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-polymorphic: https://github.com/chrisglass/django_polymorphic
