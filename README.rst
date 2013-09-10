@@ -105,7 +105,9 @@ Translated fields can be accessed directly::
     >>> objects[0].title
     u'omelette du fromage'
 
-When an attribute is not translated yet, the default langauage (set by ``PARLER_DEFAULT_LANGUAGE_CODE``) will be retured.
+When an attribute is not translated yet, the default langauage
+(set by ``PARLER_DEFAULT_LANGUAGE_CODE`` or ``PARLER_DEFAULT_LANGUAGE_CODE['default']['fallback']``)
+will be retured.
 
 
 Querying translated attributes
