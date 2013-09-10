@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load url from future %}
+
+{% block headtitle %}List of articles{% endblock %}
+
+{% block main %}
+  <h1>List of articles</h1>
+
+  {% if object_list %}
+    <ul>
+    {% for article in object_list %}
+      <li><a href="{% url 'article-details' article.slug %}">/{{ article.slug }}/ - &ldquo;{{ article.title }}&rdquo;</a></li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>No articles yet in this language, <a href="{% url 'admin:article_article_add' %}?language={{ LANGUAGE_CODE }}">create one</a>.</p>
+  {% endif %}
+{% endblock %}

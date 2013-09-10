@@ -1,0 +1,34 @@
+{% extends "base.html" %}}{% load i18n parler_tags %}{% load url from future %}
+
+{% block headtitle %}{{ article.title }}{% endblock %}
+
+{% block main %}
+  <h1>{{ article.title }}</h1>
+
+  {{ article.content|linebreaks }}
+
+  <hr/>
+  <p>Current language: {{ article.language_code }}</p>
+  <p>Available languages:
+
+    {% comment %}
+      generate URLs per language. This is less efficient compared to
+      the example in admin/article/change_form.html as this performs a query per language.
+
+      However, it shows the capabilities of this package very well.
+      The `objectlanguage` tag is needed because each TranslatedModel
+      has it's own "current language" state by design. It needs to be switched manually.
+    {% endcomment %}
+    {% for language_code in article.get_available_languages %}
+      {% language language_code %}{# for the i18n_patterns #}
+        {% get_language_info for language_code as lang %}
+        {% objectlanguage article language_code %}
+
+          <a href="{% url 'article-details' article.slug  %}" title="{{ language_code }}">{{ lang.name_local }}</a>
+
+        {% endobjectlanguage %}
+      {% endlanguage %}
+    {% endfor %}
+
+  </p>
+{% endblock %}

@@ -1,0 +1,316 @@
+/*
+
+ CSS selectors are sorted in order of appearance
+
+*/
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+#wrapper {
+  position: relative;
+  min-height: 100%;
+  background-color: #fff;
+}
+
+* html #wrapper { height: 100%; }
+
+
+/* -------- reset default browser styles -------- */
+
+h1, h2, h3, h4, h5, h6,
+p, blockquote, pre, address,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4 {
+  font-size: 100%;
+  font-weight: normal;
+  font-family: Tahoma, sans-serif;
+  margin: 0 0 0.5em;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+caption, th, td {
+  text-align: left;
+  font-weight: normal;
+}
+
+:focus       { outline: 0; }       /* Firefox 3 */
+a[name]      { padding: 0; }       /* Firefox 3, Safari 3 */
+textarea     { overflow: auto; }   /* IE */
+* html table { font-size: 100%; }  /* IE 5.5 */
+
+img, a img, object {
+  border: 0;
+  vertical-align: bottom;          /* avoid space by line-height */
+}
+
+a,
+a:link,
+a:hover {
+  text-decoration: none;
+}
+
+
+/* ---- header, body ---- */
+
+#header {
+  overflow: hidden;
+  display: none;
+}
+
+#fullpage {
+  padding: 2em 250px 2em 2em;
+}
+
+#fullpage h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0.67em 0;
+  clear: both;
+}
+
+#content h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.83em 0 .5em 0;
+}
+
+#content h3 {
+  font-size: 1.17em;
+  font-weight: bold;
+  margin: 0.83em 0 .5em 0;
+}
+
+#content blockquote {
+  margin: 1em 2em;
+}
+
+#content p {
+  margin: 0 0 1em 0;
+}
+
+#content ul {
+  margin: .5em 0 1.5em 0;
+  padding-left: 1.5em;
+}
+
+
+/* layout variations */
+
+#mainarea {
+  width: 650px;
+  clear: both;
+}
+
+body.twocols #content {
+  width: 440px;
+  float: left;
+}
+
+body.twocols #sidebar {
+  margin-left: 460px;
+}
+
+
+
+/* -------- menu -------- */
+
+#menu {
+  margin-bottom: 2em;
+
+  /* float container trick */
+  float: left;
+  display: inline;
+  width: 100%;
+
+  /* default font */
+  font-size: 13px;
+  font-family: Tahoma, sans-serif;
+}
+
+#menu li {
+  float: left;
+  display: inline;
+  list-style: none inside;
+  position: relative;
+}
+
+#menu li a {
+  display: block;
+  padding: 0.3em .5em;
+  margin-right: .5em;
+  text-decoration: none;
+  color: #000;
+  font-weight: bold;
+}
+
+#menu li a,
+#menu li a:visited {
+  z-index: 102;
+}
+
+#menu li a:hover {
+  z-index: 103;
+}
+
+
+/* submenu */
+
+#menu li ul {
+  display: none;
+  position: absolute;
+  left: 0;
+  width: 13em;
+}
+
+#menu li li {
+  width: 100%;
+}
+
+#menu li li a {
+  background-color: #fff;
+}
+
+#menu li:hover ul {
+  display: block;
+}
+
+/* sub sub */
+
+#menu li li {
+  float: none;
+}
+
+#menu li ul {
+  padding: 0.5em;
+  margin: -0.5em;
+}
+
+#menu li li ul {
+  position: relative;
+  padding-left: 1em;
+  width: auto;
+}
+
+/* hilite */
+
+#menu li.active > a {
+  color: #444;
+  border-bottom: 1px solid #444;
+}
+
+
+/* -------- breadcrumb -------- */
+
+
+#breadcrumb {
+  clear: both;
+  margin-bottom: 1em;
+}
+
+#breadcrumb ul {
+  list-style: none;
+}
+
+#breadcrumb li {
+  float: left;
+  display: inline;
+}
+
+
+/* ---- sections ---- */
+
+#intro {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  width: 80%;
+
+  margin-top: -.5em;
+  margin-left: -40%;
+  text-align: center;
+}
+
+#intro ul {
+  list-style-type: none;
+}
+
+#sidecol {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+}
+
+#contact {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 0 2em 2em 0;
+  text-align: right;
+}
+
+#contact h2 {
+  margin: 0 .5em 1em 0;
+  padding: 0;
+
+  font-size: 10pt;
+  color: #666;
+  line-height: 1;
+  font-weight: normal;
+  font-style: italic;
+}
+
+#contact p {
+  margin: 0
+}
+
+#contact a {
+  padding-left: .5em;
+}
+
+
+/* ---- standard resets and utils ---- */
+
+:focus       { outline: 0; }
+a[name]      { padding: 0; }
+textarea     { overflow: auto; }
+* html table { font-size: 100%; }
+
+img, a img, object {
+  border: 0;
+  vertical-align: bottom;
+}
+
+.clearfix:after {
+  content:      ".";
+  font-size:    0;
+  line-height:  0;
+  display:      block;
+  height:       0;
+  clear:        both;
+  visibility:   hidden;
+}
+
+* html .clearfix { height:     1%; }
+*+html .clearfix { min-height: 0;  }
+

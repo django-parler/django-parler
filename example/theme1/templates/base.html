@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="{{ LANGUAGE_CODE|default:"en" }}" lang="{{ LANGUAGE_CODE|default:"en" }}">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="generator" content="Powered by Python, and django-content-placeholders." />
+    <title>{% block headtitle %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ STATIC_URL }}theme1/site.css" type="text/css" />
+    {% block extrahead %}{% endblock %}
+    {% block scripts %}{% endblock %}
+  </head>
+
+  <body id="{% block bodyid %}{% endblock %}" class="{% block bodyclass %}{% endblock %}">
+    <div id="wrapper">
+      <div id="fullpage" class="clearfix">
+        <div id="header">
+          <h1>Example site</h1>
+        </div>
+
+        <div id="menu" class="clearfix">
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="{% url 'admin:index' %}">Admin</a></li>
+          </ul>
+        </div><!-- /menu -->
+
+        <div id="mainarea">
+          {% block main %}{% endblock %}
+        </div><!-- /mainarea -->
+        {% block after_main %}{% endblock %}
+
+      </div><!-- /fullpage -->
+    </div><!-- /wrapper -->
+  </body>
+</html>
