@@ -30,7 +30,7 @@ msgstr "{0} vertaling van {1}"
 #: admin.py:307
 #, python-brace-format
 msgid "{0} Translation"
-msgstr "{0} Vertaling"
+msgstr "{0} vertaling"
 
 #: templates/admin/parler/deletion_not_allowed.html:14
 #: templates/admin/parler/language_tabs.html:15

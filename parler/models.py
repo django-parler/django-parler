@@ -14,10 +14,11 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
-from django.utils.translation import get_language
+from django.utils.functional import lazy
+from django.utils.translation import get_language, ugettext
 from parler.fields import TranslatedField, LanguageCodeDescriptor
 from parler.managers import TranslatableManager
-from parler.utils.i18n import normalize_language_code, get_language_settings
+from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
 import sys
 import logging
 
@@ -32,7 +33,10 @@ class TranslationDoesNotExist(object):
     pass
 
 
-def create_translations_model(model, related_name, meta, **fields):
+_lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.verbose_name), unicode)
+
+
+def create_translations_model(shared_model, related_name, meta, **fields):
     """
     Dynamically create the translations model.
     Create the translations model for the shared model 'model'.
@@ -55,6 +59,7 @@ def create_translations_model(model, related_name, meta, **fields):
     meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
     meta['app_label'] = shared_model._meta.app_label
     meta.setdefault('db_table', shared_model._meta.db_table + '_translation')
+    meta.setdefault('verbose_name', _lazy_verbose_name(shared_model))
 
     # Define attributes for translation table
     name = '{0}_Translation'.format(shared_model.__name__)
@@ -387,7 +392,7 @@ class TranslatedFieldsModel(models.Model):
                     raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
 
     def __unicode__(self):
-        return unicode(self.pk)
+        return get_language_title(self.language_code)
 
     def __repr__(self):
         return "<{0}: #{1}, {2}, master: #{3}>".format(
