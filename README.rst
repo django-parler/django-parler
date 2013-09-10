@@ -196,6 +196,7 @@ TODO
 * Unittests and documentation on RTD.
 * ``ModelAdmin.prepopulated_fields`` doesn't work yet (you can use ``get_prepopulated_fields()`` as workaround).
 * The admin forms use the standard form widgets instead of the admin overrides.
+* The list code currently performs one query per object. This needs to be reduced.
 
 
 API
