@@ -29,9 +29,15 @@ Add the following settings::
         'parler',
     )
 
+
+By default, the fallback language is the same as ``LANGUAGE_CODE``.
+The fallback language can be changed in the settings::
+
     PARLER_DEFAULT_LANGUAGE_CODE = 'en'
 
-    # Languages are configured per site-id
+
+Optionally, the admin tabs can be configured too::
+
     PARLER_LANGUAGES = {
         # Global site
         1: (
@@ -56,9 +62,10 @@ Add the following settings::
             {'code': 'en',},
         ),
         'default': {
-            'fallback': 'en',
+            'fallback': 'en',  # defaults to PARLER_DEFAULT_LANGUAGE_CODE
         }
     }
+
 
 Basic example
 -------------
