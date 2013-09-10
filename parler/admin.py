@@ -56,7 +56,7 @@ class TranslatableAdmin(admin.ModelAdmin):
     @property
     def media(self):
         # Currently, `prepopulated_fields` can't be used because it breaks the admin validation.
-        # TODO: all TranslatedFields should become a RelatedField on the shared model (supporting ORM queries)
+        # TODO: as a fix TranslatedFields should become a RelatedField on the shared model (may also support ORM queries)
         # As workaround, declare the fields in get_prepopulated_fields() and we'll provide the admin media automatically.
         has_prepoplated = len(self.get_prepopulated_fields(_fakeRequest))
         base_media = super(TranslatableAdmin, self).media
@@ -71,7 +71,7 @@ class TranslatableAdmin(admin.ModelAdmin):
         Get the language parameter from the current request.
         """
         if not is_multilingual_project():
-            # By default, the pages are stored in a single static language.
+            # By default, the objects are stored in a single static language.
             # This makes the transition to multilingual easier as well.
             # The default language can operate as fallback language too.
             return appsettings.PARLER_DEFAULT_LANGUAGE_CODE

@@ -1,9 +1,9 @@
 """
 Simple but effective translation support.
 
-Integrating *django-hvad* (v0.3) turned out to be really hard,
+Integrating *django-hvad* (v0.3) in advanced projects turned out to be really hard,
 as it changes the behavior of the QuerySet iterator, manager methods
-and model metaclass which *django-polymorphic* also rely on.
+and model metaclass which *django-polymorphic* and friends also rely on.
 The following is a "crude, but effective" way to introduce multilingual support.
 
 Added on top of that, the API-suger is provided, similar to what django-hvad has.
@@ -91,7 +91,7 @@ class TranslatedFields(object):
 
         class MyModel(TranslatableModel):
             translations = TranslatedFields(
-                title = models.CharField("Title", max_lenght=200)
+                title = models.CharField("Title", max_length=200)
             )
     """
     def __init__(self, meta=None, **fields):
@@ -297,10 +297,6 @@ class TranslatedFieldsModelBase(ModelBase):
         # Validate a manually configured class.
         shared_model = _validate_master(new_class)
 
-        # Link the translated fields model to the shared model.
-        shared_model._translations_model = new_class
-        shared_model._translations_field = new_class.master.field.rel.related_name
-
         # Add wrappers for all translated fields to the shared models.
         new_class.contribute_translations(shared_model)
 
@@ -373,8 +369,14 @@ class TranslatedFieldsModel(models.Model):
         """
         Add the proxy attributes to the shared model.
         """
+        # Link the translated fields model to the shared model.
+        shared_model._translations_model = cls
+        shared_model._translations_field = cls.master.field.rel.related_name
+
+        # Assign the proxy fields
         for name in cls.get_translated_fields():
             try:
+                # Check if the field already exists.
                 # Note that the descriptor even proxies this request, so it should return our field.
                 field = getattr(shared_model, name)
             except AttributeError:

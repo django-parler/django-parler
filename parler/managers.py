@@ -3,12 +3,8 @@ Custom generic managers
 """
 from django.db import models
 from django.db.models.query import QuerySet
-
-
-# Based on django-queryset-transform.
-# This object however, operates on a per-object instance
-# without breaking the result generators
 from parler import appsettings
+
 
 
 class TranslatableQuerySet(QuerySet):
@@ -45,6 +41,9 @@ class TranslatableQuerySet(QuerySet):
         """
         Overwritten iterator which will apply the decorate functions before returning it.
         """
+        # Based on django-queryset-transform.
+        # This object however, operates on a per-object instance
+        # without breaking the result generators
         base_iterator = super(TranslatableQuerySet, self).iterator()
         for obj in base_iterator:
             # Apply the language setting.
