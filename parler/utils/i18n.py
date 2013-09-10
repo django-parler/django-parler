@@ -2,6 +2,7 @@
 Utils for translations
 """
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
 
 LANGUAGES_DICT = dict(settings.LANGUAGES)
 
@@ -26,10 +27,10 @@ def get_language_title(language_code):
     Return the verbose_name for a language code.
     """
     try:
-        return LANGUAGES_DICT[language_code]
+        return _(LANGUAGES_DICT[language_code])
     except KeyError:
         language_code = language_code.split('-')[0] # e.g. if fr-ca is not supported fallback to fr
-        return LANGUAGES_DICT[language_code]
+        return _(LANGUAGES_DICT[language_code])
 
 
 def get_language_settings(language_code, site_id=None):
