@@ -11,7 +11,7 @@ from django.db.models.query import QuerySet
 from parler import appsettings
 
 
-class TranslatedQuerySet(QuerySet):
+class TranslatableQuerySet(QuerySet):
     """
     An enhancement of the QuerySet which allows objects to be decorated
     with extra properties before they are returned.
@@ -21,12 +21,12 @@ class TranslatedQuerySet(QuerySet):
     """
 
     def __init__(self, *args, **kwargs):
-        super(TranslatedQuerySet, self).__init__(*args, **kwargs)
+        super(TranslatableQuerySet, self).__init__(*args, **kwargs)
         self._language = []
 
 
     def _clone(self, klass=None, setup=False, **kw):
-        c = super(TranslatedQuerySet, self)._clone(klass, setup, **kw)
+        c = super(TranslatableQuerySet, self)._clone(klass, setup, **kw)
         c._language = self._language
         return c
 
@@ -46,7 +46,7 @@ class TranslatedQuerySet(QuerySet):
         """
         Overwritten iterator which will apply the decorate functions before returning it.
         """
-        base_iterator = super(TranslatedQuerySet, self).iterator()
+        base_iterator = super(TranslatableQuerySet, self).iterator()
         for obj in base_iterator:
             # Apply the language setting.
             if self._language:
@@ -55,15 +55,20 @@ class TranslatedQuerySet(QuerySet):
             yield obj
 
 
-class TranslatedManager(models.Manager):
+class TranslatableManager(models.Manager):
     """
     The manager class which ensures the enhanced TranslatedQuerySet object is used.
     """
     def get_query_set(self, *args, **kwargs):
-        return TranslatedQuerySet(self.model, *args, **kwargs)
+        return TranslatableQuerySet(self.model, *args, **kwargs)
 
     def language(self, language_code=None):
         """
         Set the language code to assign to objects retrieved using this Manager.
         """
         return self.get_query_set().language(language_code)
+
+
+# Export the names in django-hvad style too:
+TranslationQueryset = TranslatableQuerySet
+TranslationManager = TranslatableManager

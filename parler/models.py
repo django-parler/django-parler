@@ -16,6 +16,7 @@ from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.translation import get_language
 from parler.fields import TranslatedField
+from parler.managers import TranslatableManager
 from parler.utils.i18n import normalize_language_code, get_language_settings
 import sys
 import logging
@@ -107,6 +108,9 @@ class TranslatableModel(models.Model):
     # Not part of the public API, but used internally in the class hierarchy.
     _translations_field = None
     _translations_model = None
+
+    # change the default manager to the translation manager
+    objects = TranslatableManager()
 
     class Meta:
         abstract = True

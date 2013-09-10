@@ -14,7 +14,7 @@ from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_unicode
 from django.utils.translation import ugettext_lazy as _
 from parler import appsettings
-from parler.managers import TranslatedQuerySet
+from parler.managers import TranslatableQuerySet
 from parler.utils.compat import transaction_atomic
 from parler.utils.i18n import normalize_language_code, get_language_title, is_multilingual_project
 
@@ -104,8 +104,8 @@ class TranslatableAdmin(admin.ModelAdmin):
 
     def queryset(self, request):
         qs = super(TranslatableAdmin, self).queryset(request)
-        if not isinstance(qs, TranslatedQuerySet):
-            raise ImproperlyConfigured("{0} class does not inherit from TranslatedQuerySet".format(qs.__class__.__name__))
+        if not isinstance(qs, TranslatableQuerySet):
+            raise ImproperlyConfigured("{0} class does not inherit from TranslatableQuerySet".format(qs.__class__.__name__))
 
         if not is_multilingual_project():
             # Make sure the current translations remain visible, not the dynamically set get_language() value.
