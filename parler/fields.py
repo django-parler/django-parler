@@ -26,6 +26,8 @@ class TranslatedField(object):
 class TranslatedFieldDescriptor(object):
     """
     Descriptor for translated attributes.
+
+    This attribute proxies all get/set calls to the translated model.
     """
     def __init__(self, field):
         self.field = field
@@ -55,6 +57,23 @@ class TranslatedFieldDescriptor(object):
         # Similar to getting a KeyError on `del dict['UNKNOWN_KEY']`
         translation = instance._get_translated_model()
         delattr(translation, self.field.name)
+
+
+class LanguageCodeDescriptor(object):
+    """
+    This is the property to access the ``language_code`` in the ``TranslatableModel``.
+    """
+    def __get__(self, instance, instance_type=None):
+        if not instance:
+            raise AttributeError("language_code must be accessed via instance")
+
+        return instance._current_language
+
+    def __set__(self, instance, value):
+        raise AttributeError("The 'language_code' attribute cannot be changed directly! Use the set_current_language() method instead.")
+
+    def __delete__(self, instance):
+        raise AttributeError("The 'language_code' attribute cannot be deleted!")
 
 
 try:
