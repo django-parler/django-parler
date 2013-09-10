@@ -58,18 +58,10 @@ class TranslatableAdmin(admin.ModelAdmin):
             return base_media + _language_media
 
 
-    def language_column(self, object):
-        """
-        The language column which can be included in the ``list_display``.
-        """
-        languages = object.get_available_languages()
-        return u'<span class="available-languages">{0}</span>'.format(' '.join(languages))
-
-    language_column.allow_tags = True
-    language_column.short_description = _("Languages")
-
-
     def _language(self, request, obj=None):
+        """
+        Get the language parameter from the current request.
+        """
         if not is_multilingual_project():
             # By default, the pages are stored in a single static language.
             # This makes the transition to multilingual easier as well.
@@ -91,7 +83,32 @@ class TranslatableAdmin(admin.ModelAdmin):
 
             return normalize_language_code(code)
 
+
+    def language_column(self, object):
+        """
+        The language column which can be included in the ``list_display``.
+        """
+        languages = self.get_available_languages(object)
+        return u'<span class="available-languages">{0}</span>'.format(' '.join(languages))
+
+    language_column.allow_tags = True
+    language_column.short_description = _("Languages")
+
+
+    def get_available_languages(self, obj):
+        """
+        Fetching the available languages as queryset.
+        """
+        if obj:
+            return obj.get_available_languages()
+        else:
+            return self.model._translations_model.objects.get_empty_query_set()
+
+
     def queryset(self, request):
+        """
+        Make sure the current language is selected.
+        """
         qs = super(TranslatableAdmin, self).queryset(request)
         if not isinstance(qs, TranslatableQuerySet):
             raise ImproperlyConfigured("{0} class does not inherit from TranslatableQuerySet".format(qs.__class__.__name__))
@@ -100,6 +117,7 @@ class TranslatableAdmin(admin.ModelAdmin):
             # Make sure the current translations remain visible, not the dynamically set get_language() value.
             qs = qs.language(appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
         return qs
+
 
     def get_object(self, request, object_id):
         """
@@ -111,12 +129,20 @@ class TranslatableAdmin(admin.ModelAdmin):
 
         return obj
 
+
     def get_form(self, request, obj=None, **kwargs):
+        """
+        Pass the current language to the form.
+        """
         form_class = super(TranslatableAdmin, self).get_form(request, obj, **kwargs)
         form_class.language_code = obj.get_current_language() if obj is not None else self._language(request)
         return form_class
 
+
     def get_urls(self):
+        """
+        Add a delete-translation view.
+        """
         urlpatterns = super(TranslatableAdmin, self).get_urls()
         info = self.model._meta.app_label, self.model._meta.module_name
 
@@ -127,13 +153,11 @@ class TranslatableAdmin(admin.ModelAdmin):
             ),
         ) + urlpatterns
 
-    def get_available_languages(self, obj):
-        if obj:
-            return obj.get_available_languages()
-        else:
-            return self.model._translations_model.objects.get_empty_query_set()
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        """
+        Insert the language tabs.
+        """
         lang_code = obj.get_current_language() if obj is not None else self._language(request)
         lang = get_language_title(lang_code)
 
@@ -152,13 +176,18 @@ class TranslatableAdmin(admin.ModelAdmin):
         #context['base_template'] = self.get_change_form_base_template()
         return super(TranslatableAdmin, self).render_change_form(request, context, add, change, form_url, obj)
 
+
     def response_add(self, request, obj, post_url_continue=None):
+        # Make sure ?language=... is included in the redirects.
         redirect = super(TranslatableAdmin, self).response_add(request, obj, post_url_continue)
         return self._patch_redirect(request, obj, redirect)
 
+
     def response_change(self, request, obj):
+        # Make sure ?language=... is included in the redirects.
         redirect = super(TranslatableAdmin, self).response_change(request, obj)
         return self._patch_redirect(request, obj, redirect)
+
 
     def _patch_redirect(self, request, obj, redirect):
         if redirect.status_code not in (301,302):
@@ -174,7 +203,11 @@ class TranslatableAdmin(admin.ModelAdmin):
             redirect['Location'] += "?{0}={1}".format(self.query_language_key, request.GET[self.query_language_key])
         return redirect
 
+
     def get_language_tabs(self, request, obj, available_languages):
+        """
+        Determine the language tabs to show.
+        """
         tabs = []
         get = request.GET.copy()  # QueryDict object
         language = obj.get_current_language() if obj is not None else self._language(request)
@@ -213,6 +246,7 @@ class TranslatableAdmin(admin.ModelAdmin):
                     tabs.append((url, get_language_title(code), code, status))
 
         return tabs
+
 
     @csrf_protect_m
     @transaction_atomic
@@ -281,7 +315,11 @@ class TranslatableAdmin(admin.ModelAdmin):
             "admin/delete_confirmation.html"
         ], context)
 
+
     def deletion_not_allowed(self, request, obj, language_code):
+        """
+        Deletion-not-allowed view.
+        """
         opts = self.model._meta
         context = {
             'object': obj.master,
@@ -293,5 +331,9 @@ class TranslatableAdmin(admin.ModelAdmin):
         }
         return render(request, self.deletion_not_allowed_template, context)
 
+
     def delete_model_translation(self, request, translation):
+        """
+        Hook for deleting a translation.
+        """
         translation.delete()

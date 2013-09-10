@@ -193,9 +193,9 @@ without loosing the freedom of manually using the API at your will.
 TODO
 ----
 
-* The admin forms API is still manually constructed.
-* Documentation on RTD and unittests.
+* Unittests and documentation on RTD.
 * ``ModelAdmin.prepopulated_fields`` doesn't work yet (you can use ``get_prepopulated_fields()`` as workaround).
+* The admin forms use the standard form widgets instead of the admin overrides.
 
 
 API
