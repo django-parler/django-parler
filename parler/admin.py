@@ -13,12 +13,14 @@ from django.forms import Media
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_unicode
+from django.utils.functional import lazy
 from django.utils.translation import ugettext_lazy as _
 from parler import appsettings
 from parler.forms import TranslatableModelForm
 from parler.managers import TranslatableQuerySet
 from parler.utils.compat import transaction_atomic
 from parler.utils.i18n import normalize_language_code, get_language_title, is_multilingual_project
+from parler.utils.template import select_template_name
 
 
 _language_media = Media(css={
@@ -39,6 +41,8 @@ class TranslatableAdmin(admin.ModelAdmin):
     # Code partially taken from django-hvad
 
     form = TranslatableModelForm
+
+    change_form_template = 'admin/parler/change_form.html'  # extends original change_form_template
 
     deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
 
@@ -172,6 +176,10 @@ class TranslatableAdmin(admin.ModelAdmin):
             context['title'] = '%s (%s)' % (context['title'], lang)
         if not current_is_translated:
             add = True  # lets prepopulated_fields_js work.
+
+        # django-fluent-pages uses the same technique
+        if 'default_change_form_template' not in context:
+            context['default_change_form_template'] = self.get_change_form_base_template()
 
         #context['base_template'] = self.get_change_form_base_template()
         return super(TranslatableAdmin, self).render_change_form(request, context, add, change, form_url, obj)
@@ -337,3 +345,16 @@ class TranslatableAdmin(admin.ModelAdmin):
         Hook for deleting a translation.
         """
         translation.delete()
+
+
+    def get_change_form_base_template(self):
+        opts = self.model._meta
+        app_label = opts.app_label
+        return _lazy_select_template_name((
+            "admin/{0}/{1}/change_form.html".format(app_label, opts.object_name.lower()),
+            "admin/{0}/change_form.html".format(app_label),
+            "admin/change_form.html"
+        ))
+
+
+_lazy_select_template_name = lazy(select_template_name, unicode)
