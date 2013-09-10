@@ -161,6 +161,23 @@ class TranslatableModel(models.Model):
             self._get_translated_model(use_fallback=False, auto_create=True)
 
 
+    def has_translation(self, language_code=None):
+        if language_code is None:
+            language_code = self._current_language
+
+        try:
+            # Check the cache directly, and the answer is known.
+            return self._translations_cache[language_code] is not None
+        except KeyError:
+            try:
+                # Fetch from DB, fill the cache.
+                self._get_translated_model(language_code, use_fallback=False, auto_create=False)
+            except self._translations_model.DoesNotExist:
+                return False
+            else:
+                return True
+
+
     def get_available_languages(self):
         """
         Return the language codes of all translated variations.

@@ -206,6 +206,7 @@ On ``parler.models.TranslatableModel``:
 * ``get_current_language()``
 * ``set_current_language(language_code, initialize=False)``
 * ``get_available_languages()``
+* ``has_translation(language_code=None)``
 * ``save_translations()``
 
 On ``parler.models.TranslatedFieldsModel``:
