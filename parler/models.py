@@ -84,6 +84,15 @@ class TranslatedFields(object):
     Wrapper class to define translated fields on a model.
 
     The field name becomes the related name of the :class:`TranslatedFieldsModel` subclass.
+
+    Example::
+        from django.db import models
+        from parler.models import TranslatableModel, TranslatedFields
+
+        class MyModel(TranslatableModel):
+            translations = TranslatedFields(
+                title = models.CharField("Title", max_lenght=200)
+            )
     """
     def __init__(self, meta=None, **fields):
         self.fields = fields
@@ -149,11 +158,17 @@ class TranslatableModel(models.Model):
 
 
     def get_current_language(self):
+        """
+        Get the current language.
+        """
         # not a property, so won't conflict with model fields.
         return self._current_language
 
 
     def set_current_language(self, language_code, initialize=False):
+        """
+        Switch the currently activate language of the object.
+        """
         self._current_language = normalize_language_code(language_code or get_language())
 
         # Ensure the translation is present for __get__ queries.
@@ -162,6 +177,10 @@ class TranslatableModel(models.Model):
 
 
     def has_translation(self, language_code=None):
+        """
+        Return whether a translation for the given language exists.
+        Defaults to the current language code.
+        """
         if language_code is None:
             language_code = self._current_language
 
@@ -264,6 +283,11 @@ class TranslatableModel(models.Model):
 class TranslatedFieldsModelBase(ModelBase):
     """
     Meta-class for the translated fields model.
+
+    It performs the following steps:
+    - It validates the 'master' field, in case it's added manually.
+    - It tells the original model to use this model for translations.
+    - It adds the proxy attributes to the shared model.
     """
     def __new__(mcs, name, bases, attrs):
         new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
@@ -271,40 +295,41 @@ class TranslatedFieldsModelBase(ModelBase):
             return new_class
 
         # Validate a manually configured class.
-        if not new_class.master or not isinstance(new_class.master, ReverseSingleRelatedObjectDescriptor):
-            msg = "{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__)
-            logger.error(msg)
-            raise TypeError(msg)
-
-        shared_model = new_class.master.field.rel.to
-        if not issubclass(shared_model, models.Model):
-            # Not supporting models.ForeignKey("tablename") yet. Can't use get_model() as the models are still being constructed.
-            msg = "{0}.master should point to a model class, can't use named field here.".format(name)
-            logger.error(msg)
-            raise TypeError(msg)
-
-        if shared_model._translations_model:
-            msg = "The model '{0}' already has an associated translation table!".format(shared_model.__name__)
-            logger.error(msg)
-            raise TypeError(msg)
+        shared_model = _validate_master(new_class)
 
         # Link the translated fields model to the shared model.
         shared_model._translations_model = new_class
         shared_model._translations_field = new_class.master.field.rel.related_name
 
         # Add wrappers for all translated fields to the shared models.
-        for name in new_class.get_translated_fields():
-            try:
-                # Note that the descriptor even proxies this request, so it should return our field.
-                field = getattr(shared_model, name)
-            except AttributeError:
-                # Add the proxy field for the shared field.
-                TranslatedField().contribute_to_class(shared_model, name)
-            else:
-                if not isinstance(field, models.Field) or field.model is not new_class:
-                    raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
+        new_class.contribute_translations(shared_model)
 
         return new_class
+
+
+def _validate_master(new_class):
+    """
+    Check whether the 'master' field on a TranslatedFieldsModel is correctly configured.
+    """
+    if not new_class.master or not isinstance(new_class.master, ReverseSingleRelatedObjectDescriptor):
+        msg = "{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__)
+        logger.error(msg)
+        raise TypeError(msg)
+
+    shared_model = new_class.master.field.rel.to
+    if not issubclass(shared_model, models.Model):
+        # Not supporting models.ForeignKey("tablename") yet. Can't use get_model() as the models are still being constructed.
+        msg = "{0}.master should point to a model class, can't use named field here.".format(new_class.__name__)
+        logger.error(msg)
+        raise TypeError(msg)
+
+    if shared_model._translations_model:
+        msg = "The model '{0}' already has an associated translation table!".format(shared_model.__name__)
+        logger.error(msg)
+        raise TypeError(msg)
+
+    return shared_model
+
 
 
 class TranslatedFieldsModel(models.Model):
@@ -342,6 +367,22 @@ class TranslatedFieldsModel(models.Model):
         fields.remove('master')
         fields.remove('id')   # exists with deferred objects that .only() queries create.
         return fields
+
+    @classmethod
+    def contribute_translations(cls, shared_model):
+        """
+        Add the proxy attributes to the shared model.
+        """
+        for name in cls.get_translated_fields():
+            try:
+                # Note that the descriptor even proxies this request, so it should return our field.
+                field = getattr(shared_model, name)
+            except AttributeError:
+                # Add the proxy field for the shared field.
+                TranslatedField().contribute_to_class(shared_model, name)
+            else:
+                if not isinstance(field, models.Field) or field.model is not cls:
+                    raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
 
     def __unicode__(self):
         return unicode(self.pk)

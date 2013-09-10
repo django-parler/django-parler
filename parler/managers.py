@@ -13,8 +13,7 @@ from parler import appsettings
 
 class TranslatableQuerySet(QuerySet):
     """
-    An enhancement of the QuerySet which allows objects to be decorated
-    with extra properties before they are returned.
+    An enhancement of the QuerySet which sets the objects language before they are returned.
 
     When using this method with *django-polymorphic*, make sure this
     class is first in the chain of inherited classes.
@@ -57,7 +56,7 @@ class TranslatableQuerySet(QuerySet):
 
 class TranslatableManager(models.Manager):
     """
-    The manager class which ensures the enhanced TranslatedQuerySet object is used.
+    The manager class which ensures the enhanced TranslatableQuerySet object is used.
     """
     def get_query_set(self, *args, **kwargs):
         return TranslatableQuerySet(self.model, *args, **kwargs)

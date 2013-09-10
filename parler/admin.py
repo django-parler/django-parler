@@ -22,6 +22,9 @@ from parler.utils.compat import transaction_atomic
 from parler.utils.i18n import normalize_language_code, get_language_title, is_multilingual_project
 from parler.utils.template import select_template_name
 
+# Code partially taken from django-hvad
+# which is (c) 2011, Jonas Obrist, BSD licensed
+
 
 _language_media = Media(css={
     'all': ('parler/admin/language_tabs.css',)
@@ -38,11 +41,12 @@ class TranslatableAdmin(admin.ModelAdmin):
     """
     Base class for translated admins
     """
-    # Code partially taken from django-hvad
 
     form = TranslatableModelForm
 
-    change_form_template = 'admin/parler/change_form.html'  # extends original change_form_template
+    # While this breaks the admin template name detection,
+    # the get_change_form_base_template() makes sure it inherits from your template.
+    change_form_template = 'admin/parler/change_form.html'
 
     deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
 
@@ -348,6 +352,9 @@ class TranslatableAdmin(admin.ModelAdmin):
 
 
     def get_change_form_base_template(self):
+        """
+        Determine what the actual `change_form_template` should be.
+        """
         opts = self.model._meta
         app_label = opts.app_label
         return _lazy_select_template_name((

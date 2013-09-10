@@ -8,7 +8,18 @@ from django.db.models.fields import Field
 class TranslatedField(object):
     """
     Proxy field attached to a model.
-    This makes sure the Django admin finds an actual field for the translated attribute.
+
+    Example::
+        from django.db import models
+        from parler.models import TranslatableModel, TranslatedFieldsModel
+
+        class MyModel(TranslatableModel):
+            title = TranslatedField()   # Optional, but explicitly mentioned
+
+        # Manual model class
+        class MyModelTranslation(TranslatedFieldsModel):
+            master = models.ForeignKey(MyModel, null=True)
+            title = models.CharField("Title", max_length=200)
     """
     def __init__(self):
         self.model = None
