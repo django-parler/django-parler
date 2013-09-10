@@ -195,6 +195,7 @@ TODO
 
 * The admin forms API is still manually constructed.
 * Documentation on RTD and unittests.
+* ``ModelAdmin.prepopulated_fields`` doesn't work yet (you can use ``get_prepopulated_fields()`` as workaround).
 
 
 API

@@ -9,7 +9,8 @@ from django.contrib.admin.util import get_deleted_objects, unquote
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.db import router
-from django.http import HttpResponseRedirect, Http404
+from django.forms import Media
+from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_unicode
 from django.utils.translation import ugettext_lazy as _
@@ -20,6 +21,16 @@ from parler.utils.compat import transaction_atomic
 from parler.utils.i18n import normalize_language_code, get_language_title, is_multilingual_project
 
 
+_language_media = Media(css={
+    'all': ('parler/admin/language_tabs.css',)
+})
+_language_prepopulated_media = _language_media + Media(js=(
+    'admin/js/urlify.js',
+    'admin/js/prepopulate.min.js'
+))
+
+_fakeRequest = HttpRequest()
+
 
 class TranslatableAdmin(admin.ModelAdmin):
     """
@@ -27,16 +38,24 @@ class TranslatableAdmin(admin.ModelAdmin):
     """
     # Code partially taken from django-hvad
 
-    class Media:
-        css = {
-            'all': ('parler/admin/language_tabs.css',)
-        }
-
     form = TranslatableModelForm
 
     deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
 
     query_language_key = 'language'
+
+
+    @property
+    def media(self):
+        # Currently, `prepopulated_fields` can't be used because it breaks the admin validation.
+        # TODO: all TranslatedFields should become a RelatedField on the shared model (supporting ORM queries)
+        # As workaround, declare the fields in get_prepopulated_fields() and we'll provide the admin media automatically.
+        has_prepoplated = len(self.get_prepopulated_fields(_fakeRequest))
+        base_media = super(TranslatableAdmin, self).media
+        if has_prepoplated:
+            return base_media + _language_prepopulated_media
+        else:
+            return base_media + _language_media
 
 
     def language_column(self, object):
@@ -117,12 +136,19 @@ class TranslatableAdmin(admin.ModelAdmin):
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         lang_code = obj.get_current_language() if obj is not None else self._language(request)
         lang = get_language_title(lang_code)
+
         available_languages = self.get_available_languages(obj)
-        context['current_is_translated'] = lang_code in available_languages
+        current_is_translated = lang_code in available_languages
+        language_tabs = self.get_language_tabs(request, obj, available_languages)
+
+        context['current_is_translated'] = current_is_translated
         context['allow_deletion'] = len(available_languages) > 1
-        context['language_tabs'] = self.get_language_tabs(request, obj, available_languages)
-        if context['language_tabs']:
+        context['language_tabs'] = language_tabs
+        if language_tabs:
             context['title'] = '%s (%s)' % (context['title'], lang)
+        if not current_is_translated:
+            add = True  # lets prepopulated_fields_js work.
+
         #context['base_template'] = self.get_change_form_base_template()
         return super(TranslatableAdmin, self).render_change_form(request, context, add, change, form_url, obj)
 
