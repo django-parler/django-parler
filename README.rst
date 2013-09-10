@@ -1,7 +1,14 @@
 django-parler
 =============
 
-Simple Django model translations without nasty hacks, featuring nice admin integration.
+Simple Django model translations without nasty hacks.
+
+Features:
+
+* Nice admin integration.
+* Separate language table, compatible with django-hvad_.
+* Compatible with django-polymorphic_ (no ORM query hacks)
+* Support both automatic or manual construction of the translations model.
 
 
 Installation
@@ -73,6 +80,49 @@ Extend the model class::
         def __unicode__(self):
             return self.title
 
+Now, the ``title`` field is translated.
+
+
+Using translated fields
+-----------------------
+
+Translated fields can be accessed directly::
+
+    >>> from django.utils import translation
+    >>> translation.activate('en')
+
+    >>> object = MyModel.objects.all()[0]
+    >>> object.get_current_language()
+    'en'
+    >>> object.title
+    u'cheese omelet'
+
+    >>> object.set_current_language('fr')       # Only switches
+    >>> object.title = "omelette du fromage"    # Translation is created on demand.
+    >>> object.save()
+
+    >>> objects = MyModel.objects.language('fr').all()
+    >>> objects[0].title
+    u'omelette du fromage'
+
+When an attribute is not translated yet, the default langauage (set by ``PARLER_DEFAULT_LANGUAGE_CODE``) will be retured.
+
+
+Querying translated attributes
+------------------------------
+
+Currently, this package doesn't improve the QuerySet API to access translated fields.
+Hence, simply access the translated fields like any normal relation::
+
+    object = MyObject.objects.filter(translations__title='omelette')
+
+    translation1 = myobject.translations.all()[0]
+
+Note that due to the Django ORM design, the query for translated attributes should
+typically occur within a single ``.filter(..)`` call. When using ``.filter(..).filter(..)``,
+the ORM turns that into 2 separate joins on the translations table.
+See `the ORM documentation <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ for more details.
+
 
 Advanced example
 ----------------
@@ -105,8 +155,41 @@ The translated model can be constructed manually too::
             verbose_name = _("MyModel translation")
 
 
+Background story
+================
+
+This package is inspired by django-hvad_. When attempting to integrate multilingual
+support into django-fluent-pages_ using django-hvad_ this turned out to be really hard.
+The sad truth is that while django-hvad_ has a nice admin interface, table layout and model API,
+it also overrides much of the default behavior of querysets and model metaclasses.
+Currently, this prevents combining django-hvad_ with django-polymorphic_.
+
+When investigating other multilingual packages, they either appeared to be outdated,
+store translations in the same table (too inflexible for us) or only provided a model API.
+Hence, there was a need for a new solution, using a simple, crude but effective API.
+
+Initially, multilingual support was coded directly within django-fluent-pages_,
+while keeping a future django-hvad_ transition in mind. Instead of doing metaclass operations,
+the "shared model" just proxied all attributes to the translated model (all manually constructed).
+Queries just had to be performed using ``.filter(translations__title=..)``.
+This proved to be a sane solution and quickly it turned out that this code
+deserved a separate package, and some other modules needed it too.
+
+This package is an attempt to combine the best of both worlds;
+the API simplicity of django-hvad_ with the crude,
+but effective solution of proxying translated attributes.
+And yes, we've added some metaclass magic too - to make life easier -
+without loosing the freedom of manually using the API at your will.
+
+TODO
+----
+
+* The admin forms API is still manually constructed.
+* Documentation on RTD and unittests.
+
+
 API
----
+====
 
 On ``parler.models.TranslatableModel``:
 
@@ -136,7 +219,7 @@ In ``parler.utils``:
 
 
 Contributing
-------------
+============
 
 This module is designed to be generic. In case there is anything you didn't like about it,
 or think it's not flexible enough, please let us know. We'd love to improve it!
@@ -144,3 +227,8 @@ or think it's not flexible enough, please let us know. We'd love to improve it!
 If you have any other valuable contribution, suggestion or idea,
 please let us know as well because we will look into it.
 Pull requests are welcome too. :-)
+
+
+.. _django-hvad: https://github.com/kristianoellegaard/django-hvad
+.. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
+.. _django-polymorphic: https://github.com/chrisglass/django_polymorphic
