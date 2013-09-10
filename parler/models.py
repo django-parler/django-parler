@@ -50,30 +50,30 @@ def create_translations_model(model, related_name, meta, **fields):
     """
     if not meta:
         meta = {}
-    meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
 
-    # Create inner Meta class
-    Meta = type('Meta', (object,), meta)
-    if not hasattr(Meta, 'db_table'):
-        Meta.db_table = model._meta.db_table + '_translation'
-    Meta.app_label = model._meta.app_label
-    name = '{0}_Translation'.format(model.__name__)
+    # Define inner Meta class
+    meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
+    meta['app_label'] = shared_model._meta.app_label
+    meta.setdefault('db_table', shared_model._meta.db_table + '_translation')
+
+    # Define attributes for translation table
+    name = '{0}_Translation'.format(shared_model.__name__)
 
     attrs = {}
     attrs.update(fields)
-    attrs['Meta'] = Meta
-    attrs['__module__'] = model.__module__
+    attrs['Meta'] = type('Meta', (object,), meta)
+    attrs['__module__'] = shared_model.__module__
     attrs['objects'] = models.Manager()
-    attrs['master'] = models.ForeignKey(model, related_name=related_name, editable=False, null=True)
+    attrs['master'] = models.ForeignKey(shared_model, related_name=related_name, editable=False, null=True)
 
     # Create and return the new model
     translations_model = TranslatedFieldsModelBase(name, (TranslatedFieldsModel,), attrs)
-    translations_model.DoesNotExist = type('DoesNotExist', (TranslationDoesNotExist, model.DoesNotExist, translations_model.DoesNotExist,), {})
+    translations_model.DoesNotExist = type('DoesNotExist', (TranslationDoesNotExist, shared_model.DoesNotExist, translations_model.DoesNotExist,), {})
 
     # Register it as a global in the shared model's module.
     # This is needed so that Translation model instances, and objects which refer to them, can be properly pickled and unpickled.
     # The Django session and caching frameworks, in particular, depend on this behaviour.
-    mod = sys.modules[model.__module__]
+    mod = sys.modules[shared_model.__module__]
     setattr(mod, name, translations_model)
 
     return translations_model
