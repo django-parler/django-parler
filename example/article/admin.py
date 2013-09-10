@@ -5,21 +5,29 @@ from .models import Article
 from parler.forms import TranslatableModelForm, TranslatedField
 
 
-# Example, translated fields can be enhanced by manually declaring them:
 class ArticleAdminForm(TranslatableModelForm):
+    """
+    Example form
+
+    Translated fields can be enhanced by manually declaring them:
+    """
     title = TranslatedField(widget=AdminTextInputWidget)
     content = TranslatedField(widget=AdminTextareaWidget)
 
 
 class ArticleAdmin(TranslatableAdmin):
-    # Example form usage. This is optional.
+    """
+    Example admin.
+
+    Using an empty class would already work,
+    but this example shows some additional options.
+    """
+
+    # The 'language_column' is provided by the base class:
+    list_display = ('title', 'language_column')
+
+    # Example custom form usage.
     form = ArticleAdminForm
-
-
-    def get_prepopulated_fields(self, request, obj=None):
-        # Can't use prepopulated_fields= yet, but this is a workaround.
-        return {'slug': ('title',)}
-
 
     # NOTE: when using Django 1.4, use declared_fieldsets= instead of fieldsets=
     fieldsets = (
@@ -30,6 +38,11 @@ class ArticleAdmin(TranslatableAdmin):
             'fields': ('content',),
         })
     )
+
+    def get_prepopulated_fields(self, request, obj=None):
+        # Can't use prepopulated_fields= yet, but this is a workaround.
+        return {'slug': ('title',)}
+
 
 
 admin.site.register(Article, ArticleAdmin)
