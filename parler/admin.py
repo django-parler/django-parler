@@ -14,42 +14,10 @@ from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_unicode
 from django.utils.translation import ugettext_lazy as _
 from parler import appsettings
+from parler.forms import TranslatableModelForm
 from parler.managers import TranslatableQuerySet
 from parler.utils.compat import transaction_atomic
 from parler.utils.i18n import normalize_language_code, get_language_title, is_multilingual_project
-
-
-def get_model_form_field(model, name, **kwargs):
-    return model._meta.get_field_by_name(name)[0].formfield(**kwargs)
-
-
-class TranslatableModelFormMixin(object):
-    """
-    Form mixin, to fetch+store translated fields.
-    """
-    _translatable_model = None
-    _translatable_fields = ()
-    language_code = None   # Set by get_form()
-
-
-    def __init__(self, *args, **kwargs):
-        super(TranslatableModelFormMixin, self).__init__(*args, **kwargs)
-
-        # Load the initial values for the translated fields
-        instance = kwargs.get('instance', None)
-        if instance:
-            translation = instance._get_translated_model(auto_create=True)
-            for field in self._translatable_fields:
-                self.initial.setdefault(field, getattr(translation, field))
-
-
-    def save(self, commit=True):
-        self.instance.set_current_language(self.language_code)
-        # Assign translated fields to the model (using the TranslatedAttribute descriptor)
-        for field in self._translatable_fields:
-            setattr(self.instance, field, self.cleaned_data[field])
-
-        return super(TranslatableModelFormMixin, self).save(commit)
 
 
 
@@ -63,6 +31,8 @@ class TranslatableAdmin(admin.ModelAdmin):
         css = {
             'all': ('parler/admin/language_tabs.css',)
         }
+
+    form = TranslatableModelForm
 
     deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
 
