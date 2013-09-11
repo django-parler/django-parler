@@ -11,11 +11,12 @@ It's possible to create the translations model manually,
 or let it be created dynamically when using the :class:`TranslatedFields` field.
 """
 from django.core.exceptions import ImproperlyConfigured
-from django.db import models
+from django.db import models, router
 from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext
+from parler import signals
 from parler.fields import TranslatedField, LanguageCodeDescriptor
 from parler.managers import TranslatableManager
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
@@ -347,16 +348,52 @@ class TranslatedFieldsModel(models.Model):
         abstract = True
 
     def __init__(self, *args, **kwargs):
+        signals.pre_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
         super(TranslatedFieldsModel, self).__init__(*args, **kwargs)
         self._original_values = self._get_field_values()
+
+        signals.post_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
 
     @property
     def is_modified(self):
         return self._original_values != self._get_field_values()
 
-    def save(self, *args, **kwargs):
-        super(TranslatedFieldsModel, self).save(*args, **kwargs)
+    @property
+    def shared_model(self):
+        return self.__class__.master.field.rel.to
+
+    def save_base(self, raw=False, using=None, update_fields=None, **kwargs):
+        # Send the pre_save signal
+        using = using or router.db_for_write(self.__class__, instance=self)
+        record_exists = self.pk is not None  # Ignoring force_insert/force_update for now.
+        if self._meta.auto_created:
+            signals.pre_translation_save.send(
+                sender=self.shared_model, instance=self,
+                raw=raw, using=using, update_fields=update_fields
+            )
+
+        # Perform save
+        super(TranslatedFieldsModel, self).save_base(raw=raw, using=using, update_fields=update_fields, **kwargs)
         self._original_values = self._get_field_values()
+
+        # Send the post_save signal
+        if not self._meta.auto_created:
+            signals.post_translation_save.send(
+                sender=self.shared_model, instance=self, created=(not record_exists),
+                update_fields=update_fields, raw=raw, using=using
+            )
+
+    def delete(self, using=None):
+        # Send pre-delete signal
+        using = using or router.db_for_write(self.__class__, instance=self)
+        if not self._meta.auto_created:
+            signals.pre_translation_delete.send(sender=self.shared_model, instance=self, using=using)
+
+        super(TranslatedFieldsModel, self).delete(using=using)
+
+        # Send post-delete signal
+        if not self._meta.auto_created:
+            signals.post_translation_delete.send(sender=self.shared_model, instance=self, using=using)
 
     def _get_field_values(self):
         # Return all field values in a consistent (sorted) manner.
