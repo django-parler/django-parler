@@ -191,6 +191,7 @@ class TranslatableModel(models.Model):
 
         try:
             # Check the cache directly, and the answer is known.
+            # NOTE this may also return newly auto created translations which are not saved yet.
             return self._translations_cache[language_code] is not None
         except KeyError:
             try:
