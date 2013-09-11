@@ -1,3 +1,11 @@
+Changes in version 0.9.1 (beta)
+-------------------------------
+
+* Added signals to detect translation model init/save/delete operations.
+* Added default ``TranslatedFieldsModel`` ``verbose_name``, to improve the delete view.
+* Allow using the ``TranslatableAdmin`` for non-``TranslatableModel`` objects (operate as NO-OP).
+
+
 Changes in version 0.9 (beta)
 -----------------------------
 
