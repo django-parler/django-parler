@@ -18,6 +18,7 @@ from django.utils.translation import ugettext_lazy as _
 from parler import appsettings
 from parler.forms import TranslatableModelForm
 from parler.managers import TranslatableQuerySet
+from parler.models import TranslatableModel
 from parler.utils.compat import transaction_atomic
 from parler.utils.i18n import normalize_language_code, get_language_title, is_multilingual_project
 from parler.utils.template import select_template_name
@@ -39,18 +40,29 @@ _fakeRequest = HttpRequest()
 
 class TranslatableAdmin(admin.ModelAdmin):
     """
-    Base class for translated admins
+    Base class for translated admins.
+
+    This class also works as regular admin for non TranslatableModel objects.
+    When using this class with a non-TranslatableModel,
+    all operations effectively become a NO-OP.
     """
 
     form = TranslatableModelForm
 
-    # While this breaks the admin template name detection,
-    # the get_change_form_base_template() makes sure it inherits from your template.
-    change_form_template = 'admin/parler/change_form.html'
-
     deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
 
     query_language_key = 'language'
+
+
+    @property
+    def change_form_template(self):
+        # Dynamic property to support transition to regular models.
+        if self._has_translatable_model():
+            # While this breaks the admin template name detection,
+            # the get_change_form_base_template() makes sure it inherits from your template.
+            return 'admin/parler/change_form.html'
+        else:
+            return None # get default admin selection
 
 
     @property
@@ -66,11 +78,16 @@ class TranslatableAdmin(admin.ModelAdmin):
             return base_media + _language_media
 
 
+    def _has_translatable_model(self):
+        # Allow fallback to regular models when needed.
+        return issubclass(self.model, TranslatableModel)
+
+
     def _language(self, request, obj=None):
         """
         Get the language parameter from the current request.
         """
-        if not is_multilingual_project():
+        if not is_multilingual_project() or not self._has_translatable_model():
             # By default, the objects are stored in a single static language.
             # This makes the transition to multilingual easier as well.
             # The default language can operate as fallback language too.
@@ -118,12 +135,14 @@ class TranslatableAdmin(admin.ModelAdmin):
         Make sure the current language is selected.
         """
         qs = super(TranslatableAdmin, self).queryset(request)
-        if not isinstance(qs, TranslatableQuerySet):
-            raise ImproperlyConfigured("{0} class does not inherit from TranslatableQuerySet".format(qs.__class__.__name__))
 
-        if not is_multilingual_project():
-            # Make sure the current translations remain visible, not the dynamically set get_language() value.
-            qs = qs.language(appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
+        if self._has_translatable_model():
+            if not isinstance(qs, TranslatableQuerySet):
+                raise ImproperlyConfigured("{0} class does not inherit from TranslatableQuerySet".format(qs.__class__.__name__))
+
+            if not is_multilingual_project():
+                # Make sure the current translations remain visible, not the dynamically set get_language() value.
+                qs = qs.language(appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
         return qs
 
 
@@ -132,7 +151,7 @@ class TranslatableAdmin(admin.ModelAdmin):
         Make sure the object is fetched in the correct language.
         """
         obj = super(TranslatableAdmin, self).get_object(request, object_id)
-        if obj is not None:
+        if obj is not None and self._has_translatable_model():  # Allow fallback to regular models.
             obj.set_current_language(self._language(request, obj), initialize=True)
 
         return obj
@@ -143,7 +162,9 @@ class TranslatableAdmin(admin.ModelAdmin):
         Pass the current language to the form.
         """
         form_class = super(TranslatableAdmin, self).get_form(request, obj, **kwargs)
-        form_class.language_code = obj.get_current_language() if obj is not None else self._language(request)
+        if self._has_translatable_model():
+            form_class.language_code = obj.get_current_language() if obj is not None else self._language(request)
+
         return form_class
 
 
@@ -152,34 +173,38 @@ class TranslatableAdmin(admin.ModelAdmin):
         Add a delete-translation view.
         """
         urlpatterns = super(TranslatableAdmin, self).get_urls()
-        info = self.model._meta.app_label, self.model._meta.module_name
+        if not self._has_translatable_model():
+            return urlpatterns
+        else:
+            info = self.model._meta.app_label, self.model._meta.module_name
 
-        return patterns('',
-            url(r'^(.+)/delete-translation/(.+)/$',
-                self.admin_site.admin_view(self.delete_translation),
-                name='{0}_{1}_delete_translation'.format(*info)
-            ),
-        ) + urlpatterns
+            return patterns('',
+                url(r'^(.+)/delete-translation/(.+)/$',
+                    self.admin_site.admin_view(self.delete_translation),
+                    name='{0}_{1}_delete_translation'.format(*info)
+                ),
+            ) + urlpatterns
 
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         """
         Insert the language tabs.
         """
-        lang_code = obj.get_current_language() if obj is not None else self._language(request)
-        lang = get_language_title(lang_code)
+        if self._has_translatable_model():
+            lang_code = obj.get_current_language() if obj is not None else self._language(request)
+            lang = get_language_title(lang_code)
 
-        available_languages = self.get_available_languages(obj)
-        current_is_translated = lang_code in available_languages
-        language_tabs = self.get_language_tabs(request, obj, available_languages)
+            available_languages = self.get_available_languages(obj)
+            current_is_translated = lang_code in available_languages
+            language_tabs = self.get_language_tabs(request, obj, available_languages)
 
-        context['current_is_translated'] = current_is_translated
-        context['allow_deletion'] = len(available_languages) > 1
-        context['language_tabs'] = language_tabs
-        if language_tabs:
-            context['title'] = '%s (%s)' % (context['title'], lang)
-        if not current_is_translated:
-            add = True  # lets prepopulated_fields_js work.
+            context['current_is_translated'] = current_is_translated
+            context['allow_deletion'] = len(available_languages) > 1
+            context['language_tabs'] = language_tabs
+            if language_tabs:
+                context['title'] = '%s (%s)' % (context['title'], lang)
+            if not current_is_translated:
+                add = True  # lets prepopulated_fields_js work.
 
         # django-fluent-pages uses the same technique
         if 'default_change_form_template' not in context:
@@ -209,10 +234,12 @@ class TranslatableAdmin(admin.ModelAdmin):
         info = (self.model._meta.app_label, self.model._meta.module_name)
 
         # Pass ?language=.. to next page.
-        continue_urls = (uri, "../add/", reverse('admin:{0}_{1}_add'.format(*info)))
-        if redirect['Location'] in continue_urls and self.query_language_key in request.GET:
-            # "Save and add another" / "Save and continue" URLs
-            redirect['Location'] += "?{0}={1}".format(self.query_language_key, request.GET[self.query_language_key])
+        language = request.GET.get(self.query_language_key)
+        if language:
+            continue_urls = (uri, "../add/", reverse('admin:{0}_{1}_add'.format(*info)))
+            if redirect['Location'] in continue_urls and self.query_language_key in request.GET:
+                # "Save and add another" / "Save and continue" URLs
+                redirect['Location'] += "?{0}={1}".format(self.query_language_key, language)
         return redirect
 
 
