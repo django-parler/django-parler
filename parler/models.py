@@ -139,7 +139,7 @@ class TranslatableModel(models.Model):
         translated_kwargs = {}
         current_language = None
         if kwargs:
-            current_language = kwargs.get('_current_language', None)
+            current_language = kwargs.pop('_current_language', None)
             for field in self._translations_model.get_translated_fields():
                 try:
                     translated_kwargs[field] = kwargs.pop(field)
