@@ -1,0 +1,21 @@
+language: python
+python:
+  - "2.7"
+  - "2.6"
+env:
+  - DJANGO=1.4.5
+  - DJANGO=1.5.1
+install:
+  - pip install -q Django==$DJANGO --use-mirrors
+  - pip install -q -e . --use-mirrors
+script:
+  - python runtests.py
+branches:
+  only:
+    - master
+notifications:
+  email:
+    recipients:
+      - travis@edoburu.nl
+    on_success: never
+    on_failure: always
