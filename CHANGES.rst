@@ -1,7 +1,7 @@
 Changes in version 0.9.2 (beta)
 -------------------------------
 
-* Added ``TranslatedAttribute(any_language=True)`` option, which uses any language as fallback
+* Added ``TranslatedField(any_language=True)`` option, which uses any language as fallback
   in case the currently active language is not available. This is ideally suited for object titles.
 * Improved ``TranslationDoesNotExist`` exception, now inherits from ``AttributeError``.
   This missing translations fail silently in templates (e.g. admin list template)..

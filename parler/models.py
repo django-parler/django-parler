@@ -325,6 +325,12 @@ class TranslatableModel(models.Model):
         """
         Fetch a translated property, and return a default value
         when both the translation and fallback language are missing.
+
+        When ``any_language=True`` is used, the function also looks
+        into other languages to find a suitable value. This feature can be useful
+        for "title" attributes for example, to make sure there is at least something being displayed.
+        Also consider using ``field = TranslatedField(any_language=True)`` in the model itself,
+        to make this behavior the default for the given field.
         """
         try:
             return getattr(self, field)
