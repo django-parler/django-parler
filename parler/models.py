@@ -420,25 +420,25 @@ class TranslatedFieldsModel(models.Model):
     def shared_model(self):
         return self.__class__.master.field.rel.to
 
-    def save_base(self, raw=False, using=None, update_fields=None, **kwargs):
+    def save_base(self, raw=False, using=None, **kwargs):
         # Send the pre_save signal
         using = using or router.db_for_write(self.__class__, instance=self)
         record_exists = self.pk is not None  # Ignoring force_insert/force_update for now.
         if self._meta.auto_created:
             signals.pre_translation_save.send(
                 sender=self.shared_model, instance=self,
-                raw=raw, using=using, update_fields=update_fields
+                raw=raw, using=using
             )
 
         # Perform save
-        super(TranslatedFieldsModel, self).save_base(raw=raw, using=using, update_fields=update_fields, **kwargs)
+        super(TranslatedFieldsModel, self).save_base(raw=raw, using=using, **kwargs)
         self._original_values = self._get_field_values()
 
         # Send the post_save signal
         if not self._meta.auto_created:
             signals.post_translation_save.send(
                 sender=self.shared_model, instance=self, created=(not record_exists),
-                update_fields=update_fields, raw=raw, using=using
+                raw=raw, using=using
             )
 
     def delete(self, using=None):
