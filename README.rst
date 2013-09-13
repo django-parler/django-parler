@@ -1,3 +1,7 @@
+.. image::  https://travis-ci.org/edoburu/django-parler.png?branch=master
+  :target: http://travis-ci.org/edoburu/django-parler
+  :alt: build-status
+
 django-parler
 =============
 
