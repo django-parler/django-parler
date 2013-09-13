@@ -183,6 +183,15 @@ class TranslatableModel(models.Model):
             self._get_translated_model(use_fallback=False, auto_create=True)
 
 
+    def get_fallback_language(self):
+        """
+        Return the fallback language code,
+        which is used in case there is no translation for the currently active language.
+        """
+        lang_dict = get_language_settings(self._current_language)
+        return lang_dict['fallback'] if lang_dict['fallback'] != self._current_language else None
+
+
     def has_translation(self, language_code=None):
         """
         Return whether a translation for the given language exists.
@@ -274,6 +283,30 @@ class TranslatableModel(models.Model):
         ))
 
 
+    def _get_any_translated_model(self):
+        """
+        Return any available translation.
+        Returns None if there are no translations at all.
+        """
+        if self._translations_cache:
+            # There is already a language available in the case. No need for queries.
+            # Give consistent answers if they exist.
+            try:
+                return self._translations_cache.get(self._current_language, None) \
+                    or self._translations_cache.get(self.get_fallback_language(), None) \
+                    or next(t for t in self._translations_cache.itervalues() if t if not None)  # Skip fallback markers.
+            except StopIteration:
+                pass
+
+        try:
+            translation = self._translations_model.objects.filter(master=self)[0]
+        except IndexError:
+            return None
+        else:
+            self._translations_cache[translation.language_code] = translation
+            return translation
+
+
     def save(self, *args, **kwargs):
         super(TranslatableModel, self).save(*args, **kwargs)
         self.save_translations()
@@ -286,6 +319,24 @@ class TranslatableModel(models.Model):
             if not translations.master_id:  # Might not exist during first construction
                 translations.master = self
             translations.save()
+
+
+    def safe_translation_getter(self, field, default=None, any_language=False):
+        """
+        Fetch a translated property, and return a default value
+        when both the translation and fallback language are missing.
+        """
+        try:
+            return getattr(self, field)
+        except TranslationDoesNotExist:
+            pass
+
+        if any_language:
+            translation = self._get_any_translated_model()
+            if translation is not None:
+                return getattr(translation, field, default)
+
+        return default
 
 
 class TranslatedFieldsModelBase(ModelBase):

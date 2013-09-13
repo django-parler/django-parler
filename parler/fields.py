@@ -9,21 +9,30 @@ class TranslatedField(object):
     """
     Proxy field attached to a model.
 
+    The field is automatically added to the shared model.
+    However, this can be assigned manually to be more explicit, or to pass the ``any_language`` value.
+    The ``any_language=True`` option causes the attribute to always return a translated value,
+    even when the current language and fallback are missing.
+    This can be useful for "title" attributes for example.
+
     Example::
         from django.db import models
         from parler.models import TranslatableModel, TranslatedFieldsModel
 
         class MyModel(TranslatableModel):
-            title = TranslatedField()   # Optional, but explicitly mentioned
+            title = TranslatedField(any_language=True)
+            slug = TranslatedField()   # Optional, but explicitly mentioned
 
         # Manual model class
         class MyModelTranslation(TranslatedFieldsModel):
             master = models.ForeignKey(MyModel, null=True)
             title = models.CharField("Title", max_length=200)
+            slug = models.SlugField("Slug")
     """
-    def __init__(self):
+    def __init__(self, any_language=False):
         self.model = None
         self.name = None
+        self.any_language = any_language
 
     def contribute_to_class(self, cls, name):
         #super(TranslatedField, self).contribute_to_class(cls, name)
@@ -50,7 +59,18 @@ class TranslatedFieldDescriptor(object):
 
         # Auto create is useless for __get__, will return empty titles everywhere.
         # Better use a fallback instead, just like gettext does.
-        translation = instance._get_translated_model(use_fallback=True)
+        translation = None
+        try:
+            translation = instance._get_translated_model(use_fallback=True)
+        except instance._translations_model.DoesNotExist as e:
+            if self.field.any_language:
+                translation = instance._get_any_translated_model()  # returns None on error.
+
+            if translation is None:
+                # Improve error message
+                e.args = ("{1}\nAttempted to read attribute {0}.".format(self.field.name, e.args[0]),)
+                raise
+
         return getattr(translation, self.field.name)
 
     def __set__(self, instance, value):
