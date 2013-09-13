@@ -27,9 +27,11 @@ logger = logging.getLogger(__name__)
 
 
 
-class TranslationDoesNotExist(object):
+class TranslationDoesNotExist(AttributeError):
     """
     A tagging interface to detect missing translations.
+    The exception inherits from :class:`AttributeError` to reflect what is actually happening.
+    It also causes the templates to handle the missing attributes silently, which is very useful in the admin for example.
     """
     pass
 
@@ -74,7 +76,6 @@ def create_translations_model(shared_model, related_name, meta, **fields):
 
     # Create and return the new model
     translations_model = TranslatedFieldsModelBase(name, (TranslatedFieldsModel,), attrs)
-    translations_model.DoesNotExist = type('DoesNotExist', (TranslationDoesNotExist, shared_model.DoesNotExist, translations_model.DoesNotExist,), {})
 
     # Register it as a global in the shared model's module.
     # This is needed so that Translation model instances, and objects which refer to them, can be properly pickled and unpickled.
@@ -428,6 +429,11 @@ class TranslatedFieldsModel(models.Model):
             else:
                 if not isinstance(field, models.Field) or field.model is not cls:
                     raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
+
+        # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
+        # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
+        cls.DoesNotExist = type('DoesNotExist', (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
+
 
     def __unicode__(self):
         return get_language_title(self.language_code)
