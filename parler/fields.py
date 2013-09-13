@@ -69,6 +69,9 @@ class TranslatedFieldDescriptor(object):
         translation = instance._get_translated_model()
         delattr(translation, self.field.name)
 
+    def __repr__(self):
+        return "<{0} for {1}.{2}>".format(self.__class__.__name__, self.field.model.__name__, self.field.name)
+
 
 class LanguageCodeDescriptor(object):
     """
