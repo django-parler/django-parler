@@ -181,20 +181,20 @@ However, when an object only exists in a different language, this still fails.
 
 This package provides 3 solutions to this problem:
 
-1. Declare the translated attribute explicitly with ``any_language=True``.
+1. Declare the translated attribute explicitly with ``any_language=True``::
 
     class MyModel(TranslatableModel):
         title = TranslatedField(any_language=True)
 
-  Now, the title will.
+   Now, the title will try to fetch one of the existing languages from the database.
 
 2. Use ``model.safe_translation_getter("fieldname", any_language=True)`` on attributes
    which don't have an ``any_language=True`` setting.
 
-3. Use a try..catch block for the ``TranslationDoesNotExist`` exception for custom handling.
+3. Use a ``try .. catch TranslationDoesNotExist`` block for custom handling.
    Because this exception inherits from ``AttibuteError``, templates typically display empty values by default.
 
-4. Avoid fetching those objects using something like: ``queryset.filter(translations__isnull=False).distinct()``.
+4. Avoid fetching those objects using something like: ``queryset.filter(translations__language_code__in=('nl', 'en')).distinct()``.
    Note that the same `ORM restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ apply here.
 
 
@@ -243,9 +243,11 @@ On ``parler.models.TranslatableModel``:
 
 * ``get_current_language()``
 * ``set_current_language(language_code, initialize=False)``
+* ``get_fallback_language()``
 * ``get_available_languages()``
 * ``has_translation(language_code=None)``
 * ``save_translations()``
+* ``safe_translation_getter(field, default=None, any_language=False)``
 
 On ``parler.models.TranslatedFieldsModel``:
 
