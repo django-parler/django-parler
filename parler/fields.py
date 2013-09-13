@@ -55,7 +55,7 @@ class TranslatedFieldDescriptor(object):
     def __get__(self, instance, instance_type=None):
         if not instance:
             # Return the class attribute when asked for by the admin.
-            return instance_type._translations_model._meta.get_field_by_name(self.field.name)[0]
+            return self
 
         # Auto create is useless for __get__, will return empty titles everywhere.
         # Better use a fallback instead, just like gettext does.

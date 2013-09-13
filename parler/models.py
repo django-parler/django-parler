@@ -17,7 +17,7 @@ from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext
 from parler import signals
-from parler.fields import TranslatedField, LanguageCodeDescriptor
+from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
 import sys
@@ -459,11 +459,8 @@ class TranslatedFieldsModel(models.Model):
 
     @classmethod
     def get_translated_fields(self):
-        fields = self._meta.get_all_field_names()
-        fields.remove('language_code')
-        fields.remove('master')
-        fields.remove('id')   # exists with deferred objects that .only() queries create.
-        return fields
+        # Not using get `get_all_field_names()` because that also invokes a model scan.
+        return [f.name for f, _ in self._meta.get_fields_with_model() if f.name not in ('language_code', 'master', 'id')]
 
     @classmethod
     def contribute_translations(cls, shared_model):
@@ -484,7 +481,7 @@ class TranslatedFieldsModel(models.Model):
                 # Add the proxy field for the shared field.
                 TranslatedField().contribute_to_class(shared_model, name)
             else:
-                if not isinstance(field, models.Field) or field.model is not cls:
+                if not isinstance(field, (models.Field, TranslatedFieldDescriptor)):
                     raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
 
         # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
