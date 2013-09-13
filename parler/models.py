@@ -158,11 +158,6 @@ class TranslatableModel(models.Model):
             for field, value in translated_kwargs.iteritems():
                 setattr(translation, field, value)
 
-            # Check if other translations were also modified
-            for code, obj in self._translations_cache.iteritems():
-                if code != translation.language_code and obj.is_modified:
-                    obj.save()
-
 
     def get_current_language(self):
         """
