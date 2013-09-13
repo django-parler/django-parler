@@ -173,6 +173,31 @@ The translated model can be constructed manually too::
             verbose_name = _("MyModel translation")
 
 
+Missing translation fallbacks
+-----------------------------
+
+When a translation is missing, the fallback language is used.
+However, when an object only exists in a different language, this still fails.
+
+This package provides 3 solutions to this problem:
+
+1. Declare the translated attribute explicitly with ``any_language=True``.
+
+    class MyModel(TranslatableModel):
+        title = TranslatedField(any_language=True)
+
+  Now, the title will.
+
+2. Use ``model.safe_translation_getter("fieldname", any_language=True)`` on attributes
+   which don't have an ``any_language=True`` setting.
+
+3. Use a try..catch block for the ``TranslationDoesNotExist`` exception for custom handling.
+   Because this exception inherits from ``AttibuteError``, templates typically display empty values by default.
+
+4. Avoid fetching those objects using something like: ``queryset.filter(translations__isnull=False).distinct()``.
+   Note that the same `ORM restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ apply here.
+
+
 Background story
 ================
 
@@ -202,7 +227,8 @@ without loosing the freedom of manually using the API at your will.
 TODO
 ----
 
-* Unittests and documentation on RTD.
+* Documentation on RTD.
+* Unittest the admin.
 * ``ModelAdmin.prepopulated_fields`` doesn't work yet (you can use ``get_prepopulated_fields()`` as workaround).
 * The admin forms use the standard form widgets instead of the admin overrides.
 * The list code currently performs one query per object. This needs to be reduced.
