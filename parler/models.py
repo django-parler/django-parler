@@ -420,7 +420,7 @@ class TranslatedFieldsModel(models.Model):
         # Send the pre_save signal
         using = using or router.db_for_write(self.__class__, instance=self)
         record_exists = self.pk is not None  # Ignoring force_insert/force_update for now.
-        if self._meta.auto_created:
+        if not self._meta.auto_created:
             signals.pre_translation_save.send(
                 sender=self.shared_model, instance=self,
                 raw=raw, using=using
