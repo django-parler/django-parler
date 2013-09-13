@@ -313,12 +313,13 @@ class TranslatableModel(models.Model):
 
 
     def save_translations(self):
-        # Also save translated strings.
-        translations = self._get_translated_model()
-        if translations.is_modified:
-            if not translations.master_id:  # Might not exist during first construction
-                translations.master = self
-            translations.save()
+        # Save all translated objects which were fetched.
+        # This also supports switching languages several times, and save everything in the end.
+        for translation in self._translations_cache.itervalues():
+            if translation.is_modified:
+                if not translation.master_id:  # Might not exist during first construction
+                    translation.master = self
+                translation.save()
 
 
     def safe_translation_getter(self, field, default=None, any_language=False):
