@@ -5,8 +5,11 @@ Changes in version 0.9.2 (beta)
   in case the currently active language is not available. This is ideally suited for object titles.
 * Improved ``TranslationDoesNotExist`` exception, now inherits from ``AttributeError``.
   This missing translations fail silently in templates (e.g. admin list template)..
+* Added unittests
 * Fixed Django 1.4 compatibility
 * Fixed saving all translations, not only the active one.
+* Fix sending ``pre_translation_save`` signal.
+* Fix passing ``_current_language`` to the model __init__ function.
 
 
 Changes in version 0.9.1 (beta)
