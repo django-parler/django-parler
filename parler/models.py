@@ -213,7 +213,7 @@ class TranslatableModel(models.Model):
         """
         Return the language codes of all translated variations.
         """
-        return self._translations_model.objects.filter(master=self).values_list('language_code', flat=True)
+        return self._translations_model.objects.filter(master=self).values_list('language_code', flat=True).order_by('language_code')
 
 
     def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False):
