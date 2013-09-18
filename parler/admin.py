@@ -114,10 +114,18 @@ class TranslatableAdmin(admin.ModelAdmin):
         The language column which can be included in the ``list_display``.
         """
         languages = self.get_available_languages(object)
+        languages = [self.get_language_short_title(code) for code in languages]
         return u'<span class="available-languages">{0}</span>'.format(' '.join(languages))
 
     language_column.allow_tags = True
     language_column.short_description = _("Languages")
+
+
+    def get_language_short_title(self, language_code):
+        """
+        Hook for allowing to change the title in the :func:`language_column` of the list_display.
+        """
+        return language_code
 
 
     def get_available_languages(self, obj):
