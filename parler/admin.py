@@ -171,9 +171,19 @@ class TranslatableAdmin(admin.ModelAdmin):
         """
         form_class = super(TranslatableAdmin, self).get_form(request, obj, **kwargs)
         if self._has_translatable_model():
-            form_class.language_code = obj.get_current_language() if obj is not None else self._language(request)
+            form_class.language_code = self.get_form_language(request, obj)
 
         return form_class
+
+
+    def get_form_language(self, request, obj=None):
+        """
+        Return the current language for the currently displayed object fields.
+        """
+        if obj is not None:
+            return obj.get_current_language()
+        else:
+            return self._language(request)
 
 
     def get_urls(self):
@@ -199,7 +209,7 @@ class TranslatableAdmin(admin.ModelAdmin):
         Insert the language tabs.
         """
         if self._has_translatable_model():
-            lang_code = obj.get_current_language() if obj is not None else self._language(request)
+            lang_code = self.get_form_language(request, obj)
             lang = get_language_title(lang_code)
 
             available_languages = self.get_available_languages(obj)
@@ -257,7 +267,7 @@ class TranslatableAdmin(admin.ModelAdmin):
         """
         tabs = []
         get = request.GET.copy()  # QueryDict object
-        language = obj.get_current_language() if obj is not None else self._language(request)
+        language = self.get_form_language(request, obj)
         tab_languages = []
 
         base_url = '{0}://{1}{2}'.format(request.is_secure() and 'https' or 'http', request.get_host(), request.path)
