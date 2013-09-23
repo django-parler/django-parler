@@ -358,6 +358,10 @@ class TranslatedFieldsModelBase(ModelBase):
         if bases[0] == models.Model:
             return new_class
 
+        # No action in abstract models.
+        if new_class._meta.abstract or new_class._meta.proxy:
+            return new_class
+
         # Validate a manually configured class.
         shared_model = _validate_master(new_class)
 

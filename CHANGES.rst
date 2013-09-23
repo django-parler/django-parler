@@ -1,3 +1,9 @@
+Changes in version 0.9.3 (beta)
+-------------------------------
+
+* Support using ``TranslatedFieldsModel`` with abstract models.
+
+
 Changes in version 0.9.2 (beta)
 -------------------------------
 
