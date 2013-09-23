@@ -25,7 +25,7 @@ class TranslatedField(object):
 
         # Manual model class
         class MyModelTranslation(TranslatedFieldsModel):
-            master = models.ForeignKey(MyModel, null=True)
+            master = models.ForeignKey(MyModel, related_name='translations', null=True)
             title = models.CharField("Title", max_length=200)
             slug = models.SlugField("Slug")
     """
