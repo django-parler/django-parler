@@ -57,8 +57,10 @@ class TranslatableManager(models.Manager):
     """
     The manager class which ensures the enhanced TranslatableQuerySet object is used.
     """
-    def get_query_set(self, *args, **kwargs):
-        return TranslatableQuerySet(self.model, *args, **kwargs)
+    queryset_class = TranslatableQuerySet
+
+    def get_query_set(self):
+        return self.queryset_class(self.model, using=self._db)
 
     def language(self, language_code=None):
         """
