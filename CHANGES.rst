@@ -4,6 +4,7 @@ Changes in version 0.9.3 (beta)
 * Support using ``TranslatedFieldsModel`` with abstract models.
 * Added ``parler.appsettings.add_default_language_settings()`` function.
 * Added ``TranslatableManager.queryset_class`` attribute to easily customize the queryset class.
+* Added ``TranslatableManager.translated()`` method to filter models with a specific translation.
 * Added ``TranslatableAdmin.get_form_language()`` to access the currently active language.
 * Added support for ``ModelAdmin.formfield_overrides``.
 
