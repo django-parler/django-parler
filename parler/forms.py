@@ -3,7 +3,7 @@ from django.forms.models import ModelFormMetaclass
 from django.utils.translation import get_language
 
 
-def get_model_form_field(model, name, **kwargs):
+def get_model_form_field(model, name, formfield_callback=None, **kwargs):
     """
     Utility to create the formfield from a model field.
     When a field is not editable, a ``None`` will be returned.
@@ -12,7 +12,15 @@ def get_model_form_field(model, name, **kwargs):
     if not field.editable:  # see fields_for_model() logic in Django.
         return None
 
-    return field.formfield(**kwargs)
+    # Apply admin formfield_overrides
+    if formfield_callback is None:
+        formfield = field.formfield(**kwargs)
+    elif not callable(formfield_callback):
+        raise TypeError('formfield_callback must be a function or callable')
+    else:
+        formfield = formfield_callback(field, **kwargs)
+
+    return formfield
 
 
 class TranslatedField(object):
@@ -101,12 +109,13 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                 translations_model = form_model._translations_model
                 exclude = getattr(form_new_meta, 'exclude', form_meta.exclude) or ()
                 widgets = getattr(form_new_meta, 'widgets', form_meta.widgets) or ()
+                formfield_callback = attrs.get('formfield_callback', None)
 
                 for f_name in translations_model.get_translated_fields():
                     # Add translated field if not already added, and respect exclude options.
                     if f_name in translated_fields:
                         # The TranslatedField placeholder can be replaced directly with actual field, so do that.
-                        attrs[f_name] = get_model_form_field(translations_model, f_name, **translated_fields[f_name].kwargs)
+                        attrs[f_name] = get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **translated_fields[f_name].kwargs)
                     elif f_name not in form_base_fields and not f_name in attrs and f_name not in exclude:
                         # See if this formfield was previously defined using a TranslatedField placeholder.
                         placeholder = _get_mro_attribute(bases, f_name)
@@ -119,7 +128,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                             kwargs = {}
 
                         # Add the form field as attribute to the class.
-                        formfield = get_model_form_field(translations_model, f_name, **kwargs)
+                        formfield = get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **kwargs)
                         if formfield is not None:
                             attrs[f_name] = formfield
 

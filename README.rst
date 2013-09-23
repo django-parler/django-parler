@@ -230,7 +230,6 @@ TODO
 * Documentation on RTD.
 * Unittest the admin.
 * ``ModelAdmin.prepopulated_fields`` doesn't work yet (you can use ``get_prepopulated_fields()`` as workaround).
-* The admin forms use the standard form widgets instead of the admin overrides.
 * The list code currently performs one query per object. This needs to be reduced.
 * Preferably, the ``TranslatedField`` proxy on the model should behave like a ``RelatedField``,
   if that would nicely with the ORM too.
