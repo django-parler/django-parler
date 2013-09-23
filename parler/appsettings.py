@@ -12,30 +12,55 @@ PARLER_SHOW_EXCLUDED_LANGUAGE_TABS = getattr(settings, 'PARLER_SHOW_EXCLUDED_LAN
 PARLER_LANGUAGES = getattr(settings, 'PARLER_LANGUAGES', {})
 
 
-# Clean settings
-PARLER_DEFAULT_LANGUAGE_CODE = normalize_language_code(PARLER_DEFAULT_LANGUAGE_CODE)
+def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', **extra_defaults):
+    """
+    Apply extra defaults to the language settings.
+    This function can also be used by other packages to
+    create their own variation of ``PARLER_LANGUAGES`` with extra fields.
+    For example::
 
-def _clean_languages():
-    if not is_supported_django_language(PARLER_DEFAULT_LANGUAGE_CODE):
-        raise ImproperlyConfigured("PARLER_DEFAULT_LANGUAGE_CODE '{0}' does not exist in LANGUAGES".format(PARLER_DEFAULT_LANGUAGE_CODE))
+        from django.conf import settings
+        from parler import appsettings as parler_appsettings
 
-    PARLER_LANGUAGES.setdefault('default', {})
-    defaults = PARLER_LANGUAGES['default']
+        # Create local names, which are based on the global parler settings
+        MYAPP_DEFAULT_LANGUAGE_CODE = getattr(settings, 'MYAPP_DEFAULT_LANGUAGE_CODE', parler_appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
+        MYAPP_LANGUAGES = getattr(settings, 'MYAPP_LANGUAGES', parler_appsettings.PARLER_LANGUAGES)
+
+        # Apply the defaults to the languages
+        MYAPP_LANGUAGES = parler_appsettings.add_default_language_settings(MYAPP_LANGUAGES, 'MYAPP_LANGUAGES',
+            code=MYAPP_DEFAULT_LANGUAGE_CODE,
+            fallback=MYAPP_DEFAULT_LANGUAGE_CODE,
+            hide_untranslated=False
+        )
+    """
+    languages_list = languages_list.copy()
+
+    languages_list.setdefault('default', {})
+    defaults = languages_list['default']
     defaults.setdefault('code', PARLER_DEFAULT_LANGUAGE_CODE)
     defaults.setdefault('fallback', PARLER_DEFAULT_LANGUAGE_CODE)
+    defaults.update(extra_defaults)  # Also allow to override code and fallback this way.
 
-    for site_id, lang_choices in PARLER_LANGUAGES.iteritems():
+    if not is_supported_django_language(defaults['code']):
+        raise ImproperlyConfigured("The value for {0}['defaults']['code'] ('{1}') does not exist in LANGUAGES".format(var_name, defaults['code']))
+
+    for site_id, lang_choices in languages_list.iteritems():
         if site_id == 'default':
             continue
 
         if not isinstance(lang_choices, (list, tuple)):
-            raise ImproperlyConfigured("PARLER_LANGUAGES[{0}] should be a tuple of language choices!".format(site_id))
+            raise ImproperlyConfigured("{0}[{1}] should be a tuple of language choices!".format(var_name, site_id))
         for i, choice in enumerate(lang_choices):
             if not is_supported_django_language(choice['code']):
-                raise ImproperlyConfigured("PARLER_LANGUAGES[{0}][{1}]['code'] does not exist in LANGUAGES".format(site_id, i))
+                raise ImproperlyConfigured("{0}[{1}][{2}]['code'] does not exist in LANGUAGES".format(var_name, site_id, i))
 
             # Copy all items from the defaults, so you can provide new fields too.
             for key, value in defaults.iteritems():
                 choice.setdefault(key, value)
 
-_clean_languages()
+    return languages_list
+
+
+# Clean settings
+PARLER_DEFAULT_LANGUAGE_CODE = normalize_language_code(PARLER_DEFAULT_LANGUAGE_CODE)
+PARLER_LANGUAGES = add_default_language_settings(PARLER_LANGUAGES)

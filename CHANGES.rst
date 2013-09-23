@@ -2,6 +2,7 @@ Changes in version 0.9.3 (beta)
 -------------------------------
 
 * Support using ``TranslatedFieldsModel`` with abstract models.
+* Added ``parler.appsettings.add_default_language_settings()`` function.
 
 
 Changes in version 0.9.2 (beta)
