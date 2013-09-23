@@ -29,6 +29,7 @@ if not settings.configured:
             'django.contrib.admin',
             'django.contrib.sessions',
             'parler',
+            'parler.tests.testapp',
         ),
         TEST_RUNNER='django.test.simple.DjangoTestSuiteRunner',   # for Django 1.6, see https://docs.djangoproject.com/en/dev/releases/1.6/#new-test-runner
 
