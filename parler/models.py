@@ -104,8 +104,11 @@ class TranslatedFields(object):
     def __init__(self, meta=None, **fields):
         self.fields = fields
         self.meta = meta
+        self.name = None
 
     def contribute_to_class(self, cls, name):
+        self.name = name
+
         # Called from django.db.models.base.ModelBase.__new__
         translations_model = create_translations_model(cls, name, self.meta, **self.fields)
 
