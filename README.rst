@@ -71,7 +71,8 @@ Optionally, the admin tabs can be configured too::
             {'code': 'en',},
         ),
         'default': {
-            'fallback': 'en',  # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+            'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
         }
     }
 
@@ -150,6 +151,9 @@ To restrict the queryset to translated objects only, the following methods are a
 * ``MyObject.objects.translated(*language_codes)`` - return only objects with a translation of ``language_codes``.
 * ``MyObject.objects.active_translations(language_code=None)`` - return only objects for the current language (and fallback if this applies).
 
+The ``active_translations()`` method also returns objects which are translated in the fallback language,
+unless ``hide_untranslated = True`` is used in the ``PARLER_LANGUAGES`` setting.
+
 .. note::
    These methods perform a query on the ``translations__language_code`` field.
    Hence, they can't be combined with other filters on translated fields,
@@ -214,7 +218,7 @@ This package provides 3 solutions to this problem:
 3. Use a ``try .. catch TranslationDoesNotExist`` block for custom handling.
    Because this exception inherits from ``AttibuteError``, templates typically display empty values by default.
 
-4. Avoid fetching those objects using something like: ``queryset.filter(translations__language_code__in=('nl', 'en')).distinct()``.
+4. Avoid fetching those objects using something like: ``queryset.active_translations()`` or ``queryset.filter(translations__language_code__in=('nl', 'en')).distinct()``.
    Note that the same `ORM restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ apply here.
 
 
