@@ -5,5 +5,6 @@ __all__ = (
     'is_supported_django_language',
     'get_language_title',
     'get_language_settings',
+    'get_active_language_choices',
     'is_multilingual_project',
 )

@@ -39,6 +39,7 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     defaults = languages_list['default']
     defaults.setdefault('code', PARLER_DEFAULT_LANGUAGE_CODE)
     defaults.setdefault('fallback', PARLER_DEFAULT_LANGUAGE_CODE)
+    defaults.setdefault('hide_untranslated', False)   # Whether queries with .active_translations() may or may not return the fallback language.
     defaults.update(extra_defaults)  # Also allow to override code and fallback this way.
 
     if not is_supported_django_language(defaults['code']):

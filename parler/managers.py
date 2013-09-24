@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.translation import get_language
 from parler import appsettings
-
+from parler.utils import get_active_language_choices
 
 
 class TranslatableQuerySet(QuerySet):
@@ -50,11 +50,25 @@ class TranslatableQuerySet(QuerySet):
         relname = self.model._translations_field
 
         if not language_codes:
-            return self.filter(**{relname + '__language_code': get_language()})
-        elif len(language_codes) == 1:
+            language_codes = (get_language(),)
+
+        if len(language_codes) == 1:
             return self.filter(**{relname + '__language_code': language_codes[0]})
         else:
             return self.filter(**{relname + '__language_code__in': language_codes}).distinct()
+
+
+    def active_translations(self, language_code=None):
+        """
+        Only return objects which are translated, or have a fallback that should be displayed.
+
+        Typically that's the currently active language and fallback language.
+        When ``hide_untranslated = True``, only the currently active language will be returned.
+        """
+        # Default:     (language, fallback) when hide_translated == False
+        # Alternative: (language,)          when hide_untranslated == True
+        language_codes = get_active_language_choices(language_code)
+        return self.translated(*language_codes)
 
 
     def iterator(self):
@@ -96,6 +110,15 @@ class TranslatableManager(models.Manager):
         this method can't be combined with other filters that access the translated fields.
         """
         return self.get_query_set().translated(*language_codes)
+
+    def active_translations(self, language_code=None):
+        """
+        Only return objects which are translated, or have a fallback that should be displayed.
+
+        Typically that's the currently active language and fallback language.
+        When ``hide_untranslated = True``, only the currently active language will be returned.
+        """
+        return self.get_query_set().active_translations(language_code)
 
 
 # Export the names in django-hvad style too:

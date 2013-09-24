@@ -2,7 +2,7 @@
 Utils for translations
 """
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, get_language
 
 LANGUAGES_DICT = dict(settings.LANGUAGES)
 
@@ -46,6 +46,22 @@ def get_language_settings(language_code, site_id=None):
             return lang_dict
 
     return appsettings.PARLER_LANGUAGES['default']
+
+
+def get_active_language_choices(language_code=None):
+    """
+    Find out which translations should be visible in the site.
+    It returns a tuple with either a single choice (the current language),
+    or a tuple with the current language + fallback language.
+    """
+    if language_code is None:
+        language_code = get_language()
+
+    lang_dict = get_language_settings(language_code)
+    if not lang_dict['hide_untranslated'] and lang_dict['fallback'] != language_code:
+        return (language_code, lang_dict['fallback'])
+    else:
+        return (language_code,)
 
 
 def is_multilingual_project(site_id=None):
