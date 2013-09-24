@@ -4,6 +4,7 @@ Overview of all settings which can be customized.
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from parler.utils import normalize_language_code, is_supported_django_language
+from parler.utils.conf import LanguagesSetting
 
 PARLER_DEFAULT_LANGUAGE_CODE = getattr(settings, 'PARLER_DEFAULT_LANGUAGE_CODE', settings.LANGUAGE_CODE)
 
@@ -32,8 +33,11 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
             fallback=MYAPP_DEFAULT_LANGUAGE_CODE,
             hide_untranslated=False
         )
+
+    The returned object will be an :class:`~parler.utils.conf.LanguagesSetting` object,
+    which adds additional methods to the :class:`dict` object.
     """
-    languages_list = languages_list.copy()
+    languages_list = LanguagesSetting(languages_list)
 
     languages_list.setdefault('default', {})
     defaults = languages_list['default']

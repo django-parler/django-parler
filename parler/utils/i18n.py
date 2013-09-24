@@ -37,15 +37,11 @@ def get_language_settings(language_code, site_id=None):
     """
     Return the language settings for the current site
     """
+    # This method mainly exists for ease-of-use.
+    # the body is part of the settings, to allow third party packages
+    # to have their own variation of the settings with this method functionality included.
     from parler import appsettings
-    if site_id is None:
-        site_id = settings.SITE_ID
-
-    for lang_dict in appsettings.PARLER_LANGUAGES.get(site_id, ()):
-        if lang_dict['code'] == language_code:
-            return lang_dict
-
-    return appsettings.PARLER_LANGUAGES['default']
+    return appsettings.PARLER_LANGUAGES.get_language(language_code, site_id)
 
 
 def get_active_language_choices(language_code=None):
@@ -54,14 +50,8 @@ def get_active_language_choices(language_code=None):
     It returns a tuple with either a single choice (the current language),
     or a tuple with the current language + fallback language.
     """
-    if language_code is None:
-        language_code = get_language()
-
-    lang_dict = get_language_settings(language_code)
-    if not lang_dict['hide_untranslated'] and lang_dict['fallback'] != language_code:
-        return (language_code, lang_dict['fallback'])
-    else:
-        return (language_code,)
+    from parler import appsettings
+    return appsettings.PARLER_LANGUAGES.get_active_choices(language_code)
 
 
 def is_multilingual_project(site_id=None):
