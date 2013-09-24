@@ -142,6 +142,29 @@ the ORM turns that into 2 separate joins on the translations table.
 See `the ORM documentation <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ for more details.
 
 
+Filtering translated objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To restrict the queryset to translated objects only, the following methods are available:
+
+ * ``MyObject.objects.translated(*language_codes)`` - return only objects with a translation of ``language_codes``.
+ * ``MyObject.objects.active_translations(language_code=None)`` - return only objects for the current language (and fallback if this applies).
+
+.. note::
+   These methods perform a query on the ``translations__language_code`` field.
+   Hence, they can't be combined with other filters on translated fields,
+   as that causes double joins on the translations table.
+
+If you have to query a language and translated attribute, query both in a single ``.filter()`` call::
+
+    from parler.utils import get_active_language_choices
+
+    MyObject.objects.filter(
+        translations__language_code__in=get_active_language_choices(),
+        translations__slug='omelette'
+    )
+
+
 Advanced example
 ----------------
 
@@ -257,7 +280,16 @@ On ``parler.models.TranslatedFieldsModel``:
 
 On ``parler.managers.TranslatedManager``:
 
+* ``queryset_class`` - the attribute that points to the queryset class.
 * ``language(language_code=None)`` - set the language of returned objects.
+* ``translated(*language_codes)`` - return only translated objects (NOTE: can't be combined with other filters)
+* ``active_translations(language_code=None)`` - return objects of the currently active translation (may include the fallback language too).
+
+On ``parler.admin.TranslatableAdmin``:
+
+* ``get_form_language(request, obj=None)`` - return the currently active language in the admin form.
+* ``get_available_languages(obj)`` - returns the QuerySet with all active languages.
+* ``language_column(obj)`` - the extra column which can be added to the ``list_display``.
 
 In ``parler.utils``:
 
@@ -265,6 +297,7 @@ In ``parler.utils``:
 * ``is_supported_django_language()``
 * ``get_language_title()``
 * ``get_language_settings()``
+* ``get_active_language_choices()``
 * ``is_multilingual_project()``
 
 
