@@ -172,14 +172,11 @@ The translated model can be constructed manually too::
 
     from django.db import models
     from parler.models import TranslatableModel, TranslatedFieldsModel
-    from parler.managers import TranslatedManager
     from parler.fields import TranslatedField
 
 
     class MyModel(TranslatableModel):
         title = TranslatedField()  # Optional, explicitly mention the field
-
-        objects = TranslatedManager()
 
         class Meta:
             verbose_name = _("MyModel")
@@ -278,7 +275,7 @@ On ``parler.models.TranslatedFieldsModel``:
 * ``is_modified`` - Property to detect changes.
 * ``get_translated_fields()`` - The names of translated fields.
 
-On ``parler.managers.TranslatedManager``:
+On ``parler.managers.TranslatableManager``:
 
 * ``queryset_class`` - the attribute that points to the queryset class.
 * ``language(language_code=None)`` - set the language of returned objects.
