@@ -147,8 +147,8 @@ Filtering translated objects
 
 To restrict the queryset to translated objects only, the following methods are available:
 
- * ``MyObject.objects.translated(*language_codes)`` - return only objects with a translation of ``language_codes``.
- * ``MyObject.objects.active_translations(language_code=None)`` - return only objects for the current language (and fallback if this applies).
+* ``MyObject.objects.translated(*language_codes)`` - return only objects with a translation of ``language_codes``.
+* ``MyObject.objects.active_translations(language_code=None)`` - return only objects for the current language (and fallback if this applies).
 
 .. note::
    These methods perform a query on the ``translations__language_code`` field.
