@@ -3,6 +3,7 @@ Custom generic managers
 """
 from django.db import models
 from django.db.models.query import QuerySet
+from django.utils.translation import get_language
 from parler import appsettings
 
 
@@ -39,14 +40,18 @@ class TranslatableQuerySet(QuerySet):
 
     def translated(self, *language_codes):
         """
-        Only return objects which are translated in the given languages.
+        Only return translated objects which of the given languages.
+
+        When no language codes are given, only the currently active language is returned.
 
         NOTE: due to Django `ORM limitations <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_,
         this method can't be combined with other filters that access the translated fields.
         """
         relname = self.model._translations_field
 
-        if len(language_codes) == 1:
+        if not language_codes:
+            return self.filter(**{relname + '__language_code': get_language()})
+        elif len(language_codes) == 1:
             return self.filter(**{relname + '__language_code': language_codes[0]})
         else:
             return self.filter(**{relname + '__language_code__in': language_codes}).distinct()
