@@ -249,7 +249,7 @@ And yes, we've added some metaclass magic too - to make life easier -
 without loosing the freedom of manually using the API at your will.
 
 TODO
-----
+====
 
 * Documentation on RTD.
 * Unittest the admin.
@@ -257,6 +257,21 @@ TODO
 * The list code currently performs one query per object. This needs to be reduced.
 * Preferably, the ``TranslatedField`` proxy on the model should behave like a ``RelatedField``,
   if that would nicely with the ORM too.
+
+
+Django compatibility
+====================
+
+This package has been tested with Django 1.4 and 1.5 on Python 2.6/2.7.
+
+Django 1.4 note
+---------------
+
+When using Django 1.4, there is a small tweak you'll have to make in the admin.
+Instead of using ``fieldsets = ..``, use ``declared_fieldsets = ..``
+on the ``ModelAdmin`` definition. The Django 1.4 admin validation doesn't actualy
+check the form fields, but only checks whether the fields exist in the model - which they obviously don't.
+Using ``declared_fieldsets`` instead of ``fieldsets`` circumvents this check.
 
 
 API
