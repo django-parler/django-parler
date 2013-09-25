@@ -1,6 +1,7 @@
 """
 Translation support for admin forms.
 """
+import django
 from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib import admin
@@ -233,6 +234,10 @@ class TranslatableAdmin(admin.ModelAdmin):
 
 
     def response_add(self, request, obj, post_url_continue=None):
+        # Minor behavior difference for Django 1.4
+        if post_url_continue is None and django.VERSION < (1,5):
+            post_url_continue = '../%s/'
+
         # Make sure ?language=... is included in the redirects.
         redirect = super(TranslatableAdmin, self).response_add(request, obj, post_url_continue)
         return self._patch_redirect(request, obj, redirect)

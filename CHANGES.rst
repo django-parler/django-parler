@@ -1,3 +1,9 @@
+Changes in version 0.9.4 (in development)
+-----------------------------------------
+
+* Fix error in Django 1.4 with "Save and continue" button on add view.
+
+
 Changes in version 0.9.3 (beta)
 -------------------------------
 
