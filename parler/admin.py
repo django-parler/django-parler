@@ -122,6 +122,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
     deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
 
+    #: Whether translations of inlines should also be deleted when deleting a translation.
+    delete_inline_translations = True
+
 
     @property
     def change_form_template(self):
@@ -346,6 +349,15 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         (deleted_objects, perms_needed, protected) = get_deleted_objects(
             [translation], translations_model._meta, request.user, self.admin_site, using)
 
+        # Extend deleted objects with the inlines.
+        if self.delete_inline_translations:
+            shared_obj = translation.master
+            for inline, qs in self._get_inline_translations(request, translation.language_code, obj=shared_obj):
+                (del2, perms2, protected2) = get_deleted_objects(qs, qs.model._meta, request.user, self.admin_site, using)
+                deleted_objects += del2
+                perms_needed = perms_needed or perms2
+                protected += protected2
+
         if request.POST: # The user has already confirmed the deletion.
             if perms_needed:
                 raise PermissionDenied
@@ -407,6 +419,32 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         Hook for deleting a translation.
         """
         translation.delete()
+
+        # Also delete translations of inlines which the user has access to.
+        if self.delete_inline_translations:
+            master = translation.master
+            for inline, qs in self._get_inline_translations(request, translation.language_code, obj=master):
+                qs.delete()
+
+
+    def _get_inline_translations(self, request, language_code, obj=None):
+        """
+        Fetch the inline translations
+        """
+        for inline in self.get_inline_instances(request, obj=obj):
+            if issubclass(inline.model, TranslatableModel):
+                # leverage inlineformset_factory() to find the ForeignKey.
+                # This also resolves the fk_name if it's set.
+                fk = inline.get_formset(request, obj).fk
+
+                rel_name = 'master__{}'.format(fk.name)
+                filters = {
+                    'language_code': language_code,
+                    rel_name: obj
+                }
+
+                qs = inline.model._translations_model.objects.filter(**filters)
+                yield inline, qs
 
 
     def get_change_form_base_template(self):

@@ -32,3 +32,15 @@ class AnyLanguageModel(TranslatableModel):
 
     def __unicode__(self):
         return self.tr_title
+
+
+
+class EmptyModel(TranslatableModel):
+    shared = models.CharField(max_length=200, default='')
+
+    # Still tracks how many languages there are, but no actual translated fields exist yet.
+    # This is useful when the model is a parent object for inlines. The parent model defines the language tabs.
+    translations = TranslatedFields()
+
+    def __unicode__(self):
+        return self.shared
