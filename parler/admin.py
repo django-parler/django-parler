@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.db import router
 from django.forms import Media
+from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_unicode
@@ -89,6 +90,16 @@ class BaseTranslatableAdmin(BaseModelAdmin):
                     code = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
 
             return normalize_language_code(code)
+
+
+    def get_form_language(self, request, obj=None):
+        """
+        Return the current language for the currently displayed object fields.
+        """
+        if obj is not None:
+            return obj.get_current_language()
+        else:
+            return self._language(request)
 
 
     def queryset(self, request):
@@ -186,16 +197,6 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             form_class.language_code = self.get_form_language(request, obj)
 
         return form_class
-
-
-    def get_form_language(self, request, obj=None):
-        """
-        Return the current language for the currently displayed object fields.
-        """
-        if obj is not None:
-            return obj.get_current_language()
-        else:
-            return self._language(request)
 
 
     def get_urls(self):
@@ -463,11 +464,29 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 _lazy_select_template_name = lazy(select_template_name, unicode)
 
 
+class TranslatableBaseInlineFormSet(BaseInlineFormSet):
+    language_code = None
+
+    def _construct_form(self, i, **kwargs):
+        form = super(TranslatableBaseInlineFormSet, self)._construct_form(i, **kwargs)
+        form.language_code = self.language_code   # Pass the language code for new objects!
+        return form
+
+    def save_new(self, form, commit=True):
+        obj = super(TranslatableBaseInlineFormSet, self).save_new(form, commit)
+        return obj
+
 
 class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
-    # No special tricks needed.
-    # The `form = TranslatableModelForm` and get_queryset() do all the magic.
-    pass
+    form = TranslatableModelForm
+    formset = TranslatableBaseInlineFormSet
+
+    def get_formset(self, request, obj=None, **kwargs):
+        FormSet = super(TranslatableInlineModelAdmin, self).get_formset(request, obj, **kwargs)
+        # Existing objects already got the language code from the queryset().language() method.
+        # For new objects, the language code should be set here.
+        FormSet.language_code = self.get_form_language(request, obj)
+        return FormSet
 
 
 class TranslatableStackedInline(TranslatableInlineModelAdmin):
