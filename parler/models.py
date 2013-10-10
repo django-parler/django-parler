@@ -468,9 +468,9 @@ class TranslatedFieldsModel(models.Model):
         return [getattr(self, field) for field in self._meta.get_all_field_names()]
 
     @classmethod
-    def get_translated_fields(self):
+    def get_translated_fields(cls):
         # Not using get `get_all_field_names()` because that also invokes a model scan.
-        return [f.name for f, _ in self._meta.get_fields_with_model() if f.name not in ('language_code', 'master', 'id')]
+        return [f.name for f, _ in cls._meta.get_fields_with_model() if f.name not in ('language_code', 'master', 'id')]
 
     @classmethod
     def contribute_translations(cls, shared_model):
