@@ -10,6 +10,14 @@ class ModelAttributeTests(AppTestCase):
     """
     Test model construction
     """
+    @classmethod
+    def setUpClass(cls):
+        # Be supportive for other project settings too.
+        cls.conf_fallback = appsettings.PARLER_LANGUAGES['default']['fallback'] or 'en'
+        cls.other_lang1 = next(x for x, _ in settings.LANGUAGES if x != cls.conf_fallback)
+        cls.other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (cls.conf_fallback, cls.other_lang1))
+
+
     def test_untranslated_get(self):
         """
         Test the metaclass of the model.
@@ -119,20 +127,15 @@ class ModelAttributeTests(AppTestCase):
         """
         Test whether the fallback language will be returned.
         """
-        # Be supportive for other project settings too.
-        conf_fallback = appsettings.PARLER_LANGUAGES['default']['fallback'] or 'en'
-        other_lang1 = next(x for x, _ in settings.LANGUAGES if x != conf_fallback)
-        other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (conf_fallback, other_lang1))
-
         x = SimpleModel()
-        x.set_current_language(conf_fallback)
+        x.set_current_language(self.conf_fallback)
         x.tr_title = "TITLE_FALLBACK"
 
-        x.set_current_language(other_lang1)
+        x.set_current_language(self.other_lang1)
         x.tr_title = 'TITLE_XX'
         x.save()
 
-        with translation.override(other_lang2):
+        with translation.override(self.other_lang2):
             x = SimpleModel.objects.get(pk=x.pk)
             self.assertEqual(x.tr_title, 'TITLE_FALLBACK')
 
@@ -141,43 +144,33 @@ class ModelAttributeTests(AppTestCase):
         """
         Test whether a failure in the fallback language can return any saved language (if configured for it).
         """
-        # Be supportive for other project settings too.
-        conf_fallback = appsettings.PARLER_LANGUAGES['default']['fallback'] or 'en'
-        other_lang1 = next(x for x, _ in settings.LANGUAGES if x != conf_fallback)
-        other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (conf_fallback, other_lang1))
-
         x = AnyLanguageModel()
-        x.set_current_language(other_lang1)
+        x.set_current_language(self.other_lang1)
         x.tr_title = "TITLE_XX"
 
         x.save()
 
-        with translation.override(other_lang2):
+        with translation.override(self.other_lang2):
             x = AnyLanguageModel.objects.get(pk=x.pk)
             self.assertRaises(TranslationDoesNotExist, lambda: x._get_translated_model(use_fallback=True))
             self.assertEqual(x.tr_title, 'TITLE_XX')  # Even though there is no current language, there is a value.
 
             self.assertNumQueries(0, lambda: x._get_any_translated_model())   # Can fetch from cache next time.
-            self.assertEqual(x._get_any_translated_model().language_code, other_lang1)
+            self.assertEqual(x._get_any_translated_model().language_code, self.other_lang1)
 
 
     def test_any_fallback_function(self):
-        # Be supportive for other project settings too.
-        conf_fallback = appsettings.PARLER_LANGUAGES['default']['fallback'] or 'en'
-        other_lang1 = next(x for x, _ in settings.LANGUAGES if x != conf_fallback)
-        other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (conf_fallback, other_lang1))
-
         x = SimpleModel()
-        x.set_current_language(other_lang1)
+        x.set_current_language(self.other_lang1)
         x.tr_title = "TITLE_XX"
 
         x.save()
 
-        with translation.override(other_lang2):
+        with translation.override(self.other_lang2):
             x = SimpleModel.objects.get(pk=x.pk)
             self.assertRaises(TranslationDoesNotExist, lambda: x._get_translated_model(use_fallback=True))
             self.assertIs(x.safe_translation_getter('tr_title', 'DEFAULT'), 'DEFAULT')  # No lanuage, gives default
             self.assertEqual(x.safe_translation_getter('tr_title', any_language=True), 'TITLE_XX')  # Even though there is no current language, there is a value.
 
             self.assertNumQueries(0, lambda: x._get_any_translated_model())   # Can fetch from cache next time.
-            self.assertEqual(x._get_any_translated_model().language_code, other_lang1)
+            self.assertEqual(x._get_any_translated_model().language_code, self.other_lang1)
