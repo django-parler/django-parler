@@ -174,3 +174,18 @@ class ModelAttributeTests(AppTestCase):
 
             self.assertNumQueries(0, lambda: x._get_any_translated_model())   # Can fetch from cache next time.
             self.assertEqual(x._get_any_translated_model().language_code, self.other_lang1)
+
+
+    def test_save_ignore_fallback_marker(self):
+        """
+        Test whether the ``save_translations()`` method skips fallback languages
+        """
+        x = SimpleModel()
+        x.set_current_language(self.other_lang1)
+        x.tr_title = "TITLE_XX"
+        x.set_current_language(self.other_lang2)
+        # try fetching, causing an fallback marker
+        x.safe_translation_getter('tr_title', any_language=True)
+
+        # Now save. This should not raise errors
+        x.save()

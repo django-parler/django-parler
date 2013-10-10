@@ -314,6 +314,9 @@ class TranslatableModel(models.Model):
         # Save all translated objects which were fetched.
         # This also supports switching languages several times, and save everything in the end.
         for translation in self._translations_cache.itervalues():
+            if translation is None:  # Skip fallback markers
+                continue
+
             # Translation models without any fields are also supported.
             # This is useful for parent objects that have inlines;
             # the parent object defines how many translations there are.
