@@ -1,6 +1,7 @@
 Changes in version 0.9.4 (in development)
 -----------------------------------------
 
+* Added support for inlines!
 * Fix error in Django 1.4 with "Save and continue" button on add view.
 
 

@@ -5,7 +5,7 @@ import django
 from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib import admin
-from django.contrib.admin.options import csrf_protect_m
+from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
 from django.contrib.admin.util import get_deleted_objects, unquote
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
@@ -39,31 +39,12 @@ _language_prepopulated_media = _language_media + Media(js=(
 _fakeRequest = HttpRequest()
 
 
-class TranslatableAdmin(admin.ModelAdmin):
+class BaseTranslatableAdmin(BaseModelAdmin):
     """
-    Base class for translated admins.
-
-    This class also works as regular admin for non TranslatableModel objects.
-    When using this class with a non-TranslatableModel,
-    all operations effectively become a NO-OP.
+    The shared code between the regular model admin and inline classes.
     """
-
     form = TranslatableModelForm
-
-    deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
-
     query_language_key = 'language'
-
-
-    @property
-    def change_form_template(self):
-        # Dynamic property to support transition to regular models.
-        if self._has_translatable_model():
-            # While this breaks the admin template name detection,
-            # the get_change_form_base_template() makes sure it inherits from your template.
-            return 'admin/parler/change_form.html'
-        else:
-            return None # get default admin selection
 
 
     @property
@@ -72,7 +53,7 @@ class TranslatableAdmin(admin.ModelAdmin):
         # TODO: as a fix TranslatedFields should become a RelatedField on the shared model (may also support ORM queries)
         # As workaround, declare the fields in get_prepopulated_fields() and we'll provide the admin media automatically.
         has_prepoplated = len(self.get_prepopulated_fields(_fakeRequest))
-        base_media = super(TranslatableAdmin, self).media
+        base_media = super(BaseTranslatableAdmin, self).media
         if has_prepoplated:
             return base_media + _language_prepopulated_media
         else:
@@ -110,6 +91,49 @@ class TranslatableAdmin(admin.ModelAdmin):
             return normalize_language_code(code)
 
 
+    def queryset(self, request):
+        """
+        Make sure the current language is selected.
+        """
+        qs = super(BaseTranslatableAdmin, self).queryset(request)
+
+        if self._has_translatable_model():
+            if not isinstance(qs, TranslatableQuerySet):
+                raise ImproperlyConfigured("{0} class does not inherit from TranslatableQuerySet".format(qs.__class__.__name__))
+
+            if not is_multilingual_project():
+                # Make sure the current translations remain visible, not the dynamically set get_language() value.
+                qs = qs.language(appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
+            else:
+                # Set the initial language for fetched objects.
+                # This is needed for the TranslatableInlineModelAdmin
+                qs = qs.language(self._language(request))
+        return qs
+
+
+class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
+    """
+    Base class for translated admins.
+
+    This class also works as regular admin for non TranslatableModel objects.
+    When using this class with a non-TranslatableModel,
+    all operations effectively become a NO-OP.
+    """
+
+    deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
+
+
+    @property
+    def change_form_template(self):
+        # Dynamic property to support transition to regular models.
+        if self._has_translatable_model():
+            # While this breaks the admin template name detection,
+            # the get_change_form_base_template() makes sure it inherits from your template.
+            return 'admin/parler/change_form.html'
+        else:
+            return None # get default admin selection
+
+
     def language_column(self, object):
         """
         The language column which can be included in the ``list_display``.
@@ -137,22 +161,6 @@ class TranslatableAdmin(admin.ModelAdmin):
             return obj.get_available_languages()
         else:
             return self.model._translations_model.objects.get_empty_query_set()
-
-
-    def queryset(self, request):
-        """
-        Make sure the current language is selected.
-        """
-        qs = super(TranslatableAdmin, self).queryset(request)
-
-        if self._has_translatable_model():
-            if not isinstance(qs, TranslatableQuerySet):
-                raise ImproperlyConfigured("{0} class does not inherit from TranslatableQuerySet".format(qs.__class__.__name__))
-
-            if not is_multilingual_project():
-                # Make sure the current translations remain visible, not the dynamically set get_language() value.
-                qs = qs.language(appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
-        return qs
 
 
     def get_object(self, request, object_id):
@@ -415,3 +423,17 @@ class TranslatableAdmin(admin.ModelAdmin):
 
 
 _lazy_select_template_name = lazy(select_template_name, unicode)
+
+
+
+class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
+    # No special tricks needed.
+    # The `form = TranslatableModelForm` and get_queryset() do all the magic.
+    pass
+
+
+class TranslatableStackedInline(TranslatableInlineModelAdmin):
+    template = 'admin/edit_inline/stacked.html'
+
+class TranslatableTabularInline(TranslatableInlineModelAdmin):
+    template = 'admin/edit_inline/tabular.html'
