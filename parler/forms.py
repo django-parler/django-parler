@@ -1,6 +1,7 @@
 from django import forms
 from django.forms.models import ModelFormMetaclass
 from django.utils.translation import get_language
+from parler.models import TranslatableModel, TranslationDoesNotExist
 
 
 def get_model_form_field(model, name, formfield_callback=None, **kwargs):
@@ -56,9 +57,16 @@ class TranslatableModelFormMixin(object):
         # Load the initial values for the translated fields
         instance = kwargs.get('instance', None)
         if instance:
-            translation = instance._get_translated_model(auto_create=True)
-            for field in self._get_translated_fields():
-                self.initial.setdefault(field, getattr(translation, field))
+            try:
+                # By not auto creating a model, any template code that reads the fields
+                # will continue to see one of the other translations.
+                # This also causes admin inlines to show the fallback title in __unicode__.
+                translation = instance._get_translated_model()
+            except TranslationDoesNotExist:
+                pass
+            else:
+                for field in self._get_translated_fields():
+                    self.initial.setdefault(field, getattr(translation, field))
 
         # Typically already set by admin
         if self.language_code is None:
