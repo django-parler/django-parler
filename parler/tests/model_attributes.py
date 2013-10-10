@@ -3,7 +3,7 @@ from django.utils import translation
 from parler.models import TranslationDoesNotExist
 from parler import appsettings
 from .utils import AppTestCase
-from .testapp.models import SimpleModel, AnyLanguageModel
+from .testapp.models import SimpleModel, AnyLanguageModel, EmptyModel
 
 
 class ModelAttributeTests(AppTestCase):
@@ -99,6 +99,20 @@ class ModelAttributeTests(AppTestCase):
         self.assertTrue(x.has_translation('it'))  # does return true for this object.
         self.assertNumQueries(0, x.save_translations())
         self.assertEqual(sorted(x.get_available_languages()), [u'en', u'es', u'fr', u'nl'])
+
+
+    def test_empty_model(self):
+        """
+        Test whether a translated model without any fields still works.
+        """
+        x = EmptyModel()
+        x.set_current_language('en', initialize=True)
+        x.set_current_language('fr', initialize=True)
+        x.set_current_language('es')
+        x.set_current_language('nl', initialize=True)
+        x.save()
+
+        self.assertEqual(sorted(x.get_available_languages()), [u'en', u'fr', u'nl'])
 
 
     def test_fallback_language(self):

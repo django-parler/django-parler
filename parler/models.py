@@ -314,7 +314,10 @@ class TranslatableModel(models.Model):
         # Save all translated objects which were fetched.
         # This also supports switching languages several times, and save everything in the end.
         for translation in self._translations_cache.itervalues():
-            if translation.is_modified:
+            # Translation models without any fields are also supported.
+            # This is useful for parent objects that have inlines;
+            # the parent object defines how many translations there are.
+            if translation.is_modified or (translation.is_empty and not translation.pk):
                 if not translation.master_id:  # Might not exist during first construction
                     translation.master = self
                 translation.save()
@@ -418,6 +421,10 @@ class TranslatedFieldsModel(models.Model):
     @property
     def is_modified(self):
         return self._original_values != self._get_field_values()
+
+    @property
+    def is_empty(self):
+        return len(self.get_translated_fields()) == 0
 
     @property
     def shared_model(self):
