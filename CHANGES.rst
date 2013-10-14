@@ -1,10 +1,11 @@
-Changes in version 0.9.4 (in development)
------------------------------------------
+Changes in version 0.9.4 (beta)
+-------------------------------
 
 * Added support for inlines!
 * Fix error in Django 1.4 with "Save and continue" button on add view.
 * Fix error in ``save_translations()`` when objects fetched fallback languages.
 * Add ``save_translation(translation)`` method, to easily hook into the ``translation.save()`` call.
+* Added support for empty ``translations = TranslatedFields()`` declaration.
 
 
 Changes in version 0.9.3 (beta)
