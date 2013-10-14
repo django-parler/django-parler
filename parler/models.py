@@ -317,13 +317,17 @@ class TranslatableModel(models.Model):
             if translation is None:  # Skip fallback markers
                 continue
 
-            # Translation models without any fields are also supported.
-            # This is useful for parent objects that have inlines;
-            # the parent object defines how many translations there are.
-            if translation.is_modified or (translation.is_empty and not translation.pk):
-                if not translation.master_id:  # Might not exist during first construction
-                    translation.master = self
-                translation.save()
+            self.save_translation(translation)
+
+
+    def save_translation(self, translation):
+        # Translation models without any fields are also supported.
+        # This is useful for parent objects that have inlines;
+        # the parent object defines how many translations there are.
+        if translation.is_modified or (translation.is_empty and not translation.pk):
+            if not translation.master_id:  # Might not exist during first construction
+                translation.master = self
+            translation.save()
 
 
     def safe_translation_getter(self, field, default=None, any_language=False):
