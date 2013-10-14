@@ -65,7 +65,7 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     meta.setdefault('verbose_name', _lazy_verbose_name(shared_model))
 
     # Define attributes for translation table
-    name = '{0}_Translation'.format(shared_model.__name__)
+    name = '{0}Translation'.format(shared_model.__name__)
 
     attrs = {}
     attrs.update(fields)
