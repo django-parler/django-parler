@@ -307,27 +307,28 @@ class TranslatableModel(models.Model):
 
     def save(self, *args, **kwargs):
         super(TranslatableModel, self).save(*args, **kwargs)
-        self.save_translations()
+        self.save_translations(*args, **kwargs)
 
 
-    def save_translations(self):
+    def save_translations(self, *args, **kwargs):
         # Save all translated objects which were fetched.
         # This also supports switching languages several times, and save everything in the end.
         for translation in self._translations_cache.itervalues():
             if translation is None:  # Skip fallback markers
                 continue
 
-            self.save_translation(translation)
+            self.save_translation(translation, *args, **kwargs)
 
 
-    def save_translation(self, translation):
+    def save_translation(self, translation, *args, **kwargs):
         # Translation models without any fields are also supported.
         # This is useful for parent objects that have inlines;
         # the parent object defines how many translations there are.
         if translation.is_modified or (translation.is_empty and not translation.pk):
             if not translation.master_id:  # Might not exist during first construction
+                translation._state.db = self._state.db
                 translation.master = self
-            translation.save()
+            translation.save(*args, **kwargs)
 
 
     def safe_translation_getter(self, field, default=None, any_language=False):
