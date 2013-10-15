@@ -445,6 +445,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 }
 
                 qs = inline.model._translations_model.objects.filter(**filters)
+                if obj is not None:
+                    qs = qs.using(obj._state.db)
+
                 yield inline, qs
 
 

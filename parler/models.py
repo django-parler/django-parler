@@ -216,7 +216,7 @@ class TranslatableModel(models.Model):
         """
         Return the language codes of all translated variations.
         """
-        return self._translations_model.objects.filter(master=self).values_list('language_code', flat=True).order_by('language_code')
+        return self._translations_model.objects.using(self._state.db).filter(master=self).values_list('language_code', flat=True).order_by('language_code')
 
 
     def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False):
@@ -297,7 +297,7 @@ class TranslatableModel(models.Model):
                 pass
 
         try:
-            translation = self._translations_model.objects.filter(master=self)[0]
+            translation = self._translations_model.objects.using(self._state.db).filter(master=self)[0]
         except IndexError:
             return None
         else:
