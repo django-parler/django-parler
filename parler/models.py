@@ -239,14 +239,16 @@ class TranslatableModel(models.Model):
         except KeyError:
             # 2. No cache, need to query
             # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
-            accessor = getattr(self, self._translations_field)
-            try:
-                object = accessor.get(language_code=language_code)
-            except self._translations_model.DoesNotExist:
-                pass
-            else:
-                self._translations_cache[language_code] = object
-                return object
+            if not self._state.adding:
+                # Object already exists, would be pointless otherwise to check for a translation.
+                accessor = getattr(self, self._translations_field)
+                try:
+                    object = accessor.get(language_code=language_code)
+                except self._translations_model.DoesNotExist:
+                    pass
+                else:
+                    self._translations_cache[language_code] = object
+                    return object
 
         # Not in cache, or default.
         # Not fetched from DB
