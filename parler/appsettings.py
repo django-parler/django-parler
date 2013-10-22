@@ -12,6 +12,8 @@ PARLER_SHOW_EXCLUDED_LANGUAGE_TABS = getattr(settings, 'PARLER_SHOW_EXCLUDED_LAN
 
 PARLER_LANGUAGES = getattr(settings, 'PARLER_LANGUAGES', {})
 
+PARLER_ENABLE_CACHING = getattr(settings, 'PARLER_ENABLE_CACHING', True)
+
 
 def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', **extra_defaults):
     """

@@ -17,6 +17,7 @@ from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext
 from parler import signals
+from parler.cache import _cache_translation, _delete_cached_translation, get_cached_translation, _delete_cached_translations
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
@@ -199,7 +200,7 @@ class TranslatableModel(models.Model):
             language_code = self._current_language
 
         try:
-            # Check the cache directly, and the answer is known.
+            # Check the local cache directly, and the answer is known.
             # NOTE this may also return newly auto created translations which are not saved yet.
             return self._translations_cache[language_code] is not None
         except KeyError:
@@ -229,7 +230,7 @@ class TranslatableModel(models.Model):
         if not language_code:
             language_code = self._current_language
 
-        # 1. fetch the object from the cache
+        # 1. fetch the object from the local cache
         try:
             object = self._translations_cache[language_code]
 
@@ -239,16 +240,25 @@ class TranslatableModel(models.Model):
         except KeyError:
             # 2. No cache, need to query
             # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
+            # Check that this object already exists, would be pointless otherwise to check for a translation.
             if not self._state.adding:
-                # Object already exists, would be pointless otherwise to check for a translation.
-                accessor = getattr(self, self._translations_field)
-                try:
-                    object = accessor.get(language_code=language_code)
-                except self._translations_model.DoesNotExist:
-                    pass
-                else:
+                # 2.1, fetch from memcache
+                object = get_cached_translation(self, language_code)
+                if object is not None:
+                    # Track in local cache
                     self._translations_cache[language_code] = object
                     return object
+                else:
+                    # 2.2, fetch from database
+                    accessor = getattr(self, self._translations_field)
+                    try:
+                        object = accessor.get(language_code=language_code)
+                    except self._translations_model.DoesNotExist:
+                        pass
+                    else:
+                        self._translations_cache[language_code] = object
+                        _cache_translation(object)  # Store in memcached
+                        return object
 
         # Not in cache, or default.
         # Not fetched from DB
@@ -261,6 +271,7 @@ class TranslatableModel(models.Model):
                 master=self  # ID might be None at this point
             )
             self._translations_cache[language_code] = object
+            # Not stored in memcached here yet, first fill + save it.
             return object
 
         # 4. Fallback?
@@ -304,12 +315,18 @@ class TranslatableModel(models.Model):
             return None
         else:
             self._translations_cache[translation.language_code] = translation
+            _cache_translation(translation)
             return translation
 
 
     def save(self, *args, **kwargs):
         super(TranslatableModel, self).save(*args, **kwargs)
         self.save_translations(*args, **kwargs)
+
+
+    def delete(self, using=None):
+        _delete_cached_translations(self)
+        super(TranslatableModel, self).delete(using)
 
 
     def save_translations(self, *args, **kwargs):
@@ -453,6 +470,7 @@ class TranslatedFieldsModel(models.Model):
         # Perform save
         super(TranslatedFieldsModel, self).save_base(raw=raw, using=using, **kwargs)
         self._original_values = self._get_field_values()
+        _cache_translation(self)
 
         # Send the post_save signal
         if not self._meta.auto_created:
@@ -468,6 +486,7 @@ class TranslatedFieldsModel(models.Model):
             signals.pre_translation_delete.send(sender=self.shared_model, instance=self, using=using)
 
         super(TranslatedFieldsModel, self).delete(using=using)
+        _delete_cached_translation(self)
 
         # Send post-delete signal
         if not self._meta.auto_created:
