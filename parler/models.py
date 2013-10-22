@@ -475,7 +475,7 @@ class TranslatedFieldsModel(models.Model):
 
     def _get_field_values(self):
         # Return all field values in a consistent (sorted) manner.
-        return [getattr(self, field) for field in self._meta.get_all_field_names()]
+        return [getattr(self, field.get_attname()) for field, _ in self._meta.get_fields_with_model()]
 
     @classmethod
     def get_translated_fields(cls):
