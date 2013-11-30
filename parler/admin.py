@@ -174,7 +174,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if obj:
             return obj.get_available_languages()
         else:
-            return self.model._translations_model.objects.get_empty_query_set()
+            return self.model._translations_model.objects.none()
 
 
     def get_object(self, request, object_id):
