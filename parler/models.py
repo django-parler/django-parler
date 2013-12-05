@@ -17,7 +17,7 @@ from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext
 from parler import signals
-from parler.cache import _cache_translation, _delete_cached_translation, get_cached_translation, _delete_cached_translations
+from parler.cache import _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
@@ -243,10 +243,12 @@ class TranslatableModel(models.Model):
             # Check that this object already exists, would be pointless otherwise to check for a translation.
             if not self._state.adding:
                 # 2.1, fetch from memcache
-                object = get_cached_translation(self, language_code)
+                object = get_cached_translation(self, language_code, use_fallback=use_fallback)
                 if object is not None:
                     # Track in local cache
-                    self._translations_cache[language_code] = object
+                    if object.language_code != language_code:
+                        self._translations_cache[language_code] = None  # Set fallback marker
+                    self._translations_cache[object.language_code] = object
                     return object
                 else:
                     # 2.2, fetch from database
@@ -282,6 +284,7 @@ class TranslatableModel(models.Model):
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
             self._translations_cache[language_code] = None   # explicit marker that language query was tried before.
+            _cache_translation_needs_fallback(self, language_code)
             try:
                 return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create)
             except self._translations_model.DoesNotExist:
