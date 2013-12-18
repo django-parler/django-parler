@@ -16,7 +16,7 @@ from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_unicode
 from django.utils.functional import lazy
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, get_language
 from parler import appsettings
 from parler.forms import TranslatableModelForm
 from parler.managers import TranslatableQuerySet
@@ -102,6 +102,19 @@ class BaseTranslatableAdmin(BaseModelAdmin):
             return self._language(request)
 
 
+    def get_queryset_language(self, request):
+        """
+        Return the language to use in the queryset.
+        """
+        if not is_multilingual_project():
+            # Make sure the current translations remain visible, not the dynamically set get_language() value.
+            return appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+        else:
+            # Allow to adjust to current language
+            # This is overwritten for the inlines, which follow the primary object.
+            return get_language()
+
+
     def queryset(self, request):
         """
         Make sure the current language is selected.
@@ -112,13 +125,11 @@ class BaseTranslatableAdmin(BaseModelAdmin):
             if not isinstance(qs, TranslatableQuerySet):
                 raise ImproperlyConfigured("{0} class does not inherit from TranslatableQuerySet".format(qs.__class__.__name__))
 
-            if not is_multilingual_project():
-                # Make sure the current translations remain visible, not the dynamically set get_language() value.
-                qs = qs.language(appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
-            else:
-                # Set the initial language for fetched objects.
-                # This is needed for the TranslatableInlineModelAdmin
-                qs = qs.language(self._language(request))
+            # Apply a consistent language to all objects.
+            qs_language = self.get_queryset_language(request)
+            if qs_language:
+                qs = qs.language(qs_language)
+
         return qs
 
 
@@ -483,6 +494,15 @@ class TranslatableBaseInlineFormSet(BaseInlineFormSet):
 class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
     form = TranslatableModelForm
     formset = TranslatableBaseInlineFormSet
+
+    def get_queryset_language(self, request):
+        if not is_multilingual_project():
+            # Make sure the current translations remain visible, not the dynamically set get_language() value.
+            return appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+        else:
+            # Set the initial language for fetched objects.
+            # This is needed for the TranslatableInlineModelAdmin
+            return self._language(request)
 
     def get_formset(self, request, obj=None, **kwargs):
         FormSet = super(TranslatableInlineModelAdmin, self).get_formset(request, obj, **kwargs)

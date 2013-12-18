@@ -5,6 +5,7 @@ Changes in version 1.0 (in development)
   This only affects your South migrations. Use ``manage.py schemamigration appname --empty "upgrade_to_django_parler10"`` to upgrade
   applications which use ``translations = TranslatedFields(..)`` in their models.
 * Fix supporting different database (using=) arguments.
+* Fix list language, always show translated values.
 
 
 Changes in version 0.9.4 (beta)
