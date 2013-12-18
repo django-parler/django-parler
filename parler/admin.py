@@ -80,16 +80,22 @@ class BaseTranslatableAdmin(BaseModelAdmin):
             code = request.GET.get(self.query_language_key)
 
             if not code:
-                # Show first tab by default
-                try:
-                    lang_choices = appsettings.PARLER_LANGUAGES[settings.SITE_ID]
-                    code = lang_choices[0]['code']
-                except (KeyError, IndexError):
-                    # No configuration, always fallback to default language.
-                    # This is essentially a non-multilingual configuration.
-                    code = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+                # forms: show first tab by default
+                code = self._get_first_tab_language()
 
             return normalize_language_code(code)
+
+
+    def _get_first_tab_language(self):
+        try:
+            lang_choices = appsettings.PARLER_LANGUAGES[settings.SITE_ID]
+            code = lang_choices[0]['code']
+        except (KeyError, IndexError):
+            # No configuration, always fallback to default language.
+            # This is essentially a non-multilingual configuration.
+            code = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+
+        return normalize_language_code(code)
 
 
     def get_form_language(self, request, obj=None):
