@@ -26,6 +26,10 @@ def get_language_title(language_code):
     """
     Return the verbose_name for a language code.
     """
+    # Avoid weird lookup errors.
+    if not language_code:
+        raise KeyError("Missing language_code in get_language_title()")
+
     try:
         return _(LANGUAGES_DICT[language_code])
     except KeyError:
