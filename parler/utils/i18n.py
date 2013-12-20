@@ -18,8 +18,8 @@ def is_supported_django_language(language_code):
     """
     Return whether a language code is supported.
     """
-    language_code = language_code.split('-')[0] # e.g. if fr-ca is not supported fallback to fr
-    return language_code in LANGUAGES_DICT
+    language_code2 = language_code.split('-')[0] # e.g. if fr-ca is not supported fallback to fr
+    return language_code in LANGUAGES_DICT or language_code2 in LANGUAGES_DICT
 
 
 def get_language_title(language_code):
