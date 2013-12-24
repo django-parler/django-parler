@@ -284,7 +284,8 @@ class TranslatableModel(models.Model):
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
             self._translations_cache[language_code] = None   # explicit marker that language query was tried before.
-            _cache_translation_needs_fallback(self, language_code)
+            if not self._state.adding:
+                _cache_translation_needs_fallback(self, language_code)
             try:
                 return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create)
             except self._translations_model.DoesNotExist:
