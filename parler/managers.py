@@ -60,7 +60,10 @@ class TranslatableQuerySet(QuerySet):
 
         filters = {}
         for field_name, val in translated_fields.iteritems():
-            filters["{0}__{1}".format(relname, field_name)] = val
+            if field_name.startswith('master__'):
+                filters[field_name[8:]] = val  # avoid translations__master__ back and forth
+            else:
+                filters["{0}__{1}".format(relname, field_name)] = val
 
         if len(language_codes) == 1:
             filters[relname + '__language_code'] = language_codes[0]
