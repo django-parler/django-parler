@@ -38,27 +38,39 @@ class TranslatableQuerySet(QuerySet):
         return self
 
 
-    def translated(self, *language_codes):
+    def translated(self, *language_codes, **translated_fields):
         """
         Only return translated objects which of the given languages.
 
         When no language codes are given, only the currently active language is returned.
 
         NOTE: due to Django `ORM limitations <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_,
-        this method can't be combined with other filters that access the translated fields.
+        this method can't be combined with other filters that access the translated fields. As such, query the fields in one filter:
+
+        .. code-block:: python
+
+            qs.filter('en', name="Cheese Omelette")
+
+        This will query the translated model for the ``name`` field.
         """
         relname = self.model._translations_field
 
         if not language_codes:
             language_codes = (get_language(),)
 
+        filters = {}
+        for field_name, val in translated_fields.iteritems():
+            filters["{0}__{1}".format(relname, field_name)] = val
+
         if len(language_codes) == 1:
-            return self.filter(**{relname + '__language_code': language_codes[0]})
+            filters[relname + '__language_code'] = language_codes[0]
+            return self.filter(**filters)
         else:
-            return self.filter(**{relname + '__language_code__in': language_codes}).distinct()
+            filters[relname + '__language_code__in'] = language_codes
+            return self.filter(**filters).distinct()
 
 
-    def active_translations(self, language_code=None):
+    def active_translations(self, language_code=None, **translated_fields):
         """
         Only return objects which are translated, or have a fallback that should be displayed.
 
@@ -68,7 +80,7 @@ class TranslatableQuerySet(QuerySet):
         # Default:     (language, fallback) when hide_translated == False
         # Alternative: (language,)          when hide_untranslated == True
         language_codes = get_active_language_choices(language_code)
-        return self.translated(*language_codes)
+        return self.translated(*language_codes, **translated_fields)
 
 
     def iterator(self):
@@ -102,23 +114,29 @@ class TranslatableManager(models.Manager):
         """
         return self.get_query_set().language(language_code)
 
-    def translated(self, *language_codes):
+    def translated(self, *language_codes, **translated_fields):
         """
         Only return objects which are translated in the given languages.
 
         NOTE: due to Django `ORM limitations <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_,
-        this method can't be combined with other filters that access the translated fields.
-        """
-        return self.get_query_set().translated(*language_codes)
+        this method can't be combined with other filters that access the translated fields. As such, query the fields in one filter:
 
-    def active_translations(self, language_code=None):
+        .. code-block:: python
+
+            qs.filter('en', name="Cheese Omelette")
+
+        This will query the translated model for the ``name`` field.
+        """
+        return self.get_query_set().translated(*language_codes, **translated_fields)
+
+    def active_translations(self, language_code=None, **translated_fields):
         """
         Only return objects which are translated, or have a fallback that should be displayed.
 
         Typically that's the currently active language and fallback language.
         When ``hide_untranslated = True``, only the currently active language will be returned.
         """
-        return self.get_query_set().active_translations(language_code)
+        return self.get_query_set().active_translations(language_code, **translated_fields)
 
 
 # Export the names in django-hvad style too:

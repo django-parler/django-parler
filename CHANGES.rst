@@ -4,6 +4,7 @@ Changes in version 1.0 (in development)
 * **BACKWARDS INCOMPATIBLE:** updated the model name of the dynamically generated translation models for django-hvad_ compatibility.
   This only affects your South migrations. Use ``manage.py schemamigration appname --empty "upgrade_to_django_parler10"`` to upgrade
   applications which use ``translations = TranslatedFields(..)`` in their models.
+* Allow ``.translated()`` and ``.active_translations()`` to filter on translated fields too.
 * Fix supporting different database (using=) arguments.
 * Fix list language, always show translated values.
 * Fix ``is_supported_django_language()`` to support dashes too

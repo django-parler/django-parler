@@ -148,8 +148,8 @@ Filtering translated objects
 
 To restrict the queryset to translated objects only, the following methods are available:
 
-* ``MyObject.objects.translated(*language_codes)`` - return only objects with a translation of ``language_codes``.
-* ``MyObject.objects.active_translations(language_code=None)`` - return only objects for the current language (and fallback if this applies).
+* ``MyObject.objects.translated(*language_codes, **translated_fields)`` - return only objects with a translation of ``language_codes``.
+* ``MyObject.objects.active_translations(language_code=None, **translated_fields)`` - return only objects for the current language (and fallback if this applies).
 
 The ``active_translations()`` method also returns objects which are translated in the fallback language,
 unless ``hide_untranslated = True`` is used in the ``PARLER_LANGUAGES`` setting.
@@ -167,6 +167,12 @@ If you have to query a language and translated attribute, query both in a single
         translations__language_code__in=get_active_language_choices(),
         translations__slug='omelette'
     )
+
+For convenience, use the provided methods::
+
+    MyObject.objects.translated(get_active_language_choices(), slug='omelette')
+
+    MyObject.objects.active_translations(slug='omelette')
 
 
 Advanced example
