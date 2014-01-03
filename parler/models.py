@@ -241,7 +241,7 @@ class TranslatableModel(models.Model):
             # 2. No cache, need to query
             # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
             # Check that this object already exists, would be pointless otherwise to check for a translation.
-            if not self._state.adding:
+            if not self._state.adding and self.pk:
                 # 2.1, fetch from memcache
                 object = get_cached_translation(self, language_code, use_fallback=use_fallback)
                 if object is not None:
@@ -284,7 +284,7 @@ class TranslatableModel(models.Model):
             # Explicitly set a marker for the fact that this translation uses the fallback instead.
             # Avoid making that query again.
             self._translations_cache[language_code] = None  # None value is the marker.
-            if not self._state.adding:
+            if not self._state.adding or self.pk:
                 _cache_translation_needs_fallback(self, language_code)
 
             # Jump to fallback language, return directly.

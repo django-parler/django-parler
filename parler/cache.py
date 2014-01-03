@@ -7,6 +7,9 @@ def get_object_cache_keys(instance):
     """
     Return the cache keys associated with an object.
     """
+    if not instance.pk or instance._state.adding:
+        return []
+
     keys = []
     # TODO: performs a query to fetch the language codes. Store that in memcached too.
     for language in instance.get_available_languages():
@@ -28,7 +31,7 @@ def get_cached_translation(instance, language_code, use_fallback=False):
     """
     Fetch an cached translation.
     """
-    if not appsettings.PARLER_ENABLE_CACHING:
+    if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
         return None
 
     key = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
@@ -56,7 +59,7 @@ def get_cached_translated_field(instance, language_code, field_name):
     """
     Fetch an cached field.
     """
-    if not appsettings.PARLER_ENABLE_CACHING:
+    if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
         return None
 
     values = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
@@ -89,6 +92,9 @@ def _cache_translation_needs_fallback(instance, language_code, timeout=0):
     """
     Store the fact that a translation doesn't exist, and the fallback should be used.
     """
+    if not instance.pk or instance._state.adding:
+        return
+
     key = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
     cache.set(key, {'__FALLBACK__': True}, timeout=timeout)
 
