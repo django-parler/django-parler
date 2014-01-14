@@ -8,6 +8,7 @@ Changes in version 1.0 (in development)
 * Fix supporting different database (using=) arguments.
 * Fix list language, always show translated values.
 * Fix ``is_supported_django_language()`` to support dashes too
+* Fix ignored ``Meta.fields`` declaration on forms to exclude all other fields.
 
 
 Changes in version 0.9.4 (beta)
