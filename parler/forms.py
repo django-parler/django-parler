@@ -72,15 +72,15 @@ class TranslatableModelFormMixin(object):
         if self.language_code is None:
             self.language_code = instance.get_current_language() if instance is not None else get_language()
 
-
     def save(self, commit=True):
-        # Assign translated fields to the model (using the TranslatedAttribute descriptor)
         self.instance.set_current_language(self.language_code)
-        for field in self._get_translated_fields():
-            setattr(self.instance, field, self.cleaned_data[field])
-
+        self.save_translated_fields(commit)
         return super(TranslatableModelFormMixin, self).save(commit)
 
+    def save_translated_fields(self, commit=True):
+        # Assign translated fields to the model (using the TranslatedAttribute descriptor)
+        for field in self._get_translated_fields():
+            setattr(self.instance, field, self.cleaned_data[field])
 
     def _get_translated_fields(self):
         return [f_name for f_name in self._meta.model._translations_model.get_translated_fields() if f_name in self.fields]
