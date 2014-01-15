@@ -115,7 +115,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
             # since the admin always uses modelform_factory() on the form class, and therefore triggering this metaclass.
             if form_model:
                 translations_model = form_model._translations_model
-                fields = getattr(form_new_meta, 'fields', form_meta.fields) or None
+                fields = getattr(form_new_meta, 'fields', form_meta.fields)
                 exclude = getattr(form_new_meta, 'exclude', form_meta.exclude) or ()
                 widgets = getattr(form_new_meta, 'widgets', form_meta.widgets) or ()
                 formfield_callback = attrs.get('formfield_callback', None)
