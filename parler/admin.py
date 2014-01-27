@@ -544,6 +544,13 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
 
         return FormSet
 
+    def get_form_language(self, request, obj=None):
+        if self._has_translatable_parent_model():
+            return super(TranslatableInlineModelAdmin, self).get_form_language(request, obj=obj)
+        else:
+            # Follow the ?language parameter
+            return self._language(request)
+
     def get_available_languages(self, obj, formset):
         """
         Fetching the available inline languages as queryset.
