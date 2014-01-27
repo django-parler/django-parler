@@ -20,3 +20,8 @@
     bottom: 4px;
     position: relative;
 }
+
+
+.parler-inline-language-tabs + .inline-group {
+    margin-top: 0;
+}

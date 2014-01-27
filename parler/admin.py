@@ -39,6 +39,13 @@ _language_prepopulated_media = _language_media + Media(js=(
 
 _fakeRequest = HttpRequest()
 
+class TabsList(list):
+    def __init__(self, seq=(), css_class=None):
+        self.css_class = css_class
+        self.current_is_translated = False
+        self.allow_deletion = False
+        super(TabsList, self).__init__(seq)
+
 
 class BaseTranslatableAdmin(BaseModelAdmin):
     """
@@ -137,6 +144,53 @@ class BaseTranslatableAdmin(BaseModelAdmin):
                 qs = qs.language(qs_language)
 
         return qs
+
+
+    def get_language_tabs(self, request, obj, available_languages, css_class=None):
+        """
+        Determine the language tabs to show.
+        """
+        tabs = TabsList(css_class=css_class)
+        get = request.GET.copy()  # QueryDict object
+        language = self.get_form_language(request, obj)
+        tab_languages = []
+
+        base_url = '{0}://{1}{2}'.format(request.is_secure() and 'https' or 'http', request.get_host(), request.path)
+
+        for lang_dict in appsettings.PARLER_LANGUAGES.get(settings.SITE_ID, ()):
+            code = lang_dict['code']
+            title = get_language_title(code)
+            get['language'] = code
+            url = '{0}?{1}'.format(base_url, get.urlencode())
+
+            if code == language:
+                status = 'current'
+            elif code in available_languages:
+                status = 'available'
+            else:
+                status = 'empty'
+
+            tabs.append((url, title, code, status))
+            tab_languages.append(code)
+
+        # Additional stale translations in the database?
+        if appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS:
+            for code in available_languages:
+                if code not in tab_languages:
+                    get['language'] = code
+                    url = '{0}?{1}'.format(base_url, get.urlencode())
+
+                    if code == language:
+                        status = 'current'
+                    else:
+                        status = 'available'
+
+                    tabs.append((url, get_language_title(code), code, status))
+
+        tabs.current_is_translated = language in available_languages
+        tabs.allow_deletion = len(available_languages) > 1
+        return tabs
+
 
 
 class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
@@ -243,15 +297,11 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             lang = get_language_title(lang_code)
 
             available_languages = self.get_available_languages(obj)
-            current_is_translated = lang_code in available_languages
             language_tabs = self.get_language_tabs(request, obj, available_languages)
-
-            context['current_is_translated'] = current_is_translated
-            context['allow_deletion'] = len(available_languages) > 1
             context['language_tabs'] = language_tabs
             if language_tabs:
                 context['title'] = '%s (%s)' % (context['title'], lang)
-            if not current_is_translated:
+            if not language_tabs.current_is_translated:
                 add = True  # lets prepopulated_fields_js work.
 
         # django-fluent-pages uses the same technique
@@ -293,50 +343,6 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 # "Save and add another" / "Save and continue" URLs
                 redirect['Location'] += "?{0}={1}".format(self.query_language_key, language)
         return redirect
-
-
-    def get_language_tabs(self, request, obj, available_languages):
-        """
-        Determine the language tabs to show.
-        """
-        tabs = []
-        get = request.GET.copy()  # QueryDict object
-        language = self.get_form_language(request, obj)
-        tab_languages = []
-
-        base_url = '{0}://{1}{2}'.format(request.is_secure() and 'https' or 'http', request.get_host(), request.path)
-
-        for lang_dict in appsettings.PARLER_LANGUAGES.get(settings.SITE_ID, ()):
-            code = lang_dict['code']
-            title = get_language_title(code)
-            get['language'] = code
-            url = '{0}?{1}'.format(base_url, get.urlencode())
-
-            if code == language:
-                status = 'current'
-            elif code in available_languages:
-                status = 'available'
-            else:
-                status = 'empty'
-
-            tabs.append((url, title, code, status))
-            tab_languages.append(code)
-
-        # Additional stale translations in the database?
-        if appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS:
-            for code in available_languages:
-                if code not in tab_languages:
-                    get['language'] = code
-                    url = '{0}?{1}'.format(base_url, get.urlencode())
-
-                    if code == language:
-                        status = 'current'
-                    else:
-                        status = 'available'
-
-                    tabs.append((url, get_language_title(code), code, status))
-
-        return tabs
 
 
     @csrf_protect_m
@@ -498,8 +504,22 @@ class TranslatableBaseInlineFormSet(BaseInlineFormSet):
 
 
 class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
+    """
+    Base class for inline models.
+    """
     form = TranslatableModelForm
     formset = TranslatableBaseInlineFormSet
+
+    @property
+    def inline_tabs(self):
+        """
+        Whether to show inline tabs, can be set as attribute on the inline.
+        """
+        return not self._has_translatable_parent_model()
+
+    def _has_translatable_parent_model(self):
+        # Allow fallback to regular models when needed.
+        return issubclass(self.parent_model, TranslatableModel)
 
     def get_queryset_language(self, request):
         if not is_multilingual_project():
@@ -515,11 +535,45 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
         # Existing objects already got the language code from the queryset().language() method.
         # For new objects, the language code should be set here.
         FormSet.language_code = self.get_form_language(request, obj)
+
+        if self.inline_tabs:
+            # Need to pass information to the template, this can only happen via the FormSet object.
+            available_languages = self.get_available_languages(obj, FormSet)
+            FormSet.language_tabs = self.get_language_tabs(request, obj, available_languages, css_class='parler-inline-language-tabs')
+            FormSet.language_tabs.allow_deletion = self._has_translatable_parent_model()   # Views not available otherwise.
+
         return FormSet
+
+    def get_available_languages(self, obj, formset):
+        """
+        Fetching the available inline languages as queryset.
+        """
+        if obj:
+            # Inlines dictate language code, not the parent model.
+            filter = {
+                'master__{0}'.format(formset.fk.name): obj
+            }
+            return self.model._translations_model.objects.using(obj._state.db).filter(**filter) \
+                   .values_list('language_code', flat=True).distinct().order_by('language_code')
+        else:
+            return self.model._translations_model.objects.none()
 
 
 class TranslatableStackedInline(TranslatableInlineModelAdmin):
-    template = 'admin/edit_inline/stacked.html'
+    @property
+    def template(self):
+        if self.inline_tabs:
+            return 'admin/parler/edit_inline/stacked_tabs.html'
+        else:
+            # Admin default
+            return 'admin/edit_inline/stacked.html'
+
 
 class TranslatableTabularInline(TranslatableInlineModelAdmin):
-    template = 'admin/edit_inline/tabular.html'
+    @property
+    def template(self):
+        if self.inline_tabs:
+            return 'admin/parler/edit_inline/tabular_tabs.html'
+        else:
+            # Admin default
+            return 'admin/edit_inline/tabular.html'
