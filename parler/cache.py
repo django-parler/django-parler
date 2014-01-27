@@ -62,7 +62,8 @@ def get_cached_translated_field(instance, language_code, field_name):
     if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
         return None
 
-    values = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
+    key = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
+    values = cache.get(key)
     if not values:
         return None
 

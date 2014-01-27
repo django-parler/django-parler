@@ -47,6 +47,9 @@ def objectlanguage(parser, token):
 
     If the global language needs to be switched too,
     wrap this tag in a ``{% language %}`` block.
+
+    Note that using this tag is not thread-safe if the object is shared between threads.
+    It temporary changes the current language of the object.
     """
     bits = token.split_contents()
     if len(bits) == 2:

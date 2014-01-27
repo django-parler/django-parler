@@ -17,7 +17,7 @@ from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext
 from parler import signals
-from parler.cache import _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations
+from parler.cache import _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
@@ -357,7 +357,7 @@ class TranslatableModel(models.Model):
             translation.save(*args, **kwargs)
 
 
-    def safe_translation_getter(self, field, default=None, any_language=False):
+    def safe_translation_getter(self, field, default=None, language_code=None, any_language=False):
         """
         Fetch a translated property, and return a default value
         when both the translation and fallback language are missing.
@@ -368,8 +368,24 @@ class TranslatableModel(models.Model):
         Also consider using ``field = TranslatedField(any_language=True)`` in the model itself,
         to make this behavior the default for the given field.
         """
+        # By default, query via descriptor (TranslatedFieldDescriptor)
+        # which also attempts the fallback language if configured to do so.
+        tr_model = self
+
+        # Extra feature: query a single field from a other translation.
+        if language_code and language_code != self._current_language:
+            # Try to fetch a cached value first.
+            value = get_cached_translated_field(self, language_code, field)
+            if value is not None:
+                return value
+
+            try:
+                tr_model = self._get_translated_model(language_code)
+            except TranslationDoesNotExist:
+                pass  # Use 'self'
+
         try:
-            return getattr(self, field)
+            return getattr(tr_model, field)
         except TranslationDoesNotExist:
             pass
 
