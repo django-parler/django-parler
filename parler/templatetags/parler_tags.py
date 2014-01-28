@@ -1,6 +1,7 @@
 from django.template import Node, Library, TemplateSyntaxError
 from django.utils.translation import get_language
 from parler.models import TranslatableModel
+from parler.utils.context import switch_language
 
 register = Library()
 
@@ -18,16 +19,9 @@ class ObjectLanguageNode(Node):
         if not isinstance(object, TranslatableModel):
             raise TemplateSyntaxError("Object '{0}' is not an instance of TranslableModel".format(object))
 
-        # Switch
-        old_object_language = object.get_current_language()
-        object.set_current_language(new_language)
-
-        try:
+        with switch_language(object, new_language):
             # Render contents inside
             output = self.nodelist.render(context)
-        finally:
-            # Switch back and return
-            object.set_current_language(old_object_language)
 
         return output
 
@@ -44,9 +38,6 @@ def objectlanguage(parser, token):
 
     A TranslatedObject is not affected by the ``{% language .. %}`` tag
     as it maintains it's own state. This tag temporary switches the object state.
-
-    If the global language needs to be switched too,
-    wrap this tag in a ``{% language %}`` block.
 
     Note that using this tag is not thread-safe if the object is shared between threads.
     It temporary changes the current language of the object.
