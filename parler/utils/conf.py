@@ -40,3 +40,14 @@ class LanguagesSetting(dict):
             return (language_code, lang_dict['fallback'])
         else:
             return (language_code,)
+
+
+    def get_fallback_language(self, language_code=None):
+        """
+        Find out what the fallback language is for a given language choice.
+        """
+        choices = self.get_active_choices(language_code)
+        if choices and len(choices) > 1:
+            return choices[-1]
+        else:
+            return None

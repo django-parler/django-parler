@@ -7,6 +7,7 @@ Changes in version 1.0 (in development)
 * Allow ``.translated()`` and ``.active_translations()`` to filter on translated fields too.
 * Added ``language_code`` parameter to ``safe_translation_getter()``, to fetch a single field in a different language.
 * Added ``switch_language()`` contextmanager.
+* Added ``get_fallback_language()`` to result of ``add_default_language_settings()`` function.
 * Added partial support for tabs on inlines when the parent object isn't a translated model.
 * Fix supporting different database (using=) arguments.
 * Fix list language, always show translated values.
