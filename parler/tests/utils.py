@@ -1,3 +1,4 @@
+from __future__ import print_function
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -26,7 +27,7 @@ class AppTestCase(TestCase):
             run_syncdb = False
             for appname in cls.install_apps:
                 if appname not in settings.INSTALLED_APPS:
-                    print 'Adding {0} to INSTALLED_APPS'.format(appname)
+                    print('Adding {0} to INSTALLED_APPS'.format(appname))
                     settings.INSTALLED_APPS = (appname,) + tuple(settings.INSTALLED_APPS)
                     run_syncdb = True
 

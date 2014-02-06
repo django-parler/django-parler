@@ -16,6 +16,7 @@ from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext
+from django.utils import six
 from parler import signals
 from parler.cache import _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
@@ -37,7 +38,7 @@ class TranslationDoesNotExist(AttributeError):
     pass
 
 
-_lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.verbose_name), unicode)
+_lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.verbose_name), six.text_type)
 
 
 def create_translations_model(shared_model, related_name, meta, **fields):
@@ -159,7 +160,7 @@ class TranslatableModel(models.Model):
         # Assign translated args manually.
         if translated_kwargs:
             translation = self._get_translated_model(auto_create=True)
-            for field, value in translated_kwargs.iteritems():
+            for field, value in six.iteritems(translated_kwargs):
                 setattr(translation, field, value)
 
 
@@ -312,7 +313,7 @@ class TranslatableModel(models.Model):
             try:
                 return self._translations_cache.get(self._current_language, None) \
                     or self._translations_cache.get(self.get_fallback_language(), None) \
-                    or next(t for t in self._translations_cache.itervalues() if t if not None)  # Skip fallback markers.
+                    or next(t for t in six.itervalues(self._translations_cache) if t if not None)  # Skip fallback markers.
             except StopIteration:
                 pass
 
@@ -339,7 +340,7 @@ class TranslatableModel(models.Model):
     def save_translations(self, *args, **kwargs):
         # Save all translated objects which were fetched.
         # This also supports switching languages several times, and save everything in the end.
-        for translation in self._translations_cache.itervalues():
+        for translation in six.itervalues(self._translations_cache):
             if translation is None:  # Skip fallback markers
                 continue
 
