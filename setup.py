@@ -36,7 +36,7 @@ setup(
     license='Apache License, Version 2.0',
 
     requires=[
-        'Django (>=1.4)',
+        'Django (>=1.4.2)',
     ],
 
     description='Simple Django model translations without nasty hacks, featuring nice admin integration.',

@@ -3,6 +3,7 @@ Overview of all settings which can be customized.
 """
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import six
 from parler.utils import normalize_language_code, is_supported_django_language
 from parler.utils.conf import LanguagesSetting
 
@@ -51,7 +52,7 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     if not is_supported_django_language(defaults['code']):
         raise ImproperlyConfigured("The value for {0}['defaults']['code'] ('{1}') does not exist in LANGUAGES".format(var_name, defaults['code']))
 
-    for site_id, lang_choices in languages_list.iteritems():
+    for site_id, lang_choices in six.iteritems(languages_list):
         if site_id == 'default':
             continue
 
@@ -62,7 +63,7 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
                 raise ImproperlyConfigured("{0}[{1}][{2}]['code'] does not exist in LANGUAGES".format(var_name, site_id, i))
 
             # Copy all items from the defaults, so you can provide new fields too.
-            for key, value in defaults.iteritems():
+            for key, value in six.iteritems(defaults):
                 choice.setdefault(key, value)
 
     return languages_list

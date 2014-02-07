@@ -17,8 +17,8 @@ class FormTests(AppTestCase):
         """
         Check if the form fields exist.
         """
-        self.assertTrue(SimpleForm.base_fields.has_key('shared'))
-        self.assertTrue(SimpleForm.base_fields.has_key('tr_title'))
+        self.assertTrue('shared' in SimpleForm.base_fields)
+        self.assertTrue('tr_title' in SimpleForm.base_fields)
 
 
     def test_form_save(self):
