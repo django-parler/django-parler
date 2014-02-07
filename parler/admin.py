@@ -14,9 +14,10 @@ from django.forms import Media
 from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
-from django.utils.encoding import iri_to_uri, force_unicode
+from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import lazy
 from django.utils.translation import ugettext_lazy as _, get_language
+from django.utils import six
 from parler import appsettings
 from parler.forms import TranslatableModelForm
 from parler.managers import TranslatableQuerySet
@@ -385,12 +386,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if request.POST: # The user has already confirmed the deletion.
             if perms_needed:
                 raise PermissionDenied
-            obj_display = _('{0} translation of {1}').format(lang, force_unicode(translation))  # in hvad: (translation.master)
+            obj_display = _('{0} translation of {1}').format(lang, force_text(translation))  # in hvad: (translation.master)
 
             self.log_deletion(request, translation, obj_display)
             self.delete_model_translation(request, translation)
             self.message_user(request, _('The %(name)s "%(obj)s" was deleted successfully.') % dict(
-                name=force_unicode(opts.verbose_name), obj=force_unicode(obj_display)
+                name=force_text(opts.verbose_name), obj=force_text(obj_display)
             ))
 
             if self.has_change_permission(request, None):
@@ -398,7 +399,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             else:
                 return HttpResponseRedirect(reverse('admin:index'))
 
-        object_name = _('{0} Translation').format(force_unicode(opts.verbose_name))
+        object_name = _('{0} Translation').format(force_text(opts.verbose_name))
         if perms_needed or protected:
             title = _("Cannot delete %(name)s") % {"name": object_name}
         else:
@@ -433,7 +434,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             'opts': opts,
             'app_label': opts.app_label,
             'language_name': get_language_title(language_code),
-            'object_name': force_unicode(opts.verbose_name)
+            'object_name': force_text(opts.verbose_name)
         }
         return render(request, self.deletion_not_allowed_template, context)
 
@@ -487,7 +488,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         ))
 
 
-_lazy_select_template_name = lazy(select_template_name, unicode)
+_lazy_select_template_name = lazy(select_template_name, six.text_type)
 
 
 class TranslatableBaseInlineFormSet(BaseInlineFormSet):

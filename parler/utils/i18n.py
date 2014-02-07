@@ -73,4 +73,6 @@ def is_multilingual_project(site_id=None):
     Whether the current Django project is configured for multilingual support.
     """
     from parler import appsettings
-    return appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS or appsettings.PARLER_LANGUAGES.has_key(site_id or settings.SITE_ID)
+    if site_id is None:
+        site_id = settings.SITE_ID
+    return appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS or site_id in appsettings.PARLER_LANGUAGES
