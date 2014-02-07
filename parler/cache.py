@@ -1,6 +1,10 @@
 from django.core.cache import cache
+from django.utils import six
 from parler import appsettings
 from parler.utils import get_language_settings
+
+if six.PY3:
+    long = int
 
 
 def get_object_cache_keys(instance):
@@ -24,7 +28,7 @@ def get_translation_cache_key(translated_model, master_id, language_code):
     """
     # Always cache the entire object, as this already produces
     # a lot of queries. Don't go for caching individual fields.
-    return 'parler.{0}.{1}.{2}'.format(translated_model.__name__, int(master_id), language_code)
+    return 'parler.{0}.{1}.{2}'.format(translated_model.__name__, long(master_id), language_code)
 
 
 def get_cached_translation(instance, language_code, use_fallback=False):
