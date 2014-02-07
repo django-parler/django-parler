@@ -10,7 +10,7 @@ env:
 matrix:
   exclude:
   - python: "3.3"
-    env: DJANGO=django==1.4.2
+    env: DJANGO=1.4.2
 
 install:
   - pip install -q Django==$DJANGO --use-mirrors
