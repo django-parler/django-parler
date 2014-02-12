@@ -408,6 +408,14 @@ class TranslatedFieldsModelBase(ModelBase):
     - It adds the proxy attributes to the shared model.
     """
     def __new__(mcs, name, bases, attrs):
+
+        # Workaround compatibility issue with six.with_metaclass() and custom Django model metaclasses:
+        # Let Django fully ignore the class which is inserted in between.
+        if not attrs and name == 'NewBase':
+            attrs['__module__'] = 'django.utils.six'
+            attrs['Meta'] = type('Meta', (), {'abstract': True})
+            return super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
+
         new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
         if bases[0] == models.Model:
             return new_class
