@@ -1,6 +1,7 @@
 from django import forms
 from django.forms.models import ModelFormMetaclass
 from django.utils.translation import get_language
+from django.utils import six
 from parler.models import TranslatableModel, TranslationDoesNotExist
 
 
@@ -107,7 +108,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
 
             # Detect all placeholders at this class level.
             translated_fields = [
-                f_name for f_name, attr_value in attrs.iteritems() if isinstance(attr_value, TranslatedField)
+                f_name for f_name, attr_value in six.iteritems(attrs) if isinstance(attr_value, TranslatedField)
             ]
 
             # Include the translated fields as attributes, pretend that these exist on the form.
@@ -165,8 +166,9 @@ def _get_mro_attribute(bases, name, default=None):
     return default
 
 
-class TranslatableModelForm(TranslatableModelFormMixin, forms.ModelForm):
+class TranslatableModelForm(six.with_metaclass(TranslatableModelFormMetaclass, TranslatableModelFormMixin), forms.ModelForm):
     """
     A model form for translated models.
     """
-    __metaclass__ = TranslatableModelFormMetaclass
+    # six.with_metaclass does not handle more than 2 parent classes for django < 1.6
+    # so only one is wrapped within with_metaclass

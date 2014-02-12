@@ -67,11 +67,11 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     meta.setdefault('verbose_name', _lazy_verbose_name(shared_model))
 
     # Define attributes for translation table
-    name = '{0}Translation'.format(shared_model.__name__)
+    name = str('{0}Translation'.format(shared_model.__name__))  # makes it bytes, for type()
 
     attrs = {}
     attrs.update(fields)
-    attrs['Meta'] = type('Meta', (object,), meta)
+    attrs['Meta'] = type(str('Meta'), (object,), meta)
     attrs['__module__'] = shared_model.__module__
     attrs['objects'] = models.Manager()
     attrs['master'] = models.ForeignKey(shared_model, related_name=related_name, editable=False, null=True)
@@ -449,12 +449,10 @@ def _validate_master(new_class):
     return shared_model
 
 
-
-class TranslatedFieldsModel(models.Model):
+class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models.Model)):
     """
     Base class for the model that holds the translated fields.
     """
-    __metaclass__ = TranslatedFieldsModelBase
 
     language_code = models.CharField(max_length=15, db_index=True)
     master = None   # FK to shared model.
@@ -549,7 +547,7 @@ class TranslatedFieldsModel(models.Model):
 
         # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
-        cls.DoesNotExist = type('DoesNotExist', (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
+        cls.DoesNotExist = type(str('DoesNotExist'), (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
 
 
     def __unicode__(self):
