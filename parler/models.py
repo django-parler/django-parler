@@ -411,13 +411,13 @@ class TranslatedFieldsModelBase(ModelBase):
     def __new__(mcs, name, bases, attrs):
 
         # Workaround compatibility issue with six.with_metaclass() and custom Django model metaclasses:
-        # Let Django fully ignore the class which is inserted in between.
-        # Django 1.5 fixed this, see https://code.djangoproject.com/ticket/19688
-        if django.VERSION < (1,5):
-            if not attrs and name == 'NewBase':
+        if not attrs and name == 'NewBase':
+            if django.VERSION < (1,5):
+                # Let Django fully ignore the class which is inserted in between.
+                # Django 1.5 fixed this, see https://code.djangoproject.com/ticket/19688
                 attrs['__module__'] = 'django.utils.six'
                 attrs['Meta'] = type('Meta', (), {'abstract': True})
-                return super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
+            return super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
 
         new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
         if bases[0] == models.Model:
