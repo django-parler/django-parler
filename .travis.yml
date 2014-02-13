@@ -20,6 +20,7 @@ install:
   - pip install -q -e . --use-mirrors
 script:
   - python runtests.py
+  - python example/manage.py test article
 
 branches:
   only:

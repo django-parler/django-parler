@@ -1,9 +1,12 @@
+from __future__ import unicode_literals
 from django.core.urlresolvers import reverse
 from django.utils import translation
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 from parler.models import TranslatableModel, TranslatedFields
 
 
+@python_2_unicode_compatible
 class Article(TranslatableModel):
     """
     Example translatable model.
@@ -23,11 +26,11 @@ class Article(TranslatableModel):
         verbose_name = "Article"
         verbose_name_plural = "Articles"
 
-    def __unicode__(self):
+    def __str__(self):
         # Fetching the title just works, as all
         # attributes are proxied to the translated model.
         # Fallbacks are handled as well.
-        return self.title
+        return "{0}".format(self.title)
 
     def get_absolute_url(self):
         # The override is only needed because we use the /##/ prefix by i18n_patterns()
