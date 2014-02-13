@@ -417,7 +417,7 @@ class TranslatedFieldsModelBase(ModelBase):
                 # Let Django fully ignore the class which is inserted in between.
                 # Django 1.5 fixed this, see https://code.djangoproject.com/ticket/19688
                 attrs['__module__'] = 'django.utils.six'
-                attrs['Meta'] = type('Meta', (), {'abstract': True})
+                attrs['Meta'] = type(str('Meta'), (), {'abstract': True})
             return super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
 
         new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
