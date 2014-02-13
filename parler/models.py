@@ -10,6 +10,7 @@ Added on top of that, the API-suger is provided, similar to what django-hvad has
 It's possible to create the translations model manually,
 or let it be created dynamically when using the :class:`TranslatedFields` field.
 """
+from __future__ import unicode_literals
 import django
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models, router
@@ -294,12 +295,12 @@ class TranslatableModel(models.Model):
             try:
                 return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create)
             except self._translations_model.DoesNotExist:
-                fallback_msg = u" (tried fallback {0})".format(lang_dict['fallback'])
+                fallback_msg = " (tried fallback {0})".format(lang_dict['fallback'])
 
         # None of the above, bail out!
         raise self._translations_model.DoesNotExist(
-            u"{0} does not have a translation for the current language!\n"
-            u"{0} ID #{1}, language={2}{3}".format(self._meta.verbose_name, self.pk, language_code, fallback_msg or ''
+            "{0} does not have a translation for the current language!\n"
+            "{0} ID #{1}, language={2}{3}".format(self._meta.verbose_name, self.pk, language_code, fallback_msg or ''
         ))
 
 

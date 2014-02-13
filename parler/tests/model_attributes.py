@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.conf import settings
 from django.utils import translation
 from parler.models import TranslationDoesNotExist
@@ -87,8 +88,8 @@ class ModelAttributeTests(AppTestCase):
         x.save()
 
         # Check if all translations are saved.
-        self.assertEqual(sorted(x.translations.values_list('tr_title', flat=True)), [u'TITLE_EN', u'TITLE_ES', u'TITLE_FR', u'TITLE_NL'])
-        self.assertEqual(sorted(x.get_available_languages()), [u'en', u'es', u'fr', u'nl'])
+        self.assertEqual(sorted(x.translations.values_list('tr_title', flat=True)), ['TITLE_EN', 'TITLE_ES', 'TITLE_FR', 'TITLE_NL'])
+        self.assertEqual(sorted(x.get_available_languages()), ['en', 'es', 'fr', 'nl'])
         self.assertTrue(x.has_translation('en'))
         self.assertTrue(x.has_translation('es'))
         self.assertFalse(x.has_translation('fi'))
@@ -106,7 +107,7 @@ class ModelAttributeTests(AppTestCase):
         x.set_current_language('it', initialize=True)
         self.assertTrue(x.has_translation('it'))  # does return true for this object.
         self.assertNumQueries(0, x.save_translations())
-        self.assertEqual(sorted(x.get_available_languages()), [u'en', u'es', u'fr', u'nl'])
+        self.assertEqual(sorted(x.get_available_languages()), ['en', 'es', 'fr', 'nl'])
 
 
     def test_empty_model(self):
@@ -120,7 +121,7 @@ class ModelAttributeTests(AppTestCase):
         x.set_current_language('nl', initialize=True)
         x.save()
 
-        self.assertEqual(sorted(x.get_available_languages()), [u'en', u'fr', u'nl'])
+        self.assertEqual(sorted(x.get_available_languages()), ['en', 'fr', 'nl'])
 
 
     def test_fallback_language(self):
