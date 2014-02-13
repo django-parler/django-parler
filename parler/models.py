@@ -10,6 +10,7 @@ Added on top of that, the API-suger is provided, similar to what django-hvad has
 It's possible to create the translations model manually,
 or let it be created dynamically when using the :class:`TranslatedFields` field.
 """
+import django
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models, router
 from django.db.models.base import ModelBase
@@ -411,10 +412,12 @@ class TranslatedFieldsModelBase(ModelBase):
 
         # Workaround compatibility issue with six.with_metaclass() and custom Django model metaclasses:
         # Let Django fully ignore the class which is inserted in between.
-        if not attrs and name == 'NewBase':
-            attrs['__module__'] = 'django.utils.six'
-            attrs['Meta'] = type('Meta', (), {'abstract': True})
-            return super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
+        # Django 1.5 fixed this, see https://code.djangoproject.com/ticket/19688
+        if django.VERSION < (1,5):
+            if not attrs and name == 'NewBase':
+                attrs['__module__'] = 'django.utils.six'
+                attrs['Meta'] = type('Meta', (), {'abstract': True})
+                return super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
 
         new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
         if bases[0] == models.Model:
