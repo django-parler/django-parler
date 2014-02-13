@@ -4,6 +4,7 @@ Custom generic managers
 from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.translation import get_language
+from django.utils import six
 from parler import appsettings
 from parler.utils import get_active_language_choices
 
@@ -59,7 +60,7 @@ class TranslatableQuerySet(QuerySet):
             language_codes = (get_language(),)
 
         filters = {}
-        for field_name, val in translated_fields.iteritems():
+        for field_name, val in six.iteritems(translated_fields):
             if field_name.startswith('master__'):
                 filters[field_name[8:]] = val  # avoid translations__master__ back and forth
             else:

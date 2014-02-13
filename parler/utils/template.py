@@ -1,5 +1,6 @@
 from django.template import TemplateDoesNotExist
 from django.template.loader import find_template
+from django.utils import six
 
 _cached_name_lookups = {}
 
@@ -21,7 +22,7 @@ def select_template_name(template_name_list):
             except TemplateDoesNotExist:
                 continue
             else:
-                template_name = unicode(template_name)  # consistent value for lazy() function.
+                template_name = six.text_type(template_name)  # consistent value for lazy() function.
                 _cached_name_lookups[template_name_list] = template_name
                 return template_name
 
