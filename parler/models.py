@@ -221,7 +221,11 @@ class TranslatableModel(models.Model):
         Return the language codes of all translated variations.
         """
         accessor = getattr(self, self._translations_field)
-        qs = accessor.get_queryset()
+        try:
+            qs = accessor.get_queryset()
+        except AttributeError:
+            # Fallback for Django 1.4 and Django 1.5
+            qs = accessor.get_query_set()
         if qs._prefetch_done:
             return sorted(obj.language_code for obj in qs)
         else:
@@ -252,7 +256,11 @@ class TranslatableModel(models.Model):
             if not self._state.adding and self.pk:
                 # 2.1, use prefetched data
                 accessor = getattr(self, self._translations_field)
-                qs = accessor.get_queryset()
+                try:
+                    qs = accessor.get_queryset()
+                except AttributeError:
+                    # Fallback for Django 1.4 and Django 1.5
+                    qs = accessor.get_query_set()
                 if qs._prefetch_done:
                     for object in qs:
                         if object.language_code == language_code:
@@ -332,7 +340,11 @@ class TranslatableModel(models.Model):
 
         try:
             accessor = getattr(self, self._translations_field)
-            qs = accessor.get_queryset()
+            try:
+                qs = accessor.get_queryset()
+            except AttributeError:
+                # Fallback for Django 1.4 and Django 1.5
+                qs = accessor.get_query_set()
             if qs._prefetch_done:
                 translation = list(qs)[0]
             else:
