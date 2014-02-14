@@ -220,7 +220,12 @@ class TranslatableModel(models.Model):
         """
         Return the language codes of all translated variations.
         """
-        return self._translations_model.objects.using(self._state.db).filter(master=self).values_list('language_code', flat=True).order_by('language_code')
+        accessor = getattr(self, self._translations_field)
+        qs = accessor.get_queryset()
+        if qs._prefetch_done:
+            return sorted(obj.language_code for obj in qs)
+        else:
+            return self._translations_model.objects.using(self._state.db).filter(master=self).values_list('language_code', flat=True).order_by('language_code')
 
 
     def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False):
@@ -245,7 +250,14 @@ class TranslatableModel(models.Model):
             # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
             # Check that this object already exists, would be pointless otherwise to check for a translation.
             if not self._state.adding and self.pk:
-                # 2.1, fetch from memcache
+                # 2.1, use prefetched data
+                accessor = getattr(self, self._translations_field)
+                qs = accessor.get_queryset()
+                if qs._prefetch_done:
+                    for object in qs:
+                        if object.language_code == language_code:
+                            return object
+                # 2.2, fetch from memcache
                 object = get_cached_translation(self, language_code, use_fallback=use_fallback)
                 if object is not None:
                     # Track in local cache
@@ -254,8 +266,7 @@ class TranslatableModel(models.Model):
                     self._translations_cache[object.language_code] = object
                     return object
                 else:
-                    # 2.2, fetch from database
-                    accessor = getattr(self, self._translations_field)
+                    # 2.3, fetch from database
                     try:
                         object = accessor.get(language_code=language_code)
                     except self._translations_model.DoesNotExist:
@@ -320,7 +331,12 @@ class TranslatableModel(models.Model):
                 pass
 
         try:
-            translation = self._translations_model.objects.using(self._state.db).filter(master=self)[0]
+            accessor = getattr(self, self._translations_field)
+            qs = accessor.get_queryset()
+            if qs._prefetch_done:
+                translation = list(qs)[0]
+            else:
+                translation = self._translations_model.objects.using(self._state.db).filter(master=self)[0]
         except IndexError:
             return None
         else:
