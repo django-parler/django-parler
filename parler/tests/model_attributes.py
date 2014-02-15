@@ -11,14 +11,6 @@ class ModelAttributeTests(AppTestCase):
     """
     Test model construction
     """
-    @classmethod
-    def setUpClass(cls):
-        # Be supportive for other project settings too.
-        cls.conf_fallback = appsettings.PARLER_LANGUAGES['default']['fallback'] or 'en'
-        cls.other_lang1 = next(x for x, _ in settings.LANGUAGES if x != cls.conf_fallback)
-        cls.other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (cls.conf_fallback, cls.other_lang1))
-
-
     def test_untranslated_get(self):
         """
         Test the metaclass of the model.

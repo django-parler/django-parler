@@ -8,6 +8,7 @@ from django.template.loaders import app_directories
 from django.test import TestCase
 from django.utils.importlib import import_module
 import os
+from parler import appsettings
 
 
 class AppTestCase(TestCase):
@@ -45,3 +46,8 @@ class AppTestCase(TestCase):
         # 1.4 does not create site automatically with the defined SITE_ID, 1.3 does.
         Site.objects.get_or_create(id=settings.SITE_ID, defaults=dict(domain='django.localhost', name='django at localhost'))
         cls.user, _ = User.objects.get_or_create(is_superuser=True, is_staff=True, username="admin")
+
+        # Be supportive for other project settings too.
+        cls.conf_fallback = appsettings.PARLER_LANGUAGES['default']['fallback'] or 'en'
+        cls.other_lang1 = next(x for x, _ in settings.LANGUAGES if x != cls.conf_fallback)
+        cls.other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (cls.conf_fallback, cls.other_lang1))

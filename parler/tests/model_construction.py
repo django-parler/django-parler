@@ -1,5 +1,4 @@
 from django.db.models import Manager
-from django.test import TestCase
 from .utils import AppTestCase
 from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel
 
