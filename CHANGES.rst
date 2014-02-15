@@ -5,11 +5,15 @@ Changes in version 1.0 (in development)
   This only affects your South migrations. Use ``manage.py schemamigration appname --empty "upgrade_to_django_parler10"`` to upgrade
   applications which use ``translations = TranslatedFields(..)`` in their models.
 * Added Python 3 compatibility!
+* Added support for ``.prefetch('translations')``.
+* Added automatic caching of translated objects, use ``PARLER_ENABLE_CACHING = False`` to disable.
+* Added inline tabs support (if the parent object is not translatable).
 * Allow ``.translated()`` and ``.active_translations()`` to filter on translated fields too.
 * Added ``language_code`` parameter to ``safe_translation_getter()``, to fetch a single field in a different language.
-* Added ``switch_language()`` contextmanager.
+* Added ``switch_language()`` context manager.
 * Added ``get_fallback_language()`` to result of ``add_default_language_settings()`` function.
 * Added partial support for tabs on inlines when the parent object isn't a translated model.
+* Fix inefficient or unneeded queries, i.e. for new objects.
 * Fix supporting different database (using=) arguments.
 * Fix list language, always show translated values.
 * Fix ``is_supported_django_language()`` to support dashes too
