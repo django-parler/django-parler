@@ -558,6 +558,8 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
         """
         if obj:
             # Inlines dictate language code, not the parent model.
+            # Hence, not looking at obj.get_available_languages(), but see what languages
+            # are used by the inline objects that point to it.
             filter = {
                 'master__{0}'.format(formset.fk.name): obj
             }

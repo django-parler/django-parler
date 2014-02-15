@@ -220,16 +220,11 @@ class TranslatableModel(models.Model):
         """
         Return the language codes of all translated variations.
         """
-        accessor = getattr(self, self._translations_field)
-        try:
-            qs = accessor.get_queryset()
-        except AttributeError:
-            # Fallback for Django 1.4 and Django 1.5
-            qs = accessor.get_query_set()
+        qs = self._get_translated_queryset()
         if qs._prefetch_done:
             return sorted(obj.language_code for obj in qs)
         else:
-            return self._translations_model.objects.using(self._state.db).filter(master=self).values_list('language_code', flat=True).order_by('language_code')
+            return qs.values_list('language_code', flat=True).order_by('language_code')
 
 
     def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False):
@@ -251,20 +246,15 @@ class TranslatableModel(models.Model):
                 return object
         except KeyError:
             # 2. No cache, need to query
-            # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
             # Check that this object already exists, would be pointless otherwise to check for a translation.
             if not self._state.adding and self.pk:
                 # 2.1, use prefetched data
-                accessor = getattr(self, self._translations_field)
-                try:
-                    qs = accessor.get_queryset()
-                except AttributeError:
-                    # Fallback for Django 1.4 and Django 1.5
-                    qs = accessor.get_query_set()
+                qs = self._get_translated_queryset()
                 if qs._prefetch_done:
                     for object in qs:
                         if object.language_code == language_code:
                             return object
+
                 # 2.2, fetch from memcache
                 object = get_cached_translation(self, language_code, use_fallback=use_fallback)
                 if object is not None:
@@ -276,7 +266,7 @@ class TranslatableModel(models.Model):
                 else:
                     # 2.3, fetch from database
                     try:
-                        object = accessor.get(language_code=language_code)
+                        object = qs.get(language_code=language_code)
                     except self._translations_model.DoesNotExist:
                         pass
                     else:
@@ -339,22 +329,32 @@ class TranslatableModel(models.Model):
                 pass
 
         try:
-            accessor = getattr(self, self._translations_field)
-            try:
-                qs = accessor.get_queryset()
-            except AttributeError:
-                # Fallback for Django 1.4 and Django 1.5
-                qs = accessor.get_query_set()
+            # Use prefetch if available, otherwise perform separate query.
+            qs = self._get_translated_queryset()
             if qs._prefetch_done:
                 translation = list(qs)[0]
             else:
-                translation = self._translations_model.objects.using(self._state.db).filter(master=self)[0]
+                translation = qs[0]
         except IndexError:
             return None
         else:
             self._translations_cache[translation.language_code] = translation
             _cache_translation(translation)
             return translation
+
+
+    def _get_translated_queryset(self):
+        """
+        Return the queryset that points to the translated model.
+        If there is a prefetch, it can be read from this queryset.
+        """
+        # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
+        accessor = getattr(self, self._translations_field)
+        try:
+            return accessor.get_queryset()
+        except AttributeError:
+            # Fallback for Django 1.4 and Django 1.5
+            return accessor.get_query_set()
 
 
     def save(self, *args, **kwargs):
