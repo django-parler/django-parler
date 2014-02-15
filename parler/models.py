@@ -248,33 +248,35 @@ class TranslatableModel(models.Model):
             # 2. No cache, need to query
             # Check that this object already exists, would be pointless otherwise to check for a translation.
             if not self._state.adding and self.pk:
-                # 2.1, use prefetched data
                 qs = self._get_translated_queryset()
                 if qs._prefetch_done:
+                    # 2.1, use prefetched data
+                    # If the object is not found in the prefetched data (which contains all translations),
+                    # it's pointless to check for memcached (2.2) or perform a single query (2.3)
                     for object in qs:
                         if object.language_code == language_code:
                             self._translations_cache[language_code] = object
                             _cache_translation(object)  # Store in memcached
                             return object
-
-                # 2.2, fetch from memcache
-                object = get_cached_translation(self, language_code, use_fallback=use_fallback)
-                if object is not None:
-                    # Track in local cache
-                    if object.language_code != language_code:
-                        self._translations_cache[language_code] = None  # Set fallback marker
-                    self._translations_cache[object.language_code] = object
-                    return object
                 else:
-                    # 2.3, fetch from database
-                    try:
-                        object = qs.get(language_code=language_code)
-                    except self._translations_model.DoesNotExist:
-                        pass
-                    else:
-                        self._translations_cache[language_code] = object
-                        _cache_translation(object)  # Store in memcached
+                    # 2.2, fetch from memcached
+                    object = get_cached_translation(self, language_code, use_fallback=use_fallback)
+                    if object is not None:
+                        # Track in local cache
+                        if object.language_code != language_code:
+                            self._translations_cache[language_code] = None  # Set fallback marker
+                        self._translations_cache[object.language_code] = object
                         return object
+                    else:
+                        # 2.3, fetch from database
+                        try:
+                            object = qs.get(language_code=language_code)
+                        except self._translations_model.DoesNotExist:
+                            pass
+                        else:
+                            self._translations_cache[language_code] = object
+                            _cache_translation(object)  # Store in memcached
+                            return object
 
         # Not in cache, or default.
         # Not fetched from DB
