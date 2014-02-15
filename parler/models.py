@@ -253,6 +253,8 @@ class TranslatableModel(models.Model):
                 if qs._prefetch_done:
                     for object in qs:
                         if object.language_code == language_code:
+                            self._translations_cache[language_code] = object
+                            _cache_translation(object)  # Store in memcached
                             return object
 
                 # 2.2, fetch from memcache
