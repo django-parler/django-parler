@@ -38,9 +38,10 @@ class QueryCountTests(AppTestCase):
             language_code = self.conf_fallback
 
         # Easier to understand then a oneline lambda
+        # Using str(), not unicode() to be python 3 compatible.
         def test_qs():
             for obj in qs:
-                unicode(obj.tr_title)
+                str(obj.tr_title)
 
         # Queryset is not set to a language, the individual models
         # will default to the currently active project language.
