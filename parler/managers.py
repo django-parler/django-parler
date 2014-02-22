@@ -50,7 +50,7 @@ class TranslatableQuerySet(QuerySet):
 
         .. code-block:: python
 
-            qs.filter('en', name="Cheese Omelette")
+            qs.translated('en', name="Cheese Omelette")
 
         This will query the translated model for the ``name`` field.
         """
@@ -127,7 +127,7 @@ class TranslatableManager(models.Manager):
 
         .. code-block:: python
 
-            qs.filter('en', name="Cheese Omelette")
+            qs.translated('en', name="Cheese Omelette")
 
         This will query the translated model for the ``name`` field.
         """
