@@ -88,7 +88,12 @@ def get_translated_url(context, lang_code, object=None):
     """
     view = context.get('view', None)
     if object is None:
-        object = context.get('object', None)
+        # Try a few common object variables, the SingleObjectMixin object,
+        # The Django CMS "current_page" variable, or the "page" from django-fluent-pages and Mezzanine.
+        # This makes this tag work with most CMSes out of the box.
+        object = context.get('object', None) \
+              or context.get('current_page', None) \
+              or context.get('page', None)
 
     try:
         if view is not None:
