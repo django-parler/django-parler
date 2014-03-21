@@ -1,4 +1,4 @@
-from django.core.urlresolvers import resolve, reverse
+from django.core.urlresolvers import resolve, reverse, Resolver404
 from django.template import Node, Library, TemplateSyntaxError
 from django.utils.translation import get_language
 from parler.models import TranslatableModel, TranslationDoesNotExist
@@ -134,6 +134,12 @@ def get_translated_url(context, lang_code, object=None):
     # Just reverse the current URL again in a new language, and see where we end up.
     # This doesn't handle translated slugs, but will resolve to the proper view name.
     path = context['request'].path
-    resolvermatch = resolve(path)
+    try:
+        resolvermatch = resolve(path)
+    except Resolver404:
+        # Can't resolve the page itself, the page is apparently a 404.
+        # This can also happen for the homepage in an i18n_patterns situation.
+        return ''
+
     with smart_override(lang_code):
         return reverse(resolvermatch.view_name, args=resolvermatch.args, kwargs=resolvermatch.kwargs)
