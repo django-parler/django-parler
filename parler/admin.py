@@ -6,6 +6,7 @@ from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
+from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.contrib.admin.util import get_deleted_objects, unquote
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
@@ -16,6 +17,7 @@ from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import lazy
+from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils import six
 from parler import appsettings
@@ -308,6 +310,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         # django-fluent-pages uses the same technique
         if 'default_change_form_template' not in context:
             context['default_change_form_template'] = self.get_change_form_base_template()
+
+        # Patch form_url to contain the "language" GET parameter.
+        # Otherwise AdminModel.render_change_form will clean the URL
+        # and remove the "language" when coming from a filtered object
+        # list causing the wrong translation to be changed.
+        form_url = add_preserved_filters({'preserved_filters': urlencode({'language': lang_code}), 'opts': self.model._meta}, form_url)
 
         #context['base_template'] = self.get_change_form_base_template()
         return super(TranslatableAdmin, self).render_change_form(request, context, add, change, form_url, obj)
