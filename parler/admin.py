@@ -6,7 +6,12 @@ from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
-from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
+try:
+    from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
+except ImportError:
+    # Django <1.6 does not preserve filters
+    def add_preserved_filters(context, form_url):
+        return form_url
 from django.contrib.admin.util import get_deleted_objects, unquote
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
