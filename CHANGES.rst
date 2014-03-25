@@ -4,6 +4,7 @@ Changes in version 1.0 (in development)
 * Added ``get_translated_url`` template tag, to implement language switching easily.
   This also allows to implement `hreflang <https://support.google.com/webmasters/answer/189077>`_ support for search engines.
 * Added a ``ViewUrlMixin`` so views can tell the template what their exact canonical URL should be.
+* Added ``TranslatableCreateView`` and ``TranslatableUpdateView`` views, and associated mixins.
 * Fix missing "language" GET parmeter for Django 1.6 when filtering in the admin (due to the ``_changelist_filters`` parameter).
 
 

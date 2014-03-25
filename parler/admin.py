@@ -30,7 +30,8 @@ from parler.forms import TranslatableModelForm
 from parler.managers import TranslatableQuerySet
 from parler.models import TranslatableModel
 from parler.utils.compat import transaction_atomic
-from parler.utils.i18n import normalize_language_code, get_language_title, is_multilingual_project
+from parler.utils.i18n import get_language_title, is_multilingual_project
+from parler.utils.views import get_language_parameter, get_language_tabs
 from parler.utils.template import select_template_name
 
 # Code partially taken from django-hvad
@@ -46,13 +47,6 @@ _language_prepopulated_media = _language_media + Media(js=(
 ))
 
 _fakeRequest = HttpRequest()
-
-class TabsList(list):
-    def __init__(self, seq=(), css_class=None):
-        self.css_class = css_class
-        self.current_is_translated = False
-        self.allow_deletion = False
-        super(TabsList, self).__init__(seq)
 
 
 class BaseTranslatableAdmin(BaseModelAdmin):
@@ -85,32 +79,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         """
         Get the language parameter from the current request.
         """
-        if not is_multilingual_project() or not self._has_translatable_model():
-            # By default, the objects are stored in a single static language.
-            # This makes the transition to multilingual easier as well.
-            # The default language can operate as fallback language too.
-            return appsettings.PARLER_DEFAULT_LANGUAGE_CODE
-        else:
-            # In multilingual mode, take the provided language of the request.
-            code = request.GET.get(self.query_language_key)
-
-            if not code:
-                # forms: show first tab by default
-                code = self._get_first_tab_language()
-
-            return normalize_language_code(code)
-
-
-    def _get_first_tab_language(self):
-        try:
-            lang_choices = appsettings.PARLER_LANGUAGES[settings.SITE_ID]
-            code = lang_choices[0]['code']
-        except (KeyError, IndexError):
-            # No configuration, always fallback to default language.
-            # This is essentially a non-multilingual configuration.
-            code = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
-
-        return normalize_language_code(code)
+        return get_language_parameter(request, self.query_language_key, object=obj)
 
 
     def get_form_language(self, request, obj=None):
@@ -129,7 +98,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         """
         if not is_multilingual_project():
             # Make sure the current translations remain visible, not the dynamically set get_language() value.
-            return appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+            return appsettings.PARLER_LANGUAGES.get_default_language()
         else:
             # Allow to adjust to current language
             # This is overwritten for the inlines, which follow the primary object.
@@ -158,46 +127,8 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         """
         Determine the language tabs to show.
         """
-        tabs = TabsList(css_class=css_class)
-        get = request.GET.copy()  # QueryDict object
-        language = self.get_form_language(request, obj)
-        tab_languages = []
-
-        base_url = '{0}://{1}{2}'.format(request.is_secure() and 'https' or 'http', request.get_host(), request.path)
-
-        for lang_dict in appsettings.PARLER_LANGUAGES.get(settings.SITE_ID, ()):
-            code = lang_dict['code']
-            title = get_language_title(code)
-            get['language'] = code
-            url = '{0}?{1}'.format(base_url, get.urlencode())
-
-            if code == language:
-                status = 'current'
-            elif code in available_languages:
-                status = 'available'
-            else:
-                status = 'empty'
-
-            tabs.append((url, title, code, status))
-            tab_languages.append(code)
-
-        # Additional stale translations in the database?
-        if appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS:
-            for code in available_languages:
-                if code not in tab_languages:
-                    get['language'] = code
-                    url = '{0}?{1}'.format(base_url, get.urlencode())
-
-                    if code == language:
-                        status = 'current'
-                    else:
-                        status = 'available'
-
-                    tabs.append((url, get_language_title(code), code, status))
-
-        tabs.current_is_translated = language in available_languages
-        tabs.allow_deletion = len(available_languages) > 1
-        return tabs
+        current_language = self.get_form_language(request, obj)
+        return get_language_tabs(request, current_language, available_languages, css_class=css_class)
 
 
 
@@ -538,7 +469,7 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
     def get_queryset_language(self, request):
         if not is_multilingual_project():
             # Make sure the current translations remain visible, not the dynamically set get_language() value.
-            return appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+            return appsettings.PARLER_LANGUAGES.get_default_language()
         else:
             # Set the initial language for fetched objects.
             # This is needed for the TranslatableInlineModelAdmin

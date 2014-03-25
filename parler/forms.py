@@ -49,10 +49,11 @@ class TranslatableModelFormMixin(object):
     """
     Form mixin, to fetch+store translated fields.
     """
-    language_code = None    # Set by TranslatableAdmin.get_form()
+    language_code = None    # Set by TranslatableAdmin.get_form() on the constructed subclass.
 
 
     def __init__(self, *args, **kwargs):
+        current_language = kwargs.pop('_current_language', None)   # Used for TranslatableViewMixin
         super(TranslatableModelFormMixin, self).__init__(*args, **kwargs)
 
         # Load the initial values for the translated fields
@@ -71,14 +72,15 @@ class TranslatableModelFormMixin(object):
 
         # Typically already set by admin
         if self.language_code is None:
-            self.language_code = instance.get_current_language() if instance is not None else get_language()
+            self.language_code = instance.get_current_language() if instance is not None else (current_language or get_language())
 
-    def save(self, commit=True):
+    def save(self, *args, **kwargs):
+        # Using args, kwargs to support custom parent arguments too.
         self.instance.set_current_language(self.language_code)
-        self.save_translated_fields(commit)
-        return super(TranslatableModelFormMixin, self).save(commit)
+        self.save_translated_fields(*args, **kwargs)
+        return super(TranslatableModelFormMixin, self).save(*args, **kwargs)
 
-    def save_translated_fields(self, commit=True):
+    def save_translated_fields(self, *args, **kwargs):
         # Assign translated fields to the model (using the TranslatedAttribute descriptor)
         for field in self._get_translated_fields():
             setattr(self.instance, field, self.cleaned_data[field])

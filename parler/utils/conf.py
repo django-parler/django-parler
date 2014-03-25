@@ -51,3 +51,26 @@ class LanguagesSetting(dict):
             return choices[-1]
         else:
             return None
+
+
+    def get_default_language(self):
+        """
+        Return the default language.
+        """
+        return self['default']['code']
+
+
+    def get_first_language(self, site_id=None):
+        """
+        Return the first language for the current site.
+        This can be used for user interfaces, where the languages are displayed in tabs.
+        """
+        if site_id is None:
+            site_id = settings.SITE_ID
+
+        try:
+            return self[site_id][0]['code']
+        except (KeyError, IndexError):
+            # No configuration, always fallback to default language.
+            # This is essentially a non-multilingual configuration.
+            return self['default']['code']
