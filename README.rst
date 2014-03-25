@@ -48,6 +48,23 @@ The fallback language can be changed in the settings::
 Optionally, the admin tabs can be configured too::
 
     PARLER_LANGUAGES = {
+        None: (
+            {'code': 'en',},
+            {'code': 'en-us',},
+            {'code': 'it',},
+            {'code': 'nl',},
+        ),
+        'default': {
+            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+            'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
+        }
+    }
+
+When using ``settings.SITE_ID`` which is a setting of the sites framework
+(``django.contrib.sites``) the ``PARLER_LANGUAGES`` dict can contain
+site specific settings and the special ``None`` key is no longer used::
+
+    PARLER_LANGUAGES = {
         # Global site
         1: (
             {'code': 'en',},

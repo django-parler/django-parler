@@ -74,5 +74,5 @@ def is_multilingual_project(site_id=None):
     """
     from parler import appsettings
     if site_id is None:
-        site_id = settings.SITE_ID
+        site_id = getattr(settings, 'SITE_ID', None)
     return appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS or site_id in appsettings.PARLER_LANGUAGES

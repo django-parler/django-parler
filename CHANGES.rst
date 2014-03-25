@@ -22,6 +22,7 @@ Released on 1.0a1:
 * Added ``switch_language()`` context manager.
 * Added ``get_fallback_language()`` to result of ``add_default_language_settings()`` function.
 * Added partial support for tabs on inlines when the parent object isn't a translated model.
+* Make settings.SITE_ID setting optional
 * Fix inefficient or unneeded queries, i.e. for new objects.
 * Fix supporting different database (using=) arguments.
 * Fix list language, always show translated values.

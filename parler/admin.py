@@ -103,7 +103,8 @@ class BaseTranslatableAdmin(BaseModelAdmin):
 
     def _get_first_tab_language(self):
         try:
-            lang_choices = appsettings.PARLER_LANGUAGES[settings.SITE_ID]
+            site_id = getattr(settings, 'SITE_ID', None)
+            lang_choices = appsettings.PARLER_LANGUAGES[site_id]
             code = lang_choices[0]['code']
         except (KeyError, IndexError):
             # No configuration, always fallback to default language.
@@ -165,7 +166,8 @@ class BaseTranslatableAdmin(BaseModelAdmin):
 
         base_url = '{0}://{1}{2}'.format(request.is_secure() and 'https' or 'http', request.get_host(), request.path)
 
-        for lang_dict in appsettings.PARLER_LANGUAGES.get(settings.SITE_ID, ()):
+        site_id = getattr(settings, 'SITE_ID', None)
+        for lang_dict in appsettings.PARLER_LANGUAGES.get(site_id, ()):
             code = lang_dict['code']
             title = get_language_title(code)
             get['language'] = code
