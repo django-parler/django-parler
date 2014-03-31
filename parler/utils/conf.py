@@ -17,7 +17,7 @@ class LanguagesSetting(dict):
         For an example, see :func:`~parler.appsettings.add_default_language_settings`.
         """
         if site_id is None:
-            site_id = settings.SITE_ID
+            site_id = getattr(settings, 'SITE_ID', None)
 
         for lang_dict in self.get(site_id, ()):
             if lang_dict['code'] == language_code:
@@ -66,7 +66,7 @@ class LanguagesSetting(dict):
         This can be used for user interfaces, where the languages are displayed in tabs.
         """
         if site_id is None:
-            site_id = settings.SITE_ID
+            site_id = getattr(settings, 'SITE_ID', None)
 
         try:
             return self[site_id][0]['code']

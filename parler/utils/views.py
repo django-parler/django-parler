@@ -38,7 +38,8 @@ def get_language_tabs(request, current_language, available_languages, css_class=
 
     base_url = '{0}://{1}{2}'.format(request.is_secure() and 'https' or 'http', request.get_host(), request.path)
 
-    for lang_dict in appsettings.PARLER_LANGUAGES.get(settings.SITE_ID, ()):
+    site_id = getattr(settings, 'SITE_ID', None)
+    for lang_dict in appsettings.PARLER_LANGUAGES.get(site_id, ()):
         code = lang_dict['code']
         title = get_language_title(code)
         get['language'] = code
