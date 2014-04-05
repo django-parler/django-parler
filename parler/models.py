@@ -12,12 +12,13 @@ or let it be created dynamically when using the :class:`TranslatedFields` field.
 """
 from __future__ import unicode_literals
 import django
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models, router
 from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
-from django.utils.translation import get_language, ugettext
+from django.utils.translation import get_language, ugettext, ugettext_lazy as _
 from django.utils import six
 from parler import signals
 from parler.cache import _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field
@@ -498,7 +499,7 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
     Base class for the model that holds the translated fields.
     """
 
-    language_code = models.CharField(max_length=15, db_index=True)
+    language_code = models.CharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
     master = None   # FK to shared model.
 
     class Meta:
