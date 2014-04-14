@@ -1,6 +1,9 @@
 Changes in version 1.0 (in development)
 ---------------------------------------
 
+Released on 1.0b1:
+~~~~~~~~~~~~~~~~~~
+
 * Added ``get_translated_url`` template tag, to implement language switching easily.
   This also allows to implement `hreflang <https://support.google.com/webmasters/answer/189077>`_ support for search engines.
 * Added a ``ViewUrlMixin`` so views can tell the template what their exact canonical URL should be.
