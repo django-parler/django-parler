@@ -1,7 +1,10 @@
 Changes in version 1.0 (in development)
 ---------------------------------------
 
-Released on 1.0b1:
+* Fixed missing app_label in cache key, fixes support for multiple models with the same name.
+
+
+Released in 1.0b1:
 ~~~~~~~~~~~~~~~~~~
 
 * Added ``get_translated_url`` template tag, to implement language switching easily.
@@ -12,7 +15,7 @@ Released on 1.0b1:
 * Support missing `SITE_ID` setting for Django 1.6.
 
 
-Released on 1.0a1:
+Released in 1.0a1:
 ~~~~~~~~~~~~~~~~~~
 
 * **BACKWARDS INCOMPATIBLE:** updated the model name of the dynamically generated translation models for django-hvad_ compatibility.
