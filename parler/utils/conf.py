@@ -26,7 +26,7 @@ class LanguagesSetting(dict):
         return self['default']
 
 
-    def get_active_choices(self, language_code=None):
+    def get_active_choices(self, language_code=None, site_id=None):
         """
         Find out which translations should be visible in the site.
         It returns a tuple with either a single choice (the current language),
@@ -35,18 +35,18 @@ class LanguagesSetting(dict):
         if language_code is None:
             language_code = get_language()
 
-        lang_dict = self.get_language(language_code)
+        lang_dict = self.get_language(language_code, site_id=site_id)
         if not lang_dict['hide_untranslated'] and lang_dict['fallback'] != language_code:
             return (language_code, lang_dict['fallback'])
         else:
             return (language_code,)
 
 
-    def get_fallback_language(self, language_code=None):
+    def get_fallback_language(self, language_code=None, site_id=None):
         """
         Find out what the fallback language is for a given language choice.
         """
-        choices = self.get_active_choices(language_code)
+        choices = self.get_active_choices(language_code, site_id=site_id)
         if choices and len(choices) > 1:
             return choices[-1]
         else:
