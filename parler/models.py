@@ -373,9 +373,12 @@ class TranslatableModel(models.Model):
 
 
     def save_translations(self, *args, **kwargs):
+        # Copy cache, new objects (e.g. fallbacks) might be fetched if users override save_translation()
+        translations = self._translations_cache.values()
+
         # Save all translated objects which were fetched.
         # This also supports switching languages several times, and save everything in the end.
-        for translation in six.itervalues(self._translations_cache):
+        for translation in translations:
             if translation is None:  # Skip fallback markers
                 continue
 
