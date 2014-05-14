@@ -1,6 +1,9 @@
 Changes in version 1.0 (in development)
 ---------------------------------------
 
+Released in 1.0b2:
+~~~~~~~~~~~~~~~~~~
+
 * Fixed missing app_label in cache key, fixes support for multiple models with the same name.
 * Fixed "dictionary changed size during iteration" in ``save_translations()``
 
