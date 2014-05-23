@@ -72,7 +72,11 @@ class TranslatableModelFormMixin(object):
 
         # Typically already set by admin
         if self.language_code is None:
-            self.language_code = instance.get_current_language() if instance is not None else (current_language or get_language())
+            if instance:
+                self.language_code = instance.get_current_language()
+                return
+            else:
+                self.language_code = current_language or get_language()
 
     def save(self, *args, **kwargs):
         # Using args, kwargs to support custom parent arguments too.
