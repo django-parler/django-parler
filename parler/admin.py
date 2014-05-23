@@ -406,7 +406,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 # This also resolves the fk_name if it's set.
                 fk = inline.get_formset(request, obj).fk
 
-                rel_name = 'master__{}'.format(fk.name)
+                rel_name = 'master__{0}'.format(fk.name)
                 filters = {
                     'language_code': language_code,
                     rel_name: obj
