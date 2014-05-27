@@ -25,6 +25,7 @@ class ArticleAdmin(TranslatableAdmin):
 
     # The 'language_column' is provided by the base class:
     list_display = ('title', 'language_column')
+    list_filter = ('published',)
 
     # Example custom form usage.
     form = ArticleAdminForm

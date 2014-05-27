@@ -1,7 +1,8 @@
+from django.core.urlresolvers import resolve, reverse, Resolver404
 from django.template import Node, Library, TemplateSyntaxError
 from django.utils.translation import get_language
-from parler.models import TranslatableModel
-from parler.utils.context import switch_language
+from parler.models import TranslatableModel, TranslationDoesNotExist
+from parler.utils.context import switch_language, smart_override
 
 register = Library()
 
@@ -55,3 +56,90 @@ def objectlanguage(parser, token):
     nodelist = parser.parse(('endobjectlanguage',))
     parser.delete_first_token()
     return ObjectLanguageNode(nodelist, object_var, language_var)
+
+
+@register.assignment_tag(takes_context=True)
+def get_translated_url(context, lang_code, object=None):
+    """
+    Get the proper URL for this page in a different language.
+
+    Note that this algorithm performs a "best effect" approach to give a proper URL.
+    To make sure the proper view URL is returned, add the :class:`~parler.views.ViewUrlMixin` to your view.
+
+    Example, to build a language menu::
+
+        <ul>
+            {% for lang_code, title in LANGUAGES %}
+                {% get_language_info for lang_code as lang %}
+                {% get_translated_url lang_code as tr_url %}
+                {% if tr_url %}<li{% if lang_code == LANGUAGE_CODE %} class="is-selected"{% endif %}><a href="{{ tr_url }}" hreflang="{{ lang_code }}">{{ lang.name_local|capfirst }}</a></li>{% endif %}
+            {% endfor %}
+        </ul>
+
+    Or to inform search engines about the translated pages::
+
+       {% for lang_code, title in LANGUAGES %}
+           {% get_translated_url lang_code as tr_url %}
+           {% if tr_url %}<link rel="alternate" hreflang="{{ lang_code }}" href="{{ tr_url }}" />{% endif %}
+       {% endfor %}
+
+    Note that using this tag is not thread-safe if the object is shared between threads.
+    It temporary changes the current language of the view object.
+    """
+    view = context.get('view', None)
+    if object is None:
+        # Try a few common object variables, the SingleObjectMixin object,
+        # The Django CMS "current_page" variable, or the "page" from django-fluent-pages and Mezzanine.
+        # This makes this tag work with most CMSes out of the box.
+        object = context.get('object', None) \
+              or context.get('current_page', None) \
+              or context.get('page', None)
+
+    try:
+        if view is not None:
+            # Allow a view to specify what the URL should be.
+            # This handles situations where the slug might be translated,
+            # and gives you complete control over the results of this template tag.
+            get_view_url = getattr(view, 'get_view_url', None)
+            if get_view_url:
+                with smart_override(lang_code):
+                    return view.get_view_url()
+
+            # Now, the "best effort" part starts.
+            # See if it's a DetailView that exposes the object.
+            if object is None:
+                object = getattr(view, 'object', None)
+
+        if object is not None and hasattr(object, 'get_absolute_url'):
+            # There is an object, get the URL in the different language.
+            # NOTE: this *assumes* that there is a detail view, not some edit view.
+            # In such case, a language menu would redirect a user from the edit page
+            # to a detail page; which is still way better a 404 or homepage.
+            if isinstance(object, TranslatableModel):
+                # Need to handle object URL translations.
+                # Just using smart_override() should be enough, as a translated object
+                # should use `switch_language(self)` internally before returning an URL.
+                # However, it doesn't hurt to help a bit here.
+                with switch_language(object, lang_code):
+                    return object.get_absolute_url()
+            else:
+                # Always switch the language before resolving, so i18n_patterns() are supported.
+                with smart_override(lang_code):
+                    return object.get_absolute_url()
+    except TranslationDoesNotExist:
+        # Typically projects have a fallback language, so even unknown languages will return something.
+        # This either means fallbacks are disabled, or the fallback language is not found!
+        return ''
+
+    # Just reverse the current URL again in a new language, and see where we end up.
+    # This doesn't handle translated slugs, but will resolve to the proper view name.
+    path = context['request'].path
+    try:
+        resolvermatch = resolve(path)
+    except Resolver404:
+        # Can't resolve the page itself, the page is apparently a 404.
+        # This can also happen for the homepage in an i18n_patterns situation.
+        return ''
+
+    with smart_override(lang_code):
+        return reverse(resolvermatch.view_name, args=resolvermatch.args, kwargs=resolvermatch.kwargs)

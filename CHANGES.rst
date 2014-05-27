@@ -1,6 +1,27 @@
 Changes in version 1.0 (in development)
 ---------------------------------------
 
+Released in 1.0b2:
+~~~~~~~~~~~~~~~~~~
+
+* Fixed missing app_label in cache key, fixes support for multiple models with the same name.
+* Fixed "dictionary changed size during iteration" in ``save_translations()``
+
+
+Released in 1.0b1:
+~~~~~~~~~~~~~~~~~~
+
+* Added ``get_translated_url`` template tag, to implement language switching easily.
+  This also allows to implement `hreflang <https://support.google.com/webmasters/answer/189077>`_ support for search engines.
+* Added a ``ViewUrlMixin`` so views can tell the template what their exact canonical URL should be.
+* Added ``TranslatableCreateView`` and ``TranslatableUpdateView`` views, and associated mixins.
+* Fix missing "language" GET parmeter for Django 1.6 when filtering in the admin (due to the ``_changelist_filters`` parameter).
+* Support missing `SITE_ID` setting for Django 1.6.
+
+
+Released in 1.0a1:
+~~~~~~~~~~~~~~~~~~
+
 * **BACKWARDS INCOMPATIBLE:** updated the model name of the dynamically generated translation models for django-hvad_ compatibility.
   This only affects your South migrations. Use ``manage.py schemamigration appname --empty "upgrade_to_django_parler10"`` to upgrade
   applications which use ``translations = TranslatedFields(..)`` in their models.
@@ -13,6 +34,7 @@ Changes in version 1.0 (in development)
 * Added ``switch_language()`` context manager.
 * Added ``get_fallback_language()`` to result of ``add_default_language_settings()`` function.
 * Added partial support for tabs on inlines when the parent object isn't a translated model.
+* Make settings.SITE_ID setting optional
 * Fix inefficient or unneeded queries, i.e. for new objects.
 * Fix supporting different database (using=) arguments.
 * Fix list language, always show translated values.
