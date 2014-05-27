@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminTextInputWidget, AdminTextareaWidget
-from parler.admin import TranslatableAdmin
-from .models import Article
+from parler.admin import TranslatableAdmin, TranslatableStackedInline, TranslatableTabularInline
+from .models import Article, Category, StackedCategory, TabularCategory
 from parler.forms import TranslatableModelForm, TranslatedField
 
 
@@ -30,9 +30,9 @@ class ArticleAdmin(TranslatableAdmin):
     form = ArticleAdminForm
 
     # NOTE: when using Django 1.4, use declared_fieldsets= instead of fieldsets=
-    fieldsets = (
+    declared_fieldsets = (
         (None, {
-            'fields': ('title', 'slug', 'published'),
+            'fields': ('title', 'slug', 'published', 'category'),
         }),
         ("Contents", {
             'fields': ('content',),
@@ -44,5 +44,31 @@ class ArticleAdmin(TranslatableAdmin):
         return {'slug': ('title',)}
 
 
+class ArticleStacked(TranslatableStackedInline):
+    model = Article
+    extra = 1
+
+
+class ArticleTabular(TranslatableTabularInline):
+    model = Article
+    extra = 1
+
+
+class CategoryAdmin(admin.ModelAdmin):
+    pass
+
+
+class CategoryStackedAdmin(admin.ModelAdmin):
+
+    inlines = [ArticleStacked]
+
+
+class CategoryTabularAdmin(admin.ModelAdmin):
+
+    inlines = [ArticleTabular]
+
 
 admin.site.register(Article, ArticleAdmin)
+admin.site.register(Category, CategoryAdmin)
+admin.site.register(StackedCategory, CategoryStackedAdmin)
+admin.site.register(TabularCategory, CategoryTabularAdmin)

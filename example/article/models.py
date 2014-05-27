@@ -21,6 +21,7 @@ class Article(TranslatableModel):
 
     # Regular fields
     published = models.BooleanField("Is published", default=False)
+    category = models.ForeignKey("Category", null=True, blank=True)
 
     class Meta:
         verbose_name = "Article"
@@ -41,3 +42,38 @@ class Article(TranslatableModel):
     def get_all_slugs(self):
         # Example illustration, how to fetch all slugs in a single query:
         return dict(self.translations.values_list('language_code', 'slug'))
+
+
+@python_2_unicode_compatible
+class Category(models.Model):
+    """
+    Example model for inline edition of Articles
+    """
+
+    name = models.CharField("Name", max_length=200)
+
+    class Meta:
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
+
+    def __str__(self):
+        # Fetching the title just works, as all
+        # attributes are proxied to the translated model.
+        # Fallbacks are handled as well.
+        return "{0}".format(self.name)
+
+
+class StackedCategory(Category):
+
+    class Meta:
+        verbose_name = "Stacked Category"
+        verbose_name_plural = "Stacked Categories"
+        proxy = True
+
+
+class TabularCategory(Category):
+
+    class Meta:
+        verbose_name = "Tabular Category"
+        verbose_name_plural = "Tabular Categories"
+        proxy = True
