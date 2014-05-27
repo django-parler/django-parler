@@ -19,15 +19,20 @@ matrix:
     env: DJANGO=1.4.2
 
 install:
+  - pip install -q coveralls --use-mirrors  # installs coverage
   - pip install -q Django==$DJANGO --use-mirrors
   - pip install -q -e . --use-mirrors
+
 script:
-  - python runtests.py
-  - python example/manage.py test article
+  - bash -c "if [ '$DJANGO' -eq '1.6.0' ]; then coverage run example/manage.py test article parler.tests; else coverage run example/manage.py test article parler; fi"
+
+after_success:
+  - coveralls --verbose
 
 branches:
   only:
     - master
+    - coverage
 
 notifications:
   email:
