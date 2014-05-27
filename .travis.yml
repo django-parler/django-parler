@@ -24,7 +24,7 @@ install:
   - pip install -q -e . --use-mirrors
 
 script:
-  - bash -c "if [ '$DJANGO' = '1.6.0' ]; then coverage run example/manage.py test article parler.tests; else coverage run example/manage.py test article parler; fi"
+  - bash -c "if [ '$DJANGO' = '1.6.0' ]; then coverage run --source=example,parler example/manage.py test article parler.tests; else coverage run --source=example,parler example/manage.py test article parler; fi"
 
 after_success:
   - coveralls --verbose
