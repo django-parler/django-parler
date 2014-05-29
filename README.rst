@@ -2,6 +2,10 @@
   :target: http://travis-ci.org/edoburu/django-parler
   :alt: build-status
 
+.. image:: https://coveralls.io/repos/edoburu/django-parler/badge.png?branch=master
+  :target: https://coveralls.io/r/edoburu/django-parler
+  :alt: coverage
+
 django-parler
 =============
 
