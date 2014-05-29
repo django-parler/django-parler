@@ -597,9 +597,10 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
         cls.DoesNotExist = type(str('DoesNotExist'), (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
 
-
     def __unicode__(self):
-        return get_language_title(self.language_code)
+        # use format to avoid weird error in django 1.4
+        # TypeError: coercing to Unicode: need string or buffer, __proxy__ found
+        return "{0}".format(get_language_title(self.language_code))
 
     def __repr__(self):
         return "<{0}: #{1}, {2}, master: #{3}>".format(

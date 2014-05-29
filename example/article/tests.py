@@ -7,24 +7,10 @@ from django.test import TestCase
 from django.contrib import auth
 from django.core.urlresolvers import reverse
 from .models import Article, Category
+from parler.appsettings import PARLER_LANGUAGES
 
 
-class ArticleTestCase(TestCase):
-
-    credentials = {
-        'username': 'admin',
-        'password': 'password'
-    }
-
-    @classmethod
-    def setUpClass(cls):
-        auth.models.User.objects.create_superuser(email='', **cls.credentials)
-
-    def assertInContent(self, member, resp, msg=None):
-        return super(ArticleTestCase, self).assertIn(member, encoding.smart_text(resp.content), msg)
-
-    def assertNotInContent(self, member, resp, msg=None):
-        return super(ArticleTestCase, self).assertNotIn(member, encoding.smart_text(resp.content), msg)
+class TestMixin(object):
 
     def setUp(self):
         cat = Category()
@@ -46,6 +32,15 @@ class ArticleTestCase(TestCase):
         art.save()
 
         self.art_id = art.id
+
+    def assertInContent(self, member, resp, msg=None):
+        return super(TestMixin, self).assertIn(member, encoding.smart_text(resp.content), msg)
+
+    def assertNotInContent(self, member, resp, msg=None):
+        return super(TestMixin, self).assertNotIn(member, encoding.smart_text(resp.content), msg)
+
+
+class ArticleTestCase(TestMixin, TestCase):
 
     def test_home(self):
         resp = self.client.get('/', follow=True)
@@ -70,6 +65,20 @@ class ArticleTestCase(TestCase):
         self.assertTemplateUsed(resp, 'article/details.html')
         self.assertInContent("This is the wonderful recipe of a cheese omelet.", resp)
 
+
+class AdminArticleTestCase(TestMixin, TestCase):
+
+    credentials = {
+        'username': 'admin',
+        'password': 'password'
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        cls.user, _ = auth.models.User.objects.get_or_create(is_superuser=True, is_staff=True, username=cls.credentials['username'])
+        cls.user.set_password(cls.credentials['password'])
+        cls.user.save()
+
     def test_admin_list(self):
         self.client.login(**self.credentials)
         resp = self.client.get(reverse('admin:article_article_changelist'))
@@ -79,14 +88,21 @@ class ArticleTestCase(TestCase):
     @unittest.skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
     def test_admin_add(self):
         self.client.login(**self.credentials)
+
+        # careful, running tests from the example app with
+        # python example/manage.py test article
+        # will fail, because languages declared in the settings are
+        # different, and not in the same order.
+        self.assertEqual('nl', PARLER_LANGUAGES.get_first_language())
+
         resp = self.client.get(reverse('admin:article_article_add'))
         self.assertEqual(200, resp.status_code)
-        self.assertIn('<h1>Add Article (English)</h1>', encoding.smart_text(resp.content))
+        self.assertIn('<h1>Add Article (Dutch)</h1>', encoding.smart_text(resp.content))
 
         translation.activate('fr')
         resp = self.client.get(reverse('admin:article_article_add'))
         self.assertEqual(200, resp.status_code)
-        self.assertInContent('<h1>Ajout Article (Anglais)</h1>', resp)
+        self.assertInContent('<h1>Ajout Article (Hollandais)</h1>', resp)
 
         translation.activate('en')
 
@@ -113,13 +129,25 @@ class ArticleTestCase(TestCase):
     @unittest.skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
     def test_admin_change(self):
         self.client.login(**self.credentials)
+
+        # careful, running tests from the example app with
+        # python example/manage.py test article
+        # will fail, because languages declared in the settings are
+        # different, and not in the same order.
+        self.assertEqual('nl', PARLER_LANGUAGES.get_first_language())
+
+        translation.activate('en')
         resp = self.client.get(reverse('admin:article_article_change', args=[self.art_id]))
+        self.assertEqual(200, resp.status_code)
+        self.assertInContent('<h1>Change Article (Dutch)</h1>', resp)
+
+        resp = self.client.get(reverse('admin:article_article_change', args=[self.art_id]), {"language": "en"})
         self.assertEqual(200, resp.status_code)
         self.assertInContent('<h1>Change Article (English)</h1>', resp)
         self.assertInContent('name="title" type="text" value="Cheese omelet"', resp)
 
         translation.activate('fr')
-        resp = self.client.get(reverse('admin:article_article_change', args=[self.art_id]))
+        resp = self.client.get(reverse('admin:article_article_change', args=[self.art_id]), {"language": "en"})
         self.assertEqual(200, resp.status_code)
         self.assertInContent('<h1>Modification de Article (Anglais)</h1>', resp)
         self.assertInContent('name="title" type="text" value="Cheese omelet"', resp)

@@ -401,7 +401,13 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         Fetch the inline translations
         """
-        for inline in self.get_inline_instances(request, obj=obj):
+        # django 1.4 do not accept the obj parameter
+        if django.VERSION < (1, 5):
+            inline_instances = self.get_inline_instances(request)
+        else:
+            inline_instances = self.get_inline_instances(request, obj=obj)
+
+        for inline in inline_instances:
             if issubclass(inline.model, TranslatableModel):
                 # leverage inlineformset_factory() to find the ForeignKey.
                 # This also resolves the fk_name if it's set.
