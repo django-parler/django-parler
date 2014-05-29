@@ -24,7 +24,7 @@ install:
   - pip install -q -e . --use-mirrors
 
 script:
-  - coverage run --source=example,parler runtests.py
+  - coverage run --source=example/article,parler runtests.py
 
 after_success:
   - coveralls --verbose
