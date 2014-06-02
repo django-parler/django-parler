@@ -1,15 +1,19 @@
 import django
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.forms.models import modelform_factory
+from django.http import Http404, HttpResponsePermanentRedirect
+from django.utils import translation
 from django.views import generic
 from django.views.generic.edit import ModelFormMixin
 from parler.forms import TranslatableModelForm
 from parler.models import TranslatableModel
+from parler.utils import get_active_language_choices
 from parler.utils.views import get_language_parameter, get_language_tabs
 
 __all__ = (
     'ViewUrlMixin',
+    'TranslatableSlugMixin',
     'TranslatableSingleObjectMixin',
     'TranslatableModelFormMixin',
     'TranslatableCreateView',
@@ -56,6 +60,84 @@ class ViewUrlMixin(object):
                 kwargs['view'] = self
             return kwargs
 
+
+class TranslatableSlugMixin(object):
+    """
+    An enhancement for the :class:`~django.views.generic.DetailView` to deal with translated slugs.
+    This view makes sure that:
+
+    * The object is fetched in the proper translation.
+    * Fallback languages are handled.
+    * Objects are not accidentally displayed in their fallback slug, but redirect to the translated slug.
+    """
+    def get_translated_filters(self, slug):
+        """
+        Allow passing other filters for translated fields.
+        """
+        return {
+            self.get_slug_field(): slug
+        }
+
+    def get_language(self):
+        """
+        Define the language of the current view, defaults to the active language.
+        """
+        return translation.get_language()
+
+    def get_language_choices(self):
+        """
+        Define the language choices for the view, defaults to the defined settings.
+        """
+        return get_active_language_choices(self.get_language())
+
+    def get_object(self, queryset=None):
+        """
+        Fetch the object using a translated slug.
+        """
+        if queryset is None:
+            queryset = self.get_queryset()
+
+        slug = self.kwargs[self.slug_url_kwarg]
+        choices = self.get_language_choices()
+
+        obj = None
+        using_fallback = False
+        for lang_choice in choices:
+            try:
+                # Get the single item from the filtered queryset
+                # NOTE. Explicitly set language to the state the object was fetched in.
+                filters = self.get_translated_filters(slug=slug)
+                obj = queryset.translated(lang_choice, **filters).language(lang_choice).get()
+            except ObjectDoesNotExist:
+                # Translated object not found,
+                # next object is marked as fallback.
+                using_fallback = True
+            else:
+                if using_fallback:
+                    # NOTE: it could happen that objects are resolved using their fallback language,
+                    # but the actual translation also exists. This is handled in render_to_response() below.
+                    setattr(obj, "_fetched_in_fallback_language", lang_choice)
+
+        if obj is None:
+            tried_msg = u", tried languages: {0}".format(u", ".join(choices))
+            error_message = translation.ugettext(u"No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
+            raise Http404(error_message + tried_msg)
+
+        return obj
+
+    def render_to_response(self, context, **response_kwargs):
+        # Check whether the object was fetched in the fallback language
+        requested_languages = self.get_language_choices()
+        if getattr(self.object, '_fetched_in_fallback_language', False) \
+           and self.object.has_translation(requested_languages[0]):
+            # The object was resolved via the fallback language,
+            # but it has an official URL in the translated language.
+            # Although get_object() could have raised a 404,
+            # we provide some service by redirecting users.
+            self.object.set_current_language(requested_languages[0])
+            return HttpResponsePermanentRedirect(self.object.get_absolute_url())
+
+        return super(TranslatableSlugMixin, self).render_to_response(context, **response_kwargs)
 
 
 class TranslatableSingleObjectMixin(object):

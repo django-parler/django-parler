@@ -1,6 +1,9 @@
 Changes in version 1.0 (in development)
 ---------------------------------------
 
+* Added ``TranslatableSlugMixin``, to be used for detail views.
+
+
 Released in 1.0b2:
 ~~~~~~~~~~~~~~~~~~
 
