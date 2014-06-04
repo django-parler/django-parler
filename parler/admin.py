@@ -2,16 +2,9 @@
 Translation support for admin forms.
 """
 import django
-from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
-try:
-    from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
-except ImportError:
-    # Django <1.6 does not preserve filters
-    def add_preserved_filters(context, form_url):
-        return form_url
 from django.contrib.admin.util import get_deleted_objects, unquote
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
@@ -29,7 +22,7 @@ from parler import appsettings
 from parler.forms import TranslatableModelForm
 from parler.managers import TranslatableQuerySet
 from parler.models import TranslatableModel
-from parler.utils.compat import transaction_atomic
+from parler.utils.compat import transaction_atomic, add_preserved_filters
 from parler.utils.i18n import get_language_title, is_multilingual_project
 from parler.utils.views import get_language_parameter, get_language_tabs
 from parler.utils.template import select_template_name

@@ -78,6 +78,9 @@ class TranslatableModelFormMixin(object):
             else:
                 self.language_code = current_language or get_language()
 
+        # Make sure the language code is set as early as possible (so it's active during clean() methods)
+        #self.instance.set_current_language(self.language_code)
+
     def save(self, *args, **kwargs):
         # Using args, kwargs to support custom parent arguments too.
         self.instance.set_current_language(self.language_code)
