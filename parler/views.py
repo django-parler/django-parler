@@ -142,7 +142,8 @@ class TranslatableSlugMixin(object):
 
 class TranslatableSingleObjectMixin(object):
     """
-    Mixin to add translation support to class based views.
+    Mixin to add translation support to class based views, particularly create and update views.
+    It adds support for the ``?language=..`` parameter in the query string.
     """
     query_language_key = 'language'
 
