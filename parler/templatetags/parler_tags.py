@@ -1,6 +1,8 @@
+import inspect
 from django.core.urlresolvers import resolve, reverse, Resolver404
 from django.template import Node, Library, TemplateSyntaxError
 from django.utils.translation import get_language
+from django.utils import six
 from parler.models import TranslatableModel, TranslationDoesNotExist
 from parler.utils.context import switch_language, smart_override
 
@@ -142,4 +144,14 @@ def get_translated_url(context, lang_code, object=None):
         return ''
 
     with smart_override(lang_code):
-        return reverse(resolvermatch.view_name, args=resolvermatch.args, kwargs=resolvermatch.kwargs)
+        clean_kwargs = _cleanup_urlpattern_kwargs(resolvermatch.kwargs)
+        return reverse(resolvermatch.view_name, args=resolvermatch.args, kwargs=clean_kwargs)
+
+
+def _cleanup_urlpattern_kwargs(kwargs):
+    # For old function-based views, the url kwargs can pass extra arguments to the view.
+    # Although these arguments don't have to be passed back to reverse(),
+    # it's not a problem because the reverse() function just ignores them as there is no match.
+    # However, for class values, an exception occurs because reverse() wants to force_text() them.
+    # Hence, remove the kwargs to avoid internal server errors on some exotic views.
+    return dict((k, v) for k, v in six.iteritems(kwargs) if not inspect.isclass(v))
