@@ -9,6 +9,7 @@ from django.views.generic.edit import ModelFormMixin
 from parler.forms import TranslatableModelForm
 from parler.models import TranslatableModel
 from parler.utils import get_active_language_choices
+from parler.utils.context import switch_language
 from parler.utils.views import get_language_parameter, get_language_tabs
 
 __all__ = (
@@ -90,6 +91,14 @@ class TranslatableSlugMixin(object):
         """
         return get_active_language_choices(self.get_language())
 
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super(TranslatableSlugMixin, self).dispatch(request, *args, **kwargs)
+        except FallbackLanguageResolved as e:
+            # Handle the fallback language redirect for get_object()
+            with switch_language(e.object, e.correct_language):
+                return HttpResponsePermanentRedirect(e.object.get_absolute_url())
+
     def get_object(self, queryset=None):
         """
         Fetch the object using a translated slug.
@@ -102,6 +111,7 @@ class TranslatableSlugMixin(object):
 
         obj = None
         using_fallback = False
+        prev_choices = []
         for lang_choice in choices:
             try:
                 # Get the single item from the filtered queryset
@@ -109,35 +119,42 @@ class TranslatableSlugMixin(object):
                 filters = self.get_translated_filters(slug=slug)
                 obj = queryset.translated(lang_choice, **filters).language(lang_choice).get()
             except ObjectDoesNotExist:
-                # Translated object not found,
-                # next object is marked as fallback.
+                # Translated object not found, next object is marked as fallback.
                 using_fallback = True
+                prev_choices.append(lang_choice)
             else:
-                if using_fallback:
-                    # NOTE: it could happen that objects are resolved using their fallback language,
-                    # but the actual translation also exists. This is handled in render_to_response() below.
-                    setattr(obj, "_fetched_in_fallback_language", lang_choice)
+                break
 
         if obj is None:
             tried_msg = u", tried languages: {0}".format(u", ".join(choices))
             error_message = translation.ugettext(u"No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
             raise Http404(error_message + tried_msg)
 
+        # Object found!
+        if using_fallback:
+            # It could happen that objects are resolved using their fallback language,
+            # but the actual translation also exists. Either that means this URL should
+            # raise a 404, or a redirect could be made as service to the users.
+            # It's possible that the old URL was active before in the language domain/subpath
+            # when there was no translation yet.
+            for prev_choice in prev_choices:
+                if obj.has_translation(prev_choice):
+                    # Only dispatch() and render_to_response() can return a valid response,
+                    # By breaking out here, this functionality can't be broken by users overriding render_to_response()
+                    raise FallbackLanguageResolved(obj, prev_choice)
+
         return obj
 
-    def render_to_response(self, context, **response_kwargs):
-        # Check whether the object was fetched in the fallback language
-        requested_languages = self.get_language_choices()
-        if getattr(self.object, '_fetched_in_fallback_language', False) \
-           and self.object.has_translation(requested_languages[0]):
-            # The object was resolved via the fallback language,
-            # but it has an official URL in the translated language.
-            # Although get_object() could have raised a 404,
-            # we provide some service by redirecting users.
-            self.object.set_current_language(requested_languages[0])
-            return HttpResponsePermanentRedirect(self.object.get_absolute_url())
 
-        return super(TranslatableSlugMixin, self).render_to_response(context, **response_kwargs)
+class FallbackLanguageResolved(Exception):
+    """
+    An object was resolved in the fallback language, while it could be in the normal language.
+    This exception is used internally to control code flow.
+    """
+    def __init__(self, object, correct_language):
+        self.object = object
+        self.correct_language = correct_language
+
 
 
 class TranslatableSingleObjectMixin(object):
