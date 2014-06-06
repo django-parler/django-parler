@@ -58,8 +58,8 @@ class UrlTests(AppTestCase):
             }
 
             # Simulate {% get_translated_url CODE object %} syntax
-            self.assertEquals(get_translated_url(context, lang_code=self.other_lang2), '/{0}/article/lang2/'.format(self.other_lang2))
-            self.assertEquals(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/article/default/'.format(self.conf_fallback))
+            self.assertEqual(get_translated_url(context, lang_code=self.other_lang2), '/{0}/article/lang2/'.format(self.other_lang2))
+            self.assertEqual(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/article/default/'.format(self.conf_fallback))
 
     def test_get_translated_url_view_kwargs(self):
         """
@@ -67,15 +67,15 @@ class UrlTests(AppTestCase):
         """
         with translation.override(self.other_lang1):
             url = reverse('view-kwargs-test-view')
-            self.assertEquals(url, '/{0}/tests/kwargs-view/'.format(self.other_lang1))
+            self.assertEqual(url, '/{0}/tests/kwargs-view/'.format(self.other_lang1))
 
             context = {
                 'request': RequestFactory().get(url),
             }
 
             # Simulate {% get_translated_url CODE object %} syntax
-            self.assertEquals(get_translated_url(context, lang_code=self.other_lang2), '/{0}/tests/kwargs-view/'.format(self.other_lang2))
-            self.assertEquals(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/tests/kwargs-view/'.format(self.conf_fallback))
+            self.assertEqual(get_translated_url(context, lang_code=self.other_lang2), '/{0}/tests/kwargs-view/'.format(self.other_lang2))
+            self.assertEqual(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/tests/kwargs-view/'.format(self.conf_fallback))
 
     def test_translatable_slug_mixin(self):
         """
@@ -97,5 +97,5 @@ class UrlTests(AppTestCase):
         # Try call on the default slug (which is resolvable), although there is a translated version.
         with translation.override(self.other_lang2):
             response = self.client.get('/{0}/article/default/'.format(self.other_lang2))
-            self.assertEquals(response.status_code, 301, "Unexpected response, got: {0}, expected 301".format(response.content))
-            self.assertEquals(response['Location'], 'http://testserver/{0}/article/lang2/'.format(self.other_lang2))
+            self.assertEqual(response.status_code, 301, "Unexpected response, got: {0}, expected 301".format(response.content))
+            self.assertEqual(response['Location'], 'http://testserver/{0}/article/lang2/'.format(self.other_lang2))

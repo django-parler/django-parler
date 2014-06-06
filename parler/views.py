@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import django
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
@@ -126,8 +127,8 @@ class TranslatableSlugMixin(object):
                 break
 
         if obj is None:
-            tried_msg = u", tried languages: {0}".format(u", ".join(choices))
-            error_message = translation.ugettext(u"No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
+            tried_msg = ", tried languages: {0}".format(", ".join(choices))
+            error_message = translation.ugettext("No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
             raise Http404(error_message + tried_msg)
 
         # Object found!
