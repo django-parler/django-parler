@@ -237,15 +237,15 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             if not language_tabs.current_is_translated:
                 add = True  # lets prepopulated_fields_js work.
 
+            # Patch form_url to contain the "language" GET parameter.
+            # Otherwise AdminModel.render_change_form will clean the URL
+            # and remove the "language" when coming from a filtered object
+            # list causing the wrong translation to be changed.
+            form_url = add_preserved_filters({'preserved_filters': urlencode({'language': lang_code}), 'opts': self.model._meta}, form_url)
+
         # django-fluent-pages uses the same technique
         if 'default_change_form_template' not in context:
             context['default_change_form_template'] = self.get_change_form_base_template()
-
-        # Patch form_url to contain the "language" GET parameter.
-        # Otherwise AdminModel.render_change_form will clean the URL
-        # and remove the "language" when coming from a filtered object
-        # list causing the wrong translation to be changed.
-        form_url = add_preserved_filters({'preserved_filters': urlencode({'language': lang_code}), 'opts': self.model._meta}, form_url)
 
         #context['base_template'] = self.get_change_form_base_template()
         return super(TranslatableAdmin, self).render_change_form(request, context, add, change, form_url, obj)
