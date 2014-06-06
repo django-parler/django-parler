@@ -93,6 +93,10 @@ class TranslatedFieldDescriptor(object):
     def __repr__(self):
         return "<{0} for {1}.{2}>".format(self.__class__.__name__, self.field.model.__name__, self.field.name)
 
+    def short_description(self):
+        """ Renders the correct verbose name for the translated fields"""
+        return self.field.model._translations_model._meta.get_field_by_name(self.field.name)[0].verbose_name
+
 
 class LanguageCodeDescriptor(object):
     """
