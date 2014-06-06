@@ -1,5 +1,6 @@
 {% extends default_change_form_template|default:"admin/change_form.html" %}
 
-{% block object-tools %}{{ block.super }}
+{% block field_sets %}
 {% if language_tabs %}{% include "admin/parler/language_tabs.html" %}{% endif %}
+{{ block.super }}
 {% endblock %}
