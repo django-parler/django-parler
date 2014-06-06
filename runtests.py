@@ -31,6 +31,7 @@ if not settings.configured:
             'parler',
             'parler.tests.testapp',
         ),
+        ROOT_URLCONF = 'parler.tests.testapp.urls',
         TEST_RUNNER='django.test.simple.DjangoTestSuiteRunner',   # for Django 1.6, see https://docs.djangoproject.com/en/dev/releases/1.6/#new-test-runner
 
         SITE_ID = 4,

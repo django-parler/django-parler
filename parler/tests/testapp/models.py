@@ -1,6 +1,8 @@
+from django.core.urlresolvers import reverse
 from django.db import models
 from parler.fields import TranslatedField
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
+from parler.utils.context import switch_language
 
 
 class ManualModel(TranslatableModel):
@@ -44,3 +46,16 @@ class EmptyModel(TranslatableModel):
 
     def __unicode__(self):
         return self.shared
+
+
+class ArticleSlugModel(TranslatableModel):
+    translations = TranslatedFields(
+        slug = models.SlugField()
+    )
+
+    def __unicode__(self):
+        return self.slug
+
+    def get_absolute_url(self):
+        with switch_language(self):
+            return reverse('article-slug-test-view', kwargs={'slug': self.slug})
