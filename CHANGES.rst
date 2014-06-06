@@ -2,6 +2,7 @@ Changes in version 1.0 (in development)
 ---------------------------------------
 
 * Added ``TranslatableSlugMixin``, to be used for detail views.
+* Fixed translated field names in admin ``list_display``, added ``short_description`` to ``TranslatedFieldDescriptor``
 
 
 Released in 1.0b2:
