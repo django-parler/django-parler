@@ -9,4 +9,4 @@ class ArticleSlugView(TranslatableSlugMixin, DetailView):
     slug_field = 'slug'
 
     def render_to_response(self, context, **response_kwargs):
-        return HttpResponse(u'view: {0}'.format(context['object'].slug))
+        return HttpResponse('view: {0}'.format(context['object'].slug))
