@@ -1,6 +1,7 @@
 """
 Translation support for admin forms.
 """
+from __future__ import unicode_literals
 import django
 from django.conf.urls import patterns, url
 from django.contrib import admin
@@ -157,7 +158,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         languages = self.get_available_languages(object)
         languages = [self.get_language_short_title(code) for code in languages]
-        return u'<span class="available-languages">{0}</span>'.format(' '.join(languages))
+        return '<span class="available-languages">{0}</span>'.format(' '.join(languages))
 
     language_column.allow_tags = True
     language_column.short_description = _("Languages")
