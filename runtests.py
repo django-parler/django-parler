@@ -7,6 +7,8 @@ from os import path
 if not settings.configured:
     module_root = path.dirname(path.realpath(__file__))
 
+    sys.path.append(path.join(module_root, 'example'))
+
     settings.configure(
         DEBUG = False,  # will be False anyway by DjangoTestRunner.
         TEMPLATE_DEBUG = True,
@@ -18,6 +20,7 @@ if not settings.configured:
         },
         TEMPLATE_LOADERS = (
             'django.template.loaders.app_directories.Loader',
+            'django.template.loaders.filesystem.Loader',
         ),
         TEMPLATE_CONTEXT_PROCESSORS = default_settings.TEMPLATE_CONTEXT_PROCESSORS + (
             'django.core.context_processors.request',
@@ -30,8 +33,13 @@ if not settings.configured:
             'django.contrib.sessions',
             'parler',
             'parler.tests.testapp',
+            'article',
+            'theme1',
         ),
-        ROOT_URLCONF = 'parler.tests.testapp.urls',
+        MIDDLEWARE_CLASSES=default_settings.MIDDLEWARE_CLASSES + (
+            'django.middleware.locale.LocaleMiddleware',  # / will be redirected to /<locale>/
+        ),
+        ROOT_URLCONF = 'example.urls',
         TEST_RUNNER='django.test.simple.DjangoTestSuiteRunner',   # for Django 1.6, see https://docs.djangoproject.com/en/dev/releases/1.6/#new-test-runner
 
         SITE_ID = 4,
@@ -48,8 +56,9 @@ if not settings.configured:
         },
     )
 
+
 def runtests():
-    argv = sys.argv[:1] + ['test', 'parler'] + sys.argv[1:]
+    argv = sys.argv[:1] + ['test', 'parler', 'article'] + sys.argv[1:]
     execute_from_command_line(argv)
 
 if __name__ == '__main__':

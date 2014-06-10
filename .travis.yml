@@ -4,6 +4,7 @@ python:
   - "2.7"
   - "3.2"
   - "3.3"
+  - "3.4"
 env:
   - DJANGO=1.4.2
   - DJANGO=1.5.1
@@ -14,12 +15,19 @@ matrix:
     env: DJANGO=1.4.2
   - python: "3.3"
     env: DJANGO=1.4.2
+  - python: "3.4"
+    env: DJANGO=1.4.2
 
 install:
+  - pip install -q coveralls --use-mirrors  # installs coverage
   - pip install -q Django==$DJANGO --use-mirrors
   - pip install -q -e . --use-mirrors
+
 script:
-  - python runtests.py
+  - coverage run --source=example/article,parler runtests.py
+
+after_success:
+  - coveralls --verbose
 
 branches:
   only:
