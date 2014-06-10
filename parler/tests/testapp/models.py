@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.core.urlresolvers import reverse
 from django.db import models
 from parler.fields import TranslatedField
@@ -17,7 +18,7 @@ class SimpleModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
     translations = TranslatedFields(
-        tr_title = models.CharField(max_length=200)
+        tr_title = models.CharField("Translated Title", max_length=200)
     )
 
     def __unicode__(self):
@@ -59,3 +60,17 @@ class ArticleSlugModel(TranslatableModel):
     def get_absolute_url(self):
         with switch_language(self):
             return reverse('article-slug-test-view', kwargs={'slug': self.slug})
+
+
+class AbstractModel(TranslatableModel):
+    # Already declared, but not yet linkable to a TranslatedFieldsModel
+    tr_title = TranslatedField(any_language=True)
+
+    class Meta:
+        abstract = True
+
+
+class ConcreteModel(AbstractModel):
+    translations = TranslatedFields(
+        tr_title = models.CharField("Translated Title", max_length=200)
+    )

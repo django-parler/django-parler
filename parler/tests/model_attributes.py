@@ -1,8 +1,6 @@
 from __future__ import unicode_literals
-from django.conf import settings
 from django.utils import translation
 from parler.models import TranslationDoesNotExist
-from parler import appsettings
 from .utils import AppTestCase
 from .testapp.models import SimpleModel, AnyLanguageModel, EmptyModel
 

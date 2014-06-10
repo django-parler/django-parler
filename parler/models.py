@@ -585,13 +585,22 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
             try:
                 # Check if the field already exists.
                 # Note that the descriptor even proxies this request, so it should return our field.
-                field = getattr(shared_model, name)
+                shared_field = getattr(shared_model, name)
             except AttributeError:
                 # Add the proxy field for the shared field.
                 TranslatedField().contribute_to_class(shared_model, name)
             else:
-                if not isinstance(field, (models.Field, TranslatedFieldDescriptor)):
+                # Currently not allowing to replace existing model fields with translatable fields.
+                # That would be a nice feature addition however.
+                if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)):
                     raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
+
+                # When the descriptor was placed on an abstract model,
+                # it doesn't point to the real model that holds the _translations_model
+                # "Upgrade" the descriptor on the class
+                if shared_field.field.model is not shared_model:
+                    TranslatedField(any_language=shared_field.field.any_language).contribute_to_class(shared_model, name)
+
 
         # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.

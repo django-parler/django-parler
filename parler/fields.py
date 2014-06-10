@@ -3,6 +3,7 @@ Model fields
 """
 from __future__ import unicode_literals
 from django.db.models.fields import Field
+from django.forms.forms import pretty_name
 
 
 # TODO: inherit RelatedField?
@@ -51,6 +52,9 @@ class TranslatedFieldDescriptor(object):
     This attribute proxies all get/set calls to the translated model.
     """
     def __init__(self, field):
+        """
+        :type field: TranslatedField
+        """
         self.field = field
 
     def __get__(self, instance, instance_type=None):
@@ -93,11 +97,26 @@ class TranslatedFieldDescriptor(object):
     def __repr__(self):
         return "<{0} for {1}.{2}>".format(self.__class__.__name__, self.field.model.__name__, self.field.name)
 
+    @property
     def short_description(self):
         """
         Ensure that the admin ``list_display`` renders the correct verbose name for translated fields.
+
+        The :func:`~django.contrib.admin.util.label_for_field` function
+        uses :func:`~django.db.models.Options.get_field_by_name` to find the find and ``verbose_name``.
+        However, for translated fields, this option does not exist,
+        hence it falls back to reading the attribute and trying ``short_description``.
+        Ideally, translated fields should also appear in this list, to be treated like regular fields.
         """
-        return self.field.model._translations_model._meta.get_field_by_name(self.field.name)[0].verbose_name
+        model = self.field.model
+        translations_model = model._translations_model
+        if translations_model is None:
+            # This only happens with abstract models. The code is accessing the descriptor at the base model directly,
+            # not the upgraded descriptor version that contribute_translations() installed.
+            # Fallback to what the admin label_for_field() would have done otherwise.
+            return pretty_name(self.field.name)
+
+        return translations_model._meta.get_field_by_name(self.field.name)[0].verbose_name
 
 
 class LanguageCodeDescriptor(object):
