@@ -41,6 +41,7 @@ class TestMixin(object):
 
 
 class ArticleTestCase(TestMixin, TestCase):
+    urls = 'example.urls'
 
     def test_home(self):
         resp = self.client.get('/', follow=True)
