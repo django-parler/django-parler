@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 from django.core.urlresolvers import reverse
-from django.utils import translation
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from parler.models import TranslatableModel, TranslatedFields
+from parler.utils.context import switch_language
 
 
 @python_2_unicode_compatible
@@ -34,9 +34,9 @@ class Article(TranslatableModel):
         return "{0}".format(self.title)
 
     def get_absolute_url(self):
-        # The override is only needed because we use the /##/ prefix by i18n_patterns()
+        # The switch_language() is needed because we use the /##/ prefix by i18n_patterns()
         # If the language is part of the URL parameters, you can pass it directly off course.
-        with translation.override(self.get_current_language()):
+        with switch_language(self):
             return reverse('article-details', kwargs={'slug': self.slug})
 
     def get_all_slugs(self):

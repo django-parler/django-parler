@@ -1,7 +1,7 @@
-from django.http import Http404
 from django.utils.translation import get_language
 from django.views.generic import ListView, DetailView
 from .models import Article
+from parler.views import TranslatableSlugMixin
 
 
 class BaseArticleMixin(object):
@@ -20,15 +20,6 @@ class ArticleListView(BaseArticleMixin, ListView):
         return super(ArticleListView, self).get_queryset().filter(translations__language_code=language)
 
 
-class ArticleDetailView(BaseArticleMixin, DetailView):
+class ArticleDetailView(BaseArticleMixin, TranslatableSlugMixin, DetailView):
     model = Article
-    slug_field = 'translations__slug'
     template_name = 'article/details.html'  # This works as expected
-
-    def get_object(self, queryset=None):
-        slug = self.kwargs['slug']
-        language = get_language()
-        try:
-            return self.get_queryset().get(translations__language_code=language, translations__slug=slug)
-        except Article.DoesNotExist as e:
-            raise Http404(e)
