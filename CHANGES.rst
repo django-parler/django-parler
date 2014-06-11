@@ -1,9 +1,12 @@
 Changes in version 1.0 (in development)
 ---------------------------------------
 
+Released in 1.0b3:
+~~~~~~~~~~~~~~~~~~
+
 * Added ``TranslatableSlugMixin``, to be used for detail views.
 * Fixed translated field names in admin ``list_display``, added ``short_description`` to ``TranslatedFieldDescriptor``
-* Fix internal server errors in get_translated_url for function-based views with class kwargs
+* Fix internal server errors in ``{% get_translated_url %}`` for function-based views with class kwargs
 * Improved admin layout for ``save_on_top=True``.
 
 
