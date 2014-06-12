@@ -1,3 +1,7 @@
+.. image:: https://badge.fury.io/py/django-parler.png
+  :target: http://badge.fury.io/py/django-parler
+  :alt: PyPI version
+
 .. image::  https://travis-ci.org/edoburu/django-parler.png?branch=master
   :target: http://travis-ci.org/edoburu/django-parler
   :alt: build-status
