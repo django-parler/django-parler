@@ -1,5 +1,6 @@
 from django import forms
-from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
+from django.core.exceptions import ValidationError
+from django.forms.models import ModelFormMetaclass, BaseInlineFormSet, construct_instance
 from django.utils.translation import get_language
 from django.utils import six
 from parler.models import TranslationDoesNotExist
@@ -67,6 +68,21 @@ class TranslatableModelFormMixin(object):
 
         # Make sure the language code is set as early as possible (so it's active during clean() methods)
         #self.instance.set_current_language(self.language_code)
+
+    def _post_clean(self):
+        # To check unique fields in translated model first a throwaway instance
+        # the translated model is built from the form data, then the validate
+        # unique on this instance is performed
+        super(TranslatableModelFormMixin, self)._post_clean()
+        opts = self._meta
+        translation = self.instance._get_translated_model(auto_create=True)
+        translation = construct_instance(self, translation, opts.fields, opts.exclude)
+
+        exclude = self._get_validation_exclusions()
+        try:
+            translation.validate_unique(exclude)
+        except ValidationError as e:
+            self._update_errors(e)
 
     def save(self, *args, **kwargs):
         # Using args, kwargs to support custom parent arguments too.
