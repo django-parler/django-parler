@@ -46,6 +46,35 @@ There are a few solutions to this problem:
    Note that the same `ORM restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ apply here.
 
 
+Multi-site support
+------------------
+
+When using the sites framework (:mod:`django.contrib.sites`) and the :django:setting:`SITE_ID`
+setting, the dict can contain entries for every site ID.
+See the :ref:`configuration <multisite-configuration>` for more details.
+
+
+Using translated slugs in views
+-------------------------------
+
+To handle translatable slugs in the :class:`~django.views.generic.detail.DetailView`,
+the :class:`~parler.views.TranslatableSlugMixin` can be used to make this work smoothly.
+For example::
+
+.. code-block:: python
+
+    class ArticleDetailView(TranslatableSlugMixin, DetailView):
+        model = Article
+        template_name = 'article/details.html'
+
+The :class:`~parler.views.TranslatableSlugMixin` makes sure that:
+
+* The object is fetched in the proper translation.
+* The slug field is read from the translation model, instead of the shared model.
+* Fallback languages are handled.
+* Objects are not accidentally displayed in their fallback slug, but redirect to the translated slug.
+
+
 Constructing the translations model manually
 --------------------------------------------
 

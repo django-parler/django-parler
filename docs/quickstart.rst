@@ -41,42 +41,12 @@ Optionally, the admin tabs can be configured too::
         }
     }
 
-When using ``settings.SITE_ID`` which is a setting of the sites framework
-(``django.contrib.sites``) the ``PARLER_LANGUAGES`` dict can contain
-site specific settings and the special ``None`` key is no longer used::
-
-    PARLER_LANGUAGES = {
-        # Global site
-        1: (
-            {'code': 'en',},
-            {'code': 'en-us',},
-            {'code': 'it',},
-            {'code': 'nl',},
-        ),
-        # US site
-        2: (
-            {'code': 'en-us',},
-            {'code': 'en',},
-        ),
-        # IT site
-        3: (
-            {'code': 'it',},
-            {'code': 'en',},
-        ),
-        # NL site
-        3: (
-            {'code': 'nl',},
-            {'code': 'en',},
-        ),
-        'default': {
-            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
-            'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
-        }
-    }
+Replace ``None`` with the :django:setting:`SITE_ID` when you run a multi-site project with the sites framework.
+Each :django:setting:`SITE_ID` can be added as additional entry in the dictionary.
 
 
-Basic example
--------------
+Constructing the model
+----------------------
 
 Extend the model class::
 
@@ -94,6 +64,9 @@ Extend the model class::
 
         def __unicode__(self):
             return self.title
+
+Using translated fields
+-----------------------
 
 Now, the ``title`` field is translated.
 The translated fields can be accessed directly::

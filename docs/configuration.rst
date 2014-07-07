@@ -57,6 +57,7 @@ The following entries are available:
 
     The default is ``False``.
 
+.. _multisite-configuration:
 
 Multi-site support
 ~~~~~~~~~~~~~~~~~~
@@ -92,6 +93,9 @@ setting, the dict can contain entries for every site ID. The special ``None`` ke
             'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
         }
     }
+
+In this example, each language variant only display 2 tabs in the admin,
+while the global site has an overview of all languages.
 
 
 .. _PARLER_ENABLE_CACHING:

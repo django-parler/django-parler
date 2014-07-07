@@ -107,6 +107,7 @@ class TranslatableSlugMixin(object):
     This view makes sure that:
 
     * The object is fetched in the proper translation.
+    * The slug field is read from the translation model, instead of the shared model.
     * Fallback languages are handled.
     * Objects are not accidentally displayed in their fallback slug, but redirect to the translated slug.
 

@@ -34,9 +34,7 @@ Installation
 
 First install the module, preferably in a virtual environment::
 
-    git clone https://github.com/edoburu/django-parler.git
-    cd django-parler
-    pip install .
+    pip install django-parler
 
 Configuration
 -------------
@@ -53,7 +51,6 @@ The fallback language can be changed in the settings::
 
     PARLER_DEFAULT_LANGUAGE_CODE = 'en'
 
-
 Optionally, the admin tabs can be configured too::
 
     PARLER_LANGUAGES = {
@@ -69,42 +66,11 @@ Optionally, the admin tabs can be configured too::
         }
     }
 
-When using ``settings.SITE_ID`` which is a setting of the sites framework
-(``django.contrib.sites``) the ``PARLER_LANGUAGES`` dict can contain
-site specific settings and the special ``None`` key is no longer used::
-
-    PARLER_LANGUAGES = {
-        # Global site
-        1: (
-            {'code': 'en',},
-            {'code': 'en-us',},
-            {'code': 'it',},
-            {'code': 'nl',},
-        ),
-        # US site
-        2: (
-            {'code': 'en-us',},
-            {'code': 'en',},
-        ),
-        # IT site
-        3: (
-            {'code': 'it',},
-            {'code': 'en',},
-        ),
-        # NL site
-        3: (
-            {'code': 'nl',},
-            {'code': 'en',},
-        ),
-        'default': {
-            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
-            'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
-        }
-    }
+Replace ``None`` with the ``SITE_ID`` when you run a multi-site project with the sites framework.
 
 
-Basic example
--------------
+Creating the model
+------------------
 
 Extend the model class::
 
@@ -126,7 +92,7 @@ Extend the model class::
 Now, the ``title`` field is translated.
 
 
-Using translated fields
+Using translated models
 -----------------------
 
 Translated fields can be accessed directly::
@@ -145,8 +111,10 @@ Translated fields can be accessed directly::
     >>> object.save()
 
 When an attribute is not translated yet, the default language will be returned.
-The default language is configured by the ``PARLER_DEFAULT_LANGUAGE_CODE``
-or ``PARLER_DEFAULT_LANGUAGE_CODE['default']['fallback']`` setting.
+
+
+Fetching translations
+~~~~~~~~~~~~~~~~~~~~~
 
 The objects can be fetched in a specific language::
 
@@ -158,28 +126,19 @@ The objects can be fetched in a specific language::
 Filtering translated objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To restrict the queryset to translated objects only, the following methods are available:
+To restrict the queryset to translated objects only, the following ORM methods are available:
 
-* ``MyObject.objects.translated(*language_codes, **translated_fields)`` - return only objects with a translation of ``language_codes``.
-* ``MyObject.objects.active_translations(language_code=None, **translated_fields)`` - return only objects for the current language (and fallback if this applies).
+* ``translated(*language_codes, **translated_fields)`` - return only objects with a translation of ``language_codes``.
+* ``active_translations(language_code=None, **translated_fields)`` - return only objects for the current language (and fallback if this applies).
+
+For example:
+
+    MyObject.objects.translated(slug='omelette')
+
+    MyObject.objects.active_translations(slug='omelette')
 
 The ``active_translations()`` method also returns objects which are translated in the fallback language,
 unless ``hide_untranslated = True`` is used in the ``PARLER_LANGUAGES`` setting.
-
-If you have to query a language and translated attribute, query both in a single ``.filter()`` call::
-
-    from parler.utils import get_active_language_choices
-
-    MyObject.objects.filter(
-        translations__language_code__in=get_active_language_choices(),
-        translations__slug='omelette'
-    )
-
-For convenience, use the provided methods::
-
-    MyObject.objects.translated(get_active_language_choices(), slug='omelette')
-
-    MyObject.objects.active_translations(slug='omelette')
 
 .. note::
    Due to Django ORM design, queries on the translated fields model should occur in a single ``.filter(..)`` or ``.translated(..)`` call.
