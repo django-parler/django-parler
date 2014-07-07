@@ -16,3 +16,21 @@ on the :class:`~django.contrib.admin.ModelAdmin` definition.
 The Django 1.4 admin validation doesn't actually check the form fields,
 but only checks whether the fields exist in the model - which they obviously don't.
 Using ``declared_fieldsets`` instead of ``fieldsets`` circumvents this check.
+
+Using prepopulated_fields
+-------------------------
+
+Using :attr:`~django.contrib.admin.ModelAdmin.prepopulated_fields` doesn't work yet,
+as the admin will complain that the field does not exist.
+Use :func:`~django.contrib.admin.ModelAdmin.get_prepopulated_fields` as workaround::
+
+    from parler.admin import TranslatableAdmin
+
+    class MyModelAdmin(TranslatableAdmin):
+
+        def get_prepopulated_fields(self, request, obj=None):
+            # can't use `prepopulated_fields = ..` because it breaks the admin validation
+            # for translated fields. This is the official django-parler workaround.
+            return {
+                'slug': ('title',)
+            }

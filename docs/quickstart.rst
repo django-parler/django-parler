@@ -111,17 +111,20 @@ The translated fields can be accessed directly::
     >>> object.title = "omelette du fromage"    # Translation is created on demand.
     >>> object.save()
 
-When fetching objects, the :func:`~parler.managers.TranslatableManager.language` method
-can be used to configure the active language of the returned objects.
-By default, the current Django language is used.
+When an attribute is not translated yet, the default language will be returned.
+The default language is configured by the :ref:`PARLER_DEFAULT_LANGUAGE_CODE`
+or ``PARLER_DEFAULT_LANGUAGE_CODE['default']['fallback']`` setting.
+
+The objects can be fetched in a specific language using
+the :func:`~parler.managers.TranslatableManager.language` method.
 
     >>> objects = MyModel.objects.language('fr').all()
     >>> objects[0].title
     u'omelette du fromage'
 
-When an attribute is not translated yet, the default language
-(set by :ref:`PARLER_DEFAULT_LANGUAGE_CODE` or ``PARLER_DEFAULT_LANGUAGE_CODE['default']['fallback']``)
-will be returned.
+This only sets the language of the object.
+By default, the current Django language is used.
+To filter the objects, use the :func:`~parler.managers.TranslatableManager.translated` method.
 
 
 Querying translated attributes
@@ -130,7 +133,7 @@ Querying translated attributes
 To restrict the queryset to translated objects only, the following methods are available:
 
 * :func:`MyObject.objects.translated(*language_codes, **translated_fields) <parler.managers.TranslatableManager.translated>` - return only objects with a translation of ``language_codes``.
-* :func:`MyObject.objects.active_translations(language_code=None, **translated_fields) <parler.managers.TranslatableManager.active_translations` - return only objects for the current language (and fallback if this applies).
+* :func:`MyObject.objects.active_translations(language_code=None, **translated_fields) <parler.managers.TranslatableManager.active_translations>` - return only objects for the current language (and fallback if this applies).
 
 The :func:`parler.managers.TranslatableManager.active_translations` method also returns objects which are translated in the fallback language,
 unless ``hide_untranslated = True`` is used in the :ref:`PARLER_LANGUAGES`` setting.
