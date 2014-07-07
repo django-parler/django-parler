@@ -95,15 +95,6 @@ This returns objects in the languages which are considered "active", which are:
 * The current language
 * The fallback language when ``hide_untranslated=False`` in the ``PARLER_LANGUAGES`` setting.
 
-.. note::
-
-   Due to `ORM restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_
-   the query should be performed in
-   a single ``.translated(..)`` or ``.active_translations(..)`` call.
-
-   The ``.active_translations(..)`` method typically needs to
-   ``.distinct()`` call to avoid duplicate results of the same object.
-
 
 Changing the language
 ---------------------
@@ -165,10 +156,18 @@ This package also includes:
 See the documentation_ for more details.
 
 
+Special notes
+-------------
+
+* Using ``ModelAdmin.prepopulated_fields`` doesn't work, but you can use ``get_prepopulated_fields()`` as workaround.
+* Due to `ORM restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_
+  queries for translated fields should be performed in a single ``.translated(..)`` or ``.active_translations(..)`` call.
+* The ``.active_translations(..)`` method typically needs to ``.distinct()`` call to avoid duplicate results of the same object.
+
+
 TODO
 ====
 
-* ``ModelAdmin.prepopulated_fields`` doesn't work yet (you can use ``get_prepopulated_fields()`` as workaround).
 * The list code currently performs one query per object. This needs to be reduced.
 * Preferably, the ``TranslatedField`` proxy on the model should behave like a ``RelatedField``,
   if that would nicely with the ORM too.
