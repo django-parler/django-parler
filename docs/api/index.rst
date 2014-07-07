@@ -15,6 +15,4 @@ API documentation
    parler.models
    parler.signals
    parler.utils
-   parler.utils.conf
-   parler.utils.context
    parler.views
