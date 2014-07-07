@@ -29,15 +29,16 @@ Features:
 
 See the documentation_ for more details.
 
-Installation
-============
 
-First install the module, preferably in a virtual environment::
+A brief overview
+================
+
+Installing django-parler
+------------------------
+
+The package can be installed using::
 
     pip install django-parler
-
-Configuration
--------------
 
 Add the following settings::
 
@@ -45,11 +46,90 @@ Add the following settings::
         'parler',
     )
 
+Creating models
+---------------
+
+Using the ``TranslatedFields`` wrapper, model fields can be marked as translatable::
+
+    from django.db import models
+    from parler.models import TranslatableModel, TranslatedFields
+
+    class MyModel(TranslatableModel):
+        translations = TranslatedFields(
+            title = models.CharField(_("Title"), max_length=200)
+        )
+
+        def __unicode__(self):
+            return self.title
+
+Accessing fields
+----------------
+
+Translatable fields can be used like regular fields::
+
+    >>> object = MyModel.objects.all()[0]
+    >>> object.get_current_language()
+    'en'
+    >>> object.title
+    u'cheese omelet'
+
+    >>> object.set_current_language('fr')       # Only switches
+    >>> object.title = "omelette du fromage"    # Translation is created on demand.
+    >>> object.save()
+
+Internally, django-parler stores the translated fields in a separate model, with one row per language.
+
+Filtering translations
+----------------------
+
+To query translated fields, use the ``.translated()`` method::
+
+    MyObject.objects.translated(title='cheese omelet')
+
+To access objects in both the current and possibly the fallback language, use::
+
+    MyObject.objects.active_translations(title='cheese omelet')
+
+This returns objects in the languages which are considered "active", which are:
+
+* The current language
+* The fallback language when ``hide_untranslated=False`` in the ``PARLER_LANGUAGES`` setting.
+
+.. note::
+
+   Due to `ORM restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_
+   the query should be performed in
+   a single ``.translated(..)`` or ``.active_translations(..)`` call.
+
+   The ``.active_translations(..)`` method typically needs to
+   ``.distinct()`` call to avoid duplicate results of the same object.
+
+
+Changing the language
+---------------------
+
+The queryset can be instructed to return objects in a specific language::
+
+    >>> objects = MyModel.objects.language('fr').all()
+    >>> objects[0].title
+    u'omelette du fromage'
+
+This only sets the language of the object.
+By default, the current Django language is used.
+
+Use ``object.get_current_language()``
+and ``object.set_current_language()``
+to change the language on individual objects.
+
+
+Configuration
+-------------
 
 By default, the fallback language is the same as ``LANGUAGE_CODE``.
 The fallback language can be changed in the settings::
 
     PARLER_DEFAULT_LANGUAGE_CODE = 'en'
+
 
 Optionally, the admin tabs can be configured too::
 
@@ -67,83 +147,7 @@ Optionally, the admin tabs can be configured too::
     }
 
 Replace ``None`` with the ``SITE_ID`` when you run a multi-site project with the sites framework.
-
-
-Creating the model
-------------------
-
-Extend the model class::
-
-    from django.db import models
-    from parler.models import TranslatableModel, TranslatedFields
-
-
-    class MyModel(TranslatableModel):
-        translations = TranslatedFields(
-            title = models.CharField(_("Title"), max_length=200)
-        )
-
-        class Meta:
-            verbose_name = _("MyModel")
-
-        def __unicode__(self):
-            return self.title
-
-Now, the ``title`` field is translated.
-
-
-Using translated models
------------------------
-
-Translated fields can be accessed directly::
-
-    >>> from django.utils import translation
-    >>> translation.activate('en')
-
-    >>> object = MyModel.objects.all()[0]
-    >>> object.get_current_language()
-    'en'
-    >>> object.title
-    u'cheese omelet'
-
-    >>> object.set_current_language('fr')       # Only switches
-    >>> object.title = "omelette du fromage"    # Translation is created on demand.
-    >>> object.save()
-
-When an attribute is not translated yet, the default language will be returned.
-
-
-Fetching translations
-~~~~~~~~~~~~~~~~~~~~~
-
-The objects can be fetched in a specific language::
-
-    >>> objects = MyModel.objects.language('fr').all()
-    >>> objects[0].title
-    u'omelette du fromage'
-
-
-Filtering translated objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To restrict the queryset to translated objects only, the following ORM methods are available:
-
-* ``translated(*language_codes, **translated_fields)`` - return only objects with a translation of ``language_codes``.
-* ``active_translations(language_code=None, **translated_fields)`` - return only objects for the current language (and fallback if this applies).
-
-For example:
-
-    MyObject.objects.translated(slug='omelette')
-
-    MyObject.objects.active_translations(slug='omelette')
-
-The ``active_translations()`` method also returns objects which are translated in the fallback language,
-unless ``hide_untranslated = True`` is used in the ``PARLER_LANGUAGES`` setting.
-
-.. note::
-   Due to Django ORM design, queries on the translated fields model should occur in a single ``.filter(..)`` or ``.translated(..)`` call.
-   When using ``.filter(..).filter(..)``, the ORM turns that into 2 separate joins on the translations table.
-   See `the ORM documentation <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ for more details.
+Each ``SITE_ID`` can be added as additional entry in the dictionary.
 
 
 Advanced Features
