@@ -1,6 +1,7 @@
 """
 Custom generic managers
 """
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.translation import get_language
@@ -13,7 +14,7 @@ class TranslatableQuerySet(QuerySet):
     """
     An enhancement of the QuerySet which sets the objects language before they are returned.
 
-    When using this method with *django-polymorphic*, make sure this
+    When using this class in combination with *django-polymorphic*, make sure this
     class is first in the chain of inherited classes.
     """
 
@@ -45,14 +46,16 @@ class TranslatableQuerySet(QuerySet):
 
         When no language codes are given, only the currently active language is returned.
 
-        NOTE: due to Django `ORM limitations <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_,
-        this method can't be combined with other filters that access the translated fields. As such, query the fields in one filter:
+        .. note::
 
-        .. code-block:: python
+            Due to Django `ORM limitations <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_,
+            this method can't be combined with other filters that access the translated fields. As such, query the fields in one filter:
 
-            qs.translated('en', name="Cheese Omelette")
+            .. code-block:: python
 
-        This will query the translated model for the ``name`` field.
+                qs.translated('en', name="Cheese Omelette")
+
+            This will query the translated model for the ``name`` field.
         """
         relname = self.model._translations_field
 
@@ -79,6 +82,8 @@ class TranslatableQuerySet(QuerySet):
         Only return objects which are translated, or have a fallback that should be displayed.
 
         Typically that's the currently active language and fallback language.
+        This should be combined with ``.distinct()``.
+
         When ``hide_untranslated = True``, only the currently active language will be returned.
         """
         # Default:     (language, fallback) when hide_translated == False
@@ -89,7 +94,7 @@ class TranslatableQuerySet(QuerySet):
 
     def iterator(self):
         """
-        Overwritten iterator which will apply the decorate functions before returning it.
+        Overwritten iterator which will set the current language before returning the object.
         """
         # Based on django-queryset-transform.
         # This object however, operates on a per-object instance
@@ -110,6 +115,8 @@ class TranslatableManager(models.Manager):
     queryset_class = TranslatableQuerySet
 
     def get_query_set(self):
+        if not issubclass(self.queryset_class, TranslatableQuerySet):
+            raise ImproperlyConfigured("{0}.queryset_class does not inherit from TranslatableQuerySet".format(self.__class__.__name__))
         return self.queryset_class(self.model, using=self._db)
 
     def language(self, language_code=None):
@@ -138,6 +145,8 @@ class TranslatableManager(models.Manager):
         Only return objects which are translated, or have a fallback that should be displayed.
 
         Typically that's the currently active language and fallback language.
+        This should be combined with ``.distinct()``.
+
         When ``hide_untranslated = True``, only the currently active language will be returned.
         """
         return self.get_query_set().active_translations(language_code, **translated_fields)

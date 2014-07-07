@@ -148,6 +148,17 @@ def get_translated_url(context, lang_code, object=None):
         return reverse(resolvermatch.view_name, args=resolvermatch.args, kwargs=clean_kwargs)
 
 
+@register.filter
+def get_translated_field(object, field):
+    """
+    Fetch a translated field in a thread-safe way, using the current language.
+    Example::
+
+        {% language 'en' %}{{ object|get_translated_field:'name' }}{% endlanguage %}
+    """
+    return object.safe_translation_getter(field, language_code=get_language())
+
+
 def _cleanup_urlpattern_kwargs(kwargs):
     # For old function-based views, the url kwargs can pass extra arguments to the view.
     # Although these arguments don't have to be passed back to reverse(),

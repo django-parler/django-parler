@@ -220,7 +220,7 @@ The translated model can be constructed manually too::
             return self.title
 
 
-    class MyModel_Translations(TranslatedFieldsModel):
+    class MyModelTranslation(TranslatedFieldsModel):
         master = models.ForeignKey(MyModel, related_name='translations', null=True)
         title = models.CharField(_("Title"), max_length=200)
 
@@ -282,12 +282,12 @@ without loosing the freedom of manually using the API at your will.
 TODO
 ====
 
-* Documentation on RTD.
-* Unittest the admin.
 * ``ModelAdmin.prepopulated_fields`` doesn't work yet (you can use ``get_prepopulated_fields()`` as workaround).
 * The list code currently performs one query per object. This needs to be reduced.
 * Preferably, the ``TranslatedField`` proxy on the model should behave like a ``RelatedField``,
   if that would nicely with the ORM too.
+
+Please contribute your improvements or work on these area's!
 
 
 Django compatibility

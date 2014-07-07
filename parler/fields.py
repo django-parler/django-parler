@@ -1,5 +1,13 @@
 """
-Model fields
+All fields that are attached to the models.
+
+The core design of django-parler is to attach descriptor fields
+to the shared model, which then proxies the get/set calls to the translated model.
+
+The :class:`TranslatedField` objects are automatically added to the shared model,
+but may be added explicitly as well. This also allows to set the ``any_language`` configuration option.
+It's also useful for abstract models; add a :class:`TranslatedField` to
+indicate that the derived model is expected to provide that translatable field.
 """
 from __future__ import unicode_literals
 from django.db.models.fields import Field
@@ -17,16 +25,20 @@ class TranslatedField(object):
     even when the current language and fallback are missing.
     This can be useful for "title" attributes for example.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
         from django.db import models
         from parler.models import TranslatableModel, TranslatedFieldsModel
 
         class MyModel(TranslatableModel):
-            title = TranslatedField(any_language=True)
-            slug = TranslatedField()   # Optional, but explicitly mentioned
+            title = TranslatedField(any_language=True)  # Add with any-fallback support
+            slug = TranslatedField()                    # Optional, but explicitly mentioned
 
-        # Manual model class
+
         class MyModelTranslation(TranslatedFieldsModel):
+            # Manual model class:
             master = models.ForeignKey(MyModel, related_name='translations', null=True)
             title = models.CharField("Title", max_length=200)
             slug = models.SlugField("Slug")

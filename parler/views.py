@@ -1,3 +1,18 @@
+"""
+The views provide high-level utilities to integrate translation support into other projects.
+
+The following mixins are available:
+
+* :class:`ViewUrlMixin` - provide a ``get_view_url`` for the :ref:`{% get_translated_url %} <get_translated_url>` template tag.
+* :class:`TranslatableSlugMixin` - enrich the :class:`~django.views.generic.detail.DetailView` to support translatable slugs.
+* :class:`LanguageChoiceMixin` - add ``?language=xx`` support to a view (e.g. for editing).
+* :class:`TranslatableModelFormMixin` - add support for translatable forms, e.g. for creating/updating objects.
+
+The following views are available:
+
+* :class:`TranslatableCreateView` - The :class:`~django.views.generic.edit.CreateView` with :class:`TranslatableModelFormMixin` support.
+* :class:`TranslatableUpdateView` - The :class:`~django.views.generic.edit.UpdateView` with :class:`TranslatableModelFormMixin` support.
+"""
 from __future__ import unicode_literals
 import django
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
@@ -16,7 +31,7 @@ from parler.utils.views import get_language_parameter, get_language_tabs
 __all__ = (
     'ViewUrlMixin',
     'TranslatableSlugMixin',
-    'TranslatableSingleObjectMixin',
+    'LanguageChoiceMixin',
     'TranslatableModelFormMixin',
     'TranslatableCreateView',
     'TranslatableUpdateView',
@@ -28,9 +43,31 @@ class ViewUrlMixin(object):
     Provide a ``view.get_view_url`` method in the template.
 
     This tells the template what the exact canonical URL should be of a view.
-    The ``get_translated_url`` template tag uses this to find the proper translated URL of the current page.
+    The :ref:`{% get_translated_url %} <get_translated_url>` template tag uses this
+    to find the proper translated URL of the current page.
+
+    Typically, setting the :attr:`view_url_name` just works::
+
+        class ArticleListView(ViewUrlMixin, ListView):
+            view_url_name = 'article:list'
+
+    The :func:`get_view_url` will use the :attr:`view_url_name` together
+    with ``view.args`` and ``view.kwargs`` construct the URL.
+    When some arguments are translated (e.g. a slug), the :func:`get_view_url`
+    can be overwritten to generate the proper URL::
+
+        from parler.views import ViewUrlMixin, TranslatableUpdateView
+        from parler.utils.context import switch_language
+
+        class ArticleEditView(ViewUrlMixin, TranslatableUpdateView):
+            view_url_name = 'article:edit'
+
+            def get_view_url(self):
+                with switch_language(self.object, get_language()):
+                    return reverse(self.view_url_name, kwargs={'slug': self.object.slug})
     """
-    #: The default view name used by :func:`get_view_url`, which should correspond with the view name in the URLConf.
+    #: The default view name used by :func:`get_view_url`, which
+    #: should correspond with the view name in the URLConf.
     view_url_name = None
 
 
@@ -39,7 +76,8 @@ class ViewUrlMixin(object):
         This method is used by the ``get_translated_url`` template tag.
 
         By default, it uses the :attr:`view_url_name` to generate an URL.
-        Override this function in case the translated URL is a bit more complex.
+        When the URL ``args`` and ``kwargs`` are translatable,
+        override this function instead to generate the proper URL.
         """
         if not self.view_url_name:
             # Sadly, class based views can't work with reverse(func_pointer) as that's unknown.
@@ -71,6 +109,14 @@ class TranslatableSlugMixin(object):
     * The object is fetched in the proper translation.
     * Fallback languages are handled.
     * Objects are not accidentally displayed in their fallback slug, but redirect to the translated slug.
+
+    Example:
+
+    .. code-block:: python
+
+        class ArticleDetailView(TranslatableSlugMixin, DetailView):
+            model = Article
+            template_name = 'article/details.html'
     """
     def get_translated_filters(self, slug):
         """
@@ -158,10 +204,10 @@ class FallbackLanguageResolved(Exception):
 
 
 
-class TranslatableSingleObjectMixin(object):
+class LanguageChoiceMixin(object):
     """
-    Mixin to add translation support to class based views, particularly create and update views.
-    It adds support for the ``?language=..`` parameter in the query string.
+    Mixin to add language selection support to class based views, particularly create and update views.
+    It adds support for the ``?language=..`` parameter in the query string, and tabs in the context.
     """
     query_language_key = 'language'
 
@@ -170,7 +216,7 @@ class TranslatableSingleObjectMixin(object):
         """
         Assign the language for the retrieved object.
         """
-        object = super(TranslatableSingleObjectMixin, self).get_object(queryset)
+        object = super(LanguageChoiceMixin, self).get_object(queryset)
         if isinstance(object, TranslatableModel):
             object.set_current_language(self._language(object), initialize=True)
         return object
@@ -192,9 +238,50 @@ class TranslatableSingleObjectMixin(object):
         return None
 
 
-class TranslatableModelFormMixin(TranslatableSingleObjectMixin):
+    def get_current_language(self):
+        """
+        Return the current language for the currently displayed object fields.
+        """
+        if self.object is not None:
+            return self.object.get_current_language()
+        else:
+            return self._language()
+
+
+    def get_context_data(self, **kwargs):
+        context = super(LanguageChoiceMixin, self).get_context_data(**kwargs)
+        context['language_tabs'] = self.get_language_tabs()
+        return context
+
+
+    def get_language_tabs(self):
+        """
+        Determine the language tabs to show.
+        """
+        current_language = self.get_current_language()
+        if self.object:
+            available_languages = list(self.object.get_available_languages())
+        else:
+            available_languages = []
+
+        return get_language_tabs(self.request, current_language, available_languages)
+
+
+# Backwards compatibility
+TranslatableSingleObjectMixin = LanguageChoiceMixin
+
+
+class TranslatableModelFormMixin(LanguageChoiceMixin):
     """
     Mixin to add translation support to class based views.
+
+    For example, adding translation support to django-oscar::
+
+        from oscar.apps.dashboard.catalogue import views as oscar_views
+        from parler.views import TranslatableModelFormMixin
+
+        class ProductCreateUpdateView(TranslatableModelFormMixin, oscar_views.ProductCreateUpdateView):
+            pass
     """
 
     def get_form_class(self):
@@ -225,39 +312,16 @@ class TranslatableModelFormMixin(TranslatableSingleObjectMixin):
         return kwargs
 
 
-    def get_form_language(self):
-        """
-        Return the current language for the currently displayed object fields.
-        """
-        if self.object is not None:
-            return self.object.get_current_language()
-        else:
-            return self._language()
-
-
-    def get_context_data(self, **kwargs):
-        context = super(TranslatableModelFormMixin, self).get_context_data(**kwargs)
-        context['language_tabs'] = self.get_language_tabs()
-        return context
-
-
-    def get_language_tabs(self):
-        """
-        Determine the language tabs to show.
-        """
-        current_language = self.get_form_language()
-        if self.object:
-            available_languages = list(self.object.get_available_languages())
-        else:
-            available_languages = []
-
-        return get_language_tabs(self.request, current_language, available_languages)
+    # Backwards compatibility
+    get_form_language = LanguageChoiceMixin.get_current_language
 
 
 # For the lazy ones:
 class TranslatableCreateView(TranslatableModelFormMixin, generic.CreateView):
     """
     Create view that supports translated models.
+    This is a mix of the :class:`TranslatableModelFormMixin`
+    and Django's :class:`~django.views.generic.edit.CreateView`.
     """
     pass
 
@@ -265,6 +329,8 @@ class TranslatableCreateView(TranslatableModelFormMixin, generic.CreateView):
 class TranslatableUpdateView(TranslatableModelFormMixin, generic.UpdateView):
     """
     Update view that supports translated models.
+    This is a mix of the :class:`TranslatableModelFormMixin`
+    and Django's :class:`~django.views.generic.edit.UpdateView`.
     """
     pass
 

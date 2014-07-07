@@ -1,0 +1,2 @@
+# for readthedocs
+Django==1.6.1

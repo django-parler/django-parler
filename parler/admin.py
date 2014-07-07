@@ -11,7 +11,6 @@ from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.db import router
 from django.forms import Media
-from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
@@ -20,7 +19,7 @@ from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils import six
 from parler import appsettings
-from parler.forms import TranslatableModelForm
+from parler.forms import TranslatableModelForm, TranslatableBaseInlineFormSet
 from parler.managers import TranslatableQuerySet
 from parler.models import TranslatableModel
 from parler.utils.compat import transaction_atomic, add_preserved_filters
@@ -47,7 +46,10 @@ class BaseTranslatableAdmin(BaseModelAdmin):
     """
     The shared code between the regular model admin and inline classes.
     """
+    #: The form to use for the model.
     form = TranslatableModelForm
+
+    #: The URL parameter for the language value.
     query_language_key = 'language'
 
 
@@ -143,7 +145,11 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
     @property
     def change_form_template(self):
-        # Dynamic property to support transition to regular models.
+        """
+        Dynamic property to support transition to regular models.
+
+        This automatically picks ``admin/parler/change_form.html`` when the admin uses a translatable model.
+        """
         if self._has_translatable_model():
             # While this breaks the admin template name detection,
             # the get_change_form_base_template() makes sure it inherits from your template.
@@ -435,24 +441,13 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 _lazy_select_template_name = lazy(select_template_name, six.text_type)
 
 
-class TranslatableBaseInlineFormSet(BaseInlineFormSet):
-    language_code = None
-
-    def _construct_form(self, i, **kwargs):
-        form = super(TranslatableBaseInlineFormSet, self)._construct_form(i, **kwargs)
-        form.language_code = self.language_code   # Pass the language code for new objects!
-        return form
-
-    def save_new(self, form, commit=True):
-        obj = super(TranslatableBaseInlineFormSet, self).save_new(form, commit)
-        return obj
-
-
 class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
     """
     Base class for inline models.
     """
+    #: The form to use.
     form = TranslatableModelForm
+    #: The formset to use.
     formset = TranslatableBaseInlineFormSet
 
     @property
@@ -476,6 +471,9 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
             return self._language(request)
 
     def get_formset(self, request, obj=None, **kwargs):
+        """
+        Return the formset, and provide the language information to the formset.
+        """
         FormSet = super(TranslatableInlineModelAdmin, self).get_formset(request, obj, **kwargs)
         # Existing objects already got the language code from the queryset().language() method.
         # For new objects, the language code should be set here.
@@ -490,6 +488,9 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
         return FormSet
 
     def get_form_language(self, request, obj=None):
+        """
+        Return the current language for the currently displayed object fields.
+        """
         if self._has_translatable_parent_model():
             return super(TranslatableInlineModelAdmin, self).get_form_language(request, obj=obj)
         else:
@@ -514,6 +515,9 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
 
 
 class TranslatableStackedInline(TranslatableInlineModelAdmin):
+    """
+    The inline class for stacked layout.
+    """
     @property
     def template(self):
         if self.inline_tabs:
@@ -524,6 +528,9 @@ class TranslatableStackedInline(TranslatableInlineModelAdmin):
 
 
 class TranslatableTabularInline(TranslatableInlineModelAdmin):
+    """
+    The inline class for tabular layout.
+    """
     @property
     def template(self):
         if self.inline_tabs:

@@ -1,14 +1,57 @@
 """
-Simple but effective translation support.
+The models and fields for translation support.
 
-Integrating *django-hvad* (v0.3) in advanced projects turned out to be really hard,
-as it changes the behavior of the QuerySet iterator, manager methods
-and model metaclass which *django-polymorphic* and friends also rely on.
-The following is a "crude, but effective" way to introduce multilingual support.
+The default is to use the :class:`TranslatedFields` class in the model, like:
 
-Added on top of that, the API-suger is provided, similar to what django-hvad has.
-It's possible to create the translations model manually,
-or let it be created dynamically when using the :class:`TranslatedFields` field.
+.. code-block:: python
+
+    from django.db import models
+    from parler.models import TranslatableModel, TranslatedFields
+
+
+    class MyModel(TranslatableModel):
+        translations = TranslatedFields(
+            title = models.CharField(_("Title"), max_length=200)
+        )
+
+        class Meta:
+            verbose_name = _("MyModel")
+
+        def __unicode__(self):
+            return self.title
+
+
+It's also possible to create the translated fields model manually:
+
+.. code-block:: python
+
+    from django.db import models
+    from parler.models import TranslatableModel, TranslatedFieldsModel
+    from parler.fields import TranslatedField
+
+
+    class MyModel(TranslatableModel):
+        title = TranslatedField()  # Optional, explicitly mention the field
+
+        class Meta:
+            verbose_name = _("MyModel")
+
+        def __unicode__(self):
+            return self.title
+
+
+    class MyModelTranslation(TranslatedFieldsModel):
+        master = models.ForeignKey(MyModel, related_name='translations', null=True)
+        title = models.CharField(_("Title"), max_length=200)
+
+        class Meta:
+            verbose_name = _("MyModel translation")
+
+This has the same effect, but also allows to to override
+the :func:`~django.db.models.Model.save` method, or add new methods yourself.
+
+The translated model is compatible with django-hvad, making the transition between both projects relatively easy.
+The manager and queryset objects of django-parler can work together with django-mptt and django-polymorphic.
 """
 from __future__ import unicode_literals
 import django
@@ -31,12 +74,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+__all__ = (
+    'TranslatableModel',
+    'TranslatedFields',
+    'TranslatedFieldsModel',
+    'TranslatedFieldsModelBase',
+    'TranslationDoesNotExist',
+    #'create_translations_model',
+)
+
 
 class TranslationDoesNotExist(AttributeError):
     """
     A tagging interface to detect missing translations.
-    The exception inherits from :class:`AttributeError` to reflect what is actually happening.
-    It also causes the templates to handle the missing attributes silently, which is very useful in the admin for example.
+    The exception inherits from :class:`~exceptions.AttributeError` to reflect what is actually happening.
+    Therefore it also causes the templates to handle the missing attributes silently, which is very useful in the admin for example.
+
+    This class is also used in the ``DoesNotExist`` object on the translated model, which inherits from:
+
+    * this class
+    * the ``sharedmodel.DoesNotExist`` class
+    * the original ``translatedmodel.DoesNotExist`` class.
+
+    This makes sure that the regular code flow is decently handled by existing exception handlers.
     """
     pass
 
@@ -97,7 +157,10 @@ class TranslatedFields(object):
 
     The field name becomes the related name of the :class:`TranslatedFieldsModel` subclass.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
         from django.db import models
         from parler.models import TranslatableModel, TranslatedFields
 
@@ -126,6 +189,8 @@ class TranslatedFields(object):
 class TranslatableModel(models.Model):
     """
     Base model class to handle translations.
+
+    All translatable fields will appear on this model, proxying the calls to the :class:`TranslatedFieldsModel`.
     """
 
     # Consider these fields "protected" or "internal" attributes.
@@ -373,6 +438,14 @@ class TranslatableModel(models.Model):
 
 
     def save_translations(self, *args, **kwargs):
+        """
+        The method to save all translations.
+        This can be overwritten to implement any custom additions.
+        This method calls :func:`save_translation` for every fetched language.
+
+        :param args: Any custom arguments to pass to :func:`save`.
+        :param kwargs: Any custom arguments to pass to :func:`save`.
+        """
         # Copy cache, new objects (e.g. fallbacks) might be fetched if users override save_translation()
         translations = self._translations_cache.values()
 
@@ -386,6 +459,14 @@ class TranslatableModel(models.Model):
 
 
     def save_translation(self, translation, *args, **kwargs):
+        """
+        Save the translation when it's modified, or unsaved.
+
+        :param translation: The translation
+        :type translation: TranslatedFieldsModel
+        :param args: Any custom arguments to pass to :func:`save`.
+        :param kwargs: Any custom arguments to pass to :func:`save`.
+        """
         # Translation models without any fields are also supported.
         # This is useful for parent objects that have inlines;
         # the parent object defines how many translations there are.
@@ -441,9 +522,10 @@ class TranslatedFieldsModelBase(ModelBase):
     Meta-class for the translated fields model.
 
     It performs the following steps:
-    - It validates the 'master' field, in case it's added manually.
-    - It tells the original model to use this model for translations.
-    - It adds the proxy attributes to the shared model.
+
+    * It validates the 'master' field, in case it's added manually.
+    * It tells the original model to use this model for translations.
+    * It adds the proxy attributes to the shared model.
     """
     def __new__(mcs, name, bases, attrs):
 
@@ -501,9 +583,11 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
     """
     Base class for the model that holds the translated fields.
     """
-
     language_code = models.CharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
+
+    #: The mandatory Foreign key field to the shared model.
     master = None   # FK to shared model.
+
 
     class Meta:
         abstract = True
@@ -517,14 +601,23 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
 
     @property
     def is_modified(self):
+        """
+        Tell whether the object content is modified since fetching it.
+        """
         return self._original_values != self._get_field_values()
 
     @property
     def is_empty(self):
+        """
+        True when there are no translated fields.
+        """
         return len(self.get_translated_fields()) == 0
 
     @property
     def shared_model(self):
+        """
+        Returns the shared model this model is linked to.
+        """
         return self.__class__.master.field.rel.to
 
     def save_base(self, raw=False, using=None, **kwargs):

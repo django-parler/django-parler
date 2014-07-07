@@ -1,3 +1,6 @@
+Changelog
+=========
+
 Changes in version 1.0 (in development)
 ---------------------------------------
 
