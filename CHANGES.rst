@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Changes in version 1.0 (in development)
----------------------------------------
+Changes in version 1.0 (2014-07-07)
+-----------------------------------
 
 Released in 1.0b3:
 ~~~~~~~~~~~~~~~~~~
