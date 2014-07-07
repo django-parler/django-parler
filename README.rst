@@ -108,9 +108,14 @@ The queryset can be instructed to return objects in a specific language::
 This only sets the language of the object.
 By default, the current Django language is used.
 
-Use ``object.get_current_language()``
-and ``object.set_current_language()``
+Use ``object.get_current_language()`` and ``object.set_current_language()``
 to change the language on individual objects.
+There is a context manager to do this temporary::
+
+    from parler.utils.context import switch_language
+
+    with switch_language(model, 'fr'):
+        print model.title
 
 
 Configuration
@@ -157,7 +162,7 @@ See the documentation_ for more details.
 
 
 Special notes
--------------
+=============
 
 * Using ``ModelAdmin.prepopulated_fields`` doesn't work, but you can use ``get_prepopulated_fields()`` as workaround.
 * Due to `ORM restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_

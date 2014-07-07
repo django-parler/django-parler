@@ -94,6 +94,12 @@ By default, the current Django language is used.
 Use :func:`~parler.models.TranslatableModel.get_current_language`
 and :func:`~parler.models.TranslatableModel.set_current_language`
 to change the language on individual objects.
+There is a context manager to do this temporary::
+
+    from parler.utils.context import switch_language
+
+    with switch_language(model, 'fr'):
+        print model.title
 
 Configuration
 -------------
