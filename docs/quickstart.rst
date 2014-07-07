@@ -101,6 +101,11 @@ There is a context manager to do this temporary::
     with switch_language(model, 'fr'):
         print model.title
 
+And a function to query just a specific field::
+
+    model.safe_translation_getter('title', language_code='fr')
+
+
 Configuration
 -------------
 
