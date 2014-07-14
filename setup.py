@@ -8,7 +8,7 @@ import sys
 
 
 # When creating the sdist, make sure the django.mo file also exists:
-if 'sdist' in sys.argv:
+if 'sdist' in sys.argv or 'develop' in sys.argv:
     try:
         os.chdir('parler')
         from django.core.management.commands.compilemessages import compile_messages
