@@ -23,7 +23,7 @@ from django.utils import translation
 from django.views import generic
 from django.views.generic.edit import ModelFormMixin
 from parler.forms import TranslatableModelForm
-from parler.models import TranslatableModelMixin
+from parler.models import TranslatableModel
 from parler.utils import get_active_language_choices
 from parler.utils.context import switch_language
 from parler.utils.views import get_language_parameter, get_language_tabs
@@ -218,7 +218,7 @@ class LanguageChoiceMixin(object):
         Assign the language for the retrieved object.
         """
         object = super(LanguageChoiceMixin, self).get_object(queryset)
-        if isinstance(object, TranslatableModelMixin):
+        if isinstance(object, TranslatableModel):
             object.set_current_language(self._language(object), initialize=True)
         return object
 
