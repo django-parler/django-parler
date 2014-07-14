@@ -185,7 +185,7 @@ class TranslatedFields(object):
         assert cls._translations_field == name
 
 
-class TranslatableMixin(object):
+class TranslatableModelMixin(object):
     """
     Base mixin to be added to an existing abstract model class.
 
@@ -212,7 +212,7 @@ class TranslatableMixin(object):
                     pass
 
         # Run original Django model __init__
-        super(TranslatableMixin, self).__init__(*args, **kwargs)
+        super(TranslatableModelMixin, self).__init__(*args, **kwargs)
 
         self._translations_cache = {}
         self._current_language = normalize_language_code(current_language or get_language())  # What you used to fetch the object is what you get.
@@ -420,13 +420,13 @@ class TranslatableMixin(object):
 
 
     def save(self, *args, **kwargs):
-        super(TranslatableMixin, self).save(*args, **kwargs)
+        super(TranslatableModelMixin, self).save(*args, **kwargs)
         self.save_translations(*args, **kwargs)
 
 
     def delete(self, using=None):
         _delete_cached_translations(self)
-        super(TranslatableMixin, self).delete(using)
+        super(TranslatableModelMixin, self).delete(using)
 
 
     def save_translations(self, *args, **kwargs):
@@ -509,7 +509,7 @@ class TranslatableMixin(object):
         return default
 
 
-class TranslatableModel(TranslatableMixin, models.Model):
+class TranslatableModel(TranslatableModelMixin, models.Model):
     """
     Base model class to handle translations.
 
