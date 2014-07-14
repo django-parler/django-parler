@@ -2,7 +2,7 @@ from django import forms
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
 from django.utils.translation import get_language
 from django.utils import six
-from parler.models import TranslatableModel, TranslationDoesNotExist
+from parler.models import TranslationDoesNotExist
 
 __all__ = (
     'TranslatableModelForm',

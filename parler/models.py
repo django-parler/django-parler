@@ -185,10 +185,9 @@ class TranslatedFields(object):
         assert cls._translations_field == name
 
 
-
-class TranslatableModel(models.Model):
+class TranslatableModelMixin(object):
     """
-    Base model class to handle translations.
+    Base mixin to be added to an existing abstract model class.
 
     All translatable fields will appear on this model, proxying the calls to the :class:`TranslatedFieldsModel`.
     """
@@ -199,13 +198,6 @@ class TranslatableModel(models.Model):
     _translations_model = None
 
     language_code = LanguageCodeDescriptor()
-
-    # change the default manager to the translation manager
-    objects = TranslatableManager()
-
-    class Meta:
-        abstract = True
-
 
     def __init__(self, *args, **kwargs):
         # Still allow to pass the translated fields (e.g. title=...) to this function.
@@ -220,7 +212,7 @@ class TranslatableModel(models.Model):
                     pass
 
         # Run original Django model __init__
-        super(TranslatableModel, self).__init__(*args, **kwargs)
+        super(TranslatableModelMixin, self).__init__(*args, **kwargs)
 
         self._translations_cache = {}
         self._current_language = normalize_language_code(current_language or get_language())  # What you used to fetch the object is what you get.
@@ -428,13 +420,13 @@ class TranslatableModel(models.Model):
 
 
     def save(self, *args, **kwargs):
-        super(TranslatableModel, self).save(*args, **kwargs)
+        super(TranslatableModelMixin, self).save(*args, **kwargs)
         self.save_translations(*args, **kwargs)
 
 
     def delete(self, using=None):
         _delete_cached_translations(self)
-        super(TranslatableModel, self).delete(using)
+        super(TranslatableModelMixin, self).delete(using)
 
 
     def save_translations(self, *args, **kwargs):
@@ -515,6 +507,19 @@ class TranslatableModel(models.Model):
                 return getattr(translation, field, default)
 
         return default
+
+
+class TranslatableModel(TranslatableModelMixin, models.Model):
+    """
+    Base model class to handle translations.
+
+    All translatable fields will appear on this model, proxying the calls to the :class:`TranslatedFieldsModel`.
+    """
+    class Meta:
+        abstract = True
+
+    # change the default manager to the translation manager
+    objects = TranslatableManager()
 
 
 class TranslatedFieldsModelBase(ModelBase):
