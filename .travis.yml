@@ -19,9 +19,9 @@ matrix:
     env: DJANGO=1.4.2
 
 install:
-  - pip install -q coveralls --use-mirrors  # installs coverage
-  - pip install -q Django==$DJANGO --use-mirrors
-  - pip install -q -e . --use-mirrors
+  - pip install -q coveralls  # installs coverage
+  - pip install -q Django==$DJANGO
+  - pip install -q -e .
 
 script:
   - coverage run --source=example/article,parler runtests.py
