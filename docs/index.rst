@@ -36,7 +36,7 @@ In depth topics
    advanced
    compatibility
    background
-
+   polymorphicmodel
 
 API documentation
 -----------------

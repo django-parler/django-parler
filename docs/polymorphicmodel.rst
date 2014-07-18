@@ -1,11 +1,13 @@
 Combining TranslatableModel with PolymorphicModel
 =================================================
 
-Sometimes you may want to combine a TranslatableModel with PolymorphicModel. Since both classes
-are abstract, both inherit from ``models.Model`` and both override the model manager, one must take
-care to override the default manager.
+Sometimes you may want to combine ``TranslatableModel`` with ``PolymorphicModel``. Since both
+classes are abstract, inherit from ``models.Model`` and both override the model manager, one must
+take care to also override the default manager.
 
-This pattern works for a polymorphic Django model:
+Say we have a base ``Product`` with two concrete products, a ``Book`` with two translatable fields
+``name`` and ``slug``, and a ``Pen`` with one translatable field ``identifier``. Then the following
+pattern works for a polymorphic Django model:
 
 .. code-block:: python
 
@@ -15,11 +17,9 @@ This pattern works for a polymorphic Django model:
 	from parler.managers import TranslatableManager
 	from polymorphic import PolymorphicModel
 	
-	
 	class Product(PolymorphicModel):
 	    code = models.CharField(blank=False, default='', max_length=16)
 	    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-	
 	
 	@python_2_unicode_compatible
 	class Book(TranslatableModel, Product):
@@ -33,7 +33,6 @@ This pattern works for a polymorphic Django model:
 	    def __str__(self):
 	        return force_text(self.code)
 	
-	
 	@python_2_unicode_compatible
 	class Pen(TranslatableModel, Product):
 	    default_manager = TranslatableManager()
@@ -45,6 +44,36 @@ This pattern works for a polymorphic Django model:
 	    def __str__(self):
 	        return force_text(self.identifier)
 
-Here the two products ``Book`` and ``Pen`` inherit from a common base class ``Product``. They both
-contain translatable fields. The only precaution one must take, is to override the
-``default_manager`` in each of the class containing translatable fields, as shown above.
+The only precaution one must take, is to override the ``default_manager`` in each of the classes
+containing translatable fields. This is shown in the example above.
+
+It is perfectly possible to to register individual polymorphic models in the Django admin interface.
+However, to use these models in a single cohesive interface, some extra base classes are available.
+
+This admin interface adds translatable fields to a polymorphic model:
+
+.. code-block:: python
+
+	from django.contrib import admin
+	from parler.admin import TranslatableAdmin, TranslatableModelForm
+	from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
+	from myapp.models.myproduct import BaseProduct, Book, Pen
+	
+	class BookAdmin(TranslatableAdmin, PolymorphicChildModelAdmin):
+	    base_form = TranslatableModelForm
+	    base_model = BaseProduct
+	    base_fields = ('code', 'price', 'name', 'slug')
+	
+	class PenAdmin(TranslatableAdmin, PolymorphicChildModelAdmin):
+	    base_form = TranslatableModelForm
+	    base_model = BaseProduct
+	    base_fields = ('code', 'price', 'identifier',)
+	
+	class BaseProductAdmin(PolymorphicParentModelAdmin):
+	    base_model = BaseProduct
+	    child_models = ((Book, BookAdmin), (Pen, PenAdmin),)
+	    list_display = ('code', 'price',)
+	
+	admin.site.register(BaseProduct, BaseProductAdmin)
+
+.. note:: You need at least **django-polymorphic** >= 0.5.6 in order to get this working.
