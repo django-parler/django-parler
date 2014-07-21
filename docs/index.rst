@@ -34,9 +34,9 @@ In depth topics
    :maxdepth: 2
 
    advanced
+   polymorphicmodel
    compatibility
    background
-   polymorphicmodel
 
 API documentation
 -----------------

@@ -270,4 +270,5 @@ texinfo_documents = [
 intersphinx_mapping = {
     'http://docs.python.org/': None,
     'https://docs.djangoproject.com/en/dev': 'https://docs.djangoproject.com/en/dev/_objects',
+    'polymorphic': ('http://django-polymorphic.readthedocs.org/en/latest/', None),
 }

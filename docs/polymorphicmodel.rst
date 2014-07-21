@@ -1,8 +1,8 @@
 Combining TranslatableModel with PolymorphicModel
 =================================================
 
-Sometimes you may want to combine ``TranslatableModel`` with ``PolymorphicModel``. Since both
-classes are abstract, inherit from ``models.Model`` and both override the model manager, one must
+Sometimes you may want to combine :class:`~parler.models.TranslatableModel` with :class:`~polymorphic.models.PolymorphicModel`.
+Since both classes are abstract, inherit from ``models.Model`` and both override the model manager, one must
 take care to also override the default manager.
 
 Say we have a base ``Product`` with two concrete products, a ``Book`` with two translatable fields
@@ -44,7 +44,7 @@ pattern works for a polymorphic Django model:
 	    def __str__(self):
 	        return force_text(self.identifier)
 
-The only precaution one must take, is to override the ``default_manager`` in each of the classes
+The only precaution one must take, is to override the default manager in each of the classes
 containing translatable fields. This is shown in the example above.
 
 It is perfectly possible to to register individual polymorphic models in the Django admin interface.
@@ -76,4 +76,5 @@ This admin interface adds translatable fields to a polymorphic model:
 	
 	admin.site.register(BaseProduct, BaseProductAdmin)
 
-.. note:: You need at least **django-polymorphic** >= 0.5.6 in order to get this working.
+.. note:: You need at least `django-polymorphic <https://github.com/chrisglass/django_polymorphic>`_ >= 0.5.5 in order to get this working.
+
