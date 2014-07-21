@@ -33,8 +33,7 @@ In depth topics
 .. toctree::
    :maxdepth: 2
 
-   advanced
-   polymorphicmodel
+   advanced/index
    compatibility
    background
 
