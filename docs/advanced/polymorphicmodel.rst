@@ -76,5 +76,5 @@ This admin interface adds translatable fields to a polymorphic model:
 	
 	admin.site.register(BaseProduct, BaseProductAdmin)
 
-.. note:: You need at least `django-polymorphic <https://github.com/chrisglass/django_polymorphic>`_ >= 0.5.5 in order to get this working.
+.. note:: You need at least `django-polymorphic <https://github.com/chrisglass/django_polymorphic>`_ >= 0.5.6 in order to get this working.
 
