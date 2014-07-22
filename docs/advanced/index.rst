@@ -9,6 +9,7 @@ Advanced usage patterns
    manual-models
    existing
    polymorphicmodel
+   guardian
    multisite
    caching
    custom-settings
