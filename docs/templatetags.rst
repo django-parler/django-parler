@@ -17,7 +17,7 @@ Getting the translated URL
 The ``get_translated_url`` tag can be used to get the proper URL for this page in a different language.
 If the URL could not be generated, an empty string is returned instead.
 
-This algorithm performs a "best effect" approach to give a proper URL.
+This algorithm performs a "best effort" approach to give a proper URL.
 When this fails, add the :class:`~parler.views.ViewUrlMixin` to your view to contruct the proper URL instead.
 
 Example, to build a language menu:
