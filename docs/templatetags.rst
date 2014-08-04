@@ -76,12 +76,11 @@ Thread safety notes
 
 Using the ``{% get_translated_url %}`` or ``{% objectlanguage %}`` tags is not thread-safe if the object is shared between threads.
 It temporary changes the current language of the view object.
-
 Thread-safety is rarely an issue in templates, when all objects are fetched from the database in the view.
+
 One example where it may happen, is when you have objects cached in global variables.
 For example, attaching objects to the :class:`~django.contrib.sites.models.Site` model causes this.
 A shared object is returned when these objects are accessed using ``Site.objects.get_current().my_object``.
-
 That's because the sites framework keeps a global cache of all :class:`~django.contrib.sites.models.Site` objects,
 and the ``my_object`` relationship is also cached by the ORM. Hence, the object is shared between all requests.
 
