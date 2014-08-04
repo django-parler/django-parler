@@ -3,7 +3,9 @@
 Template tags
 =============
 
-All translated fields can be read like normal fields, just using like::
+All translated fields can be read like normal fields, just using like:
+
+.. code-block:: html+django
 
     {{ object.fieldname }}
 
