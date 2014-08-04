@@ -23,7 +23,7 @@ A brief overview
 Creating models
 ~~~~~~~~~~~~~~~
 
-Using the ``TranslatedFields`` wrapper, model fields can be marked as translatable::
+Using the :class:`~parler.models.TranslatedFields` wrapper, model fields can be marked as translatable::
 
     from django.db import models
     from parler.models import TranslatableModel, TranslatedFields

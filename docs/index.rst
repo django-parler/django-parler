@@ -24,8 +24,8 @@ Getting started
    :maxdepth: 2
 
    quickstart
-   templatetags
    configuration
+   templatetags
 
 In depth topics
 ---------------
