@@ -9,6 +9,20 @@ To use the template loads, add this to the top of the template:
 
     {% load parler_tags %}
 
+The template tags offer the following features to template developers:
+
+* Getting a translated URL of the current page, or any other object.
+* Switching the object language, e.g. to print views in a different language.
+* Fetching translated fields in a thread-safe way (for shared objects).
+
+All translated fields can be read like normal fields.
+
+When a translation is not available for the field,
+an empty string (or :django:setting:`TEMPLATE_STRING_IF_INVALID`) will be outputted.
+That's because the :class:`~parler.models.TranslationDoesNotExist` exception
+inherits from :class:`~exceptions.AttributeError`, which the Django template ignores.
+
+
 .. _get_translated_url:
 
 Getting the translated URL
