@@ -7,17 +7,17 @@ All translated fields can be read like normal fields, just using like::
 
     {{ object.fieldname }}
 
-For other situations, you may need to use the template tags, e.g.:
-
-* Getting a translated URL of the current page, or any other object.
-* Switching the object language, e.g. to display fields in a different language.
-* Fetching translated fields in a thread-safe way (for shared objects).
-
 When a translation is not available for the field,
 an empty string (or :django:setting:`TEMPLATE_STRING_IF_INVALID`) will be outputted.
 The Django template system safely ignores the :class:`~parler.models.TranslationDoesNotExist`
 exception that would normally be emitted in code;
 that's because that exception inherits from :class:`~exceptions.AttributeError`.
+
+For other situations, you may need to use the template tags, e.g.:
+
+* Getting a translated URL of the current page, or any other object.
+* Switching the object language, e.g. to display fields in a different language.
+* Fetching translated fields in a thread-safe way (for shared objects).
 
 To use the template loads, add this to the top of the template:
 
