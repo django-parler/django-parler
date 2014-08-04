@@ -3,8 +3,11 @@
 Template tags
 =============
 
-All translated fields can be read like normal fields.
-The template tags provide additional utility features:
+All translated fields can be read like normal fields, just using like::
+
+    {{ object.fieldname }}
+
+For other situations, you may need to use the template tags, e.g.:
 
 * Getting a translated URL of the current page, or any other object.
 * Switching the object language, e.g. to display fields in a different language.
