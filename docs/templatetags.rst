@@ -3,24 +3,24 @@
 Template tags
 =============
 
+All translated fields can be read like normal fields.
+The template tags provide additional utility features:
+
+* Getting a translated URL of the current page, or any other object.
+* Switching the object language, e.g. to display fields in a different language.
+* Fetching translated fields in a thread-safe way (for shared objects).
+
+When a translation is not available for the field,
+an empty string (or :django:setting:`TEMPLATE_STRING_IF_INVALID`) will be outputted.
+The Django template system safely ignores the :class:`~parler.models.TranslationDoesNotExist`
+exception that would normally be emitted in code;
+that's because that exception inherits from :class:`~exceptions.AttributeError`.
+
 To use the template loads, add this to the top of the template:
 
 .. code-block:: html+django
 
     {% load parler_tags %}
-
-The template tags offer the following features to template developers:
-
-* Getting a translated URL of the current page, or any other object.
-* Switching the object language, e.g. to print views in a different language.
-* Fetching translated fields in a thread-safe way (for shared objects).
-
-All translated fields can be read like normal fields.
-
-When a translation is not available for the field,
-an empty string (or :django:setting:`TEMPLATE_STRING_IF_INVALID`) will be outputted.
-That's because the :class:`~parler.models.TranslationDoesNotExist` exception
-inherits from :class:`~exceptions.AttributeError`, which the Django template ignores.
 
 
 .. _get_translated_url:
