@@ -25,6 +25,7 @@ It's also possible to create the translated fields model manually:
         title = models.CharField(_("Title"), max_length=200)
 
         class Meta:
+            unique_together = ('language_code', 'master')
             verbose_name = _("MyModel translation")
 
 This has the same effect, but also allows to to override
