@@ -6,21 +6,24 @@ python:
   - "3.3"
   - "3.4"
 env:
-  - DJANGO=1.4.2
-  - DJANGO=1.5.1
-  - DJANGO=1.6.0
+  - DJANGO="django==1.4.2"
+  - DJANGO="django==1.5.1"
+  - DJANGO="django==1.6.0"
+  - DJANGO="https://www.djangoproject.com/download/1.7c2/tarball/"
 matrix:
   exclude:
+  - python: "2.6"
+    env: DJANGO="https://www.djangoproject.com/download/1.7c2/tarball/"
   - python: "3.2"
-    env: DJANGO=1.4.2
+    env: DJANGO="django==1.4.2"
   - python: "3.3"
-    env: DJANGO=1.4.2
+    env: DJANGO="django==1.4.2"
   - python: "3.4"
-    env: DJANGO=1.4.2
+    env: DJANGO="django==1.4.2"
 
 install:
   - pip install -q coveralls  # installs coverage
-  - pip install -q Django==$DJANGO
+  - pip install -q $DJANGO
   - pip install -q -e .
 
 script:
