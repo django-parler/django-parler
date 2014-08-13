@@ -23,3 +23,12 @@ except ImportError:
     # Django <1.6 does not preserve filters
     def add_preserved_filters(context, form_url):
         return form_url
+
+
+def with_metaclass(meta, *bases):
+    """Create a base class with a metaclass."""
+    # from six v1.7.1, to allow consistent behaviours across all django versions
+    class metaclass(meta):
+        def __new__(cls, name, this_bases, d):
+            return meta(name, bases, d)
+    return type.__new__(metaclass, 'temporary_class', (), {})

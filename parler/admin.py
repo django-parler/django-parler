@@ -105,7 +105,10 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         """
         Make sure the current language is selected.
         """
-        qs = super(BaseTranslatableAdmin, self).queryset(request)
+        if django.VERSION >= (1, 7):
+            qs = super(BaseTranslatableAdmin, self).get_queryset(request)
+        else:
+            qs = super(BaseTranslatableAdmin, self).queryset(request)
 
         if self._has_translatable_model():
             if not isinstance(qs, TranslatableQuerySet):
@@ -217,7 +220,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if not self._has_translatable_model():
             return urlpatterns
         else:
-            info = self.model._meta.app_label, self.model._meta.module_name
+            opts = self.model._meta
+            info = opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name
 
             return patterns('',
                 url(r'^(.+)/delete-translation/(.+)/$',
@@ -278,7 +282,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return redirect  # a 200 response likely.
 
         uri = iri_to_uri(request.path)
-        info = (self.model._meta.app_label, self.model._meta.module_name)
+        opts = self.model._meta
+        info = (opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name)
 
         # Pass ?language=.. to next page.
         language = request.GET.get(self.query_language_key)
@@ -339,7 +344,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             ))
 
             if self.has_change_permission(request, None):
-                return HttpResponseRedirect(reverse('admin:{0}_{1}_changelist'.format(opts.app_label, opts.module_name)))
+                return HttpResponseRedirect(reverse('admin:{0}_{1}_changelist'.format(opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name)))
             else:
                 return HttpResponseRedirect(reverse('admin:index'))
 

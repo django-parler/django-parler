@@ -114,16 +114,18 @@ class TranslatableManager(models.Manager):
     """
     queryset_class = TranslatableQuerySet
 
-    def get_query_set(self):
+    def get_queryset(self):
         if not issubclass(self.queryset_class, TranslatableQuerySet):
             raise ImproperlyConfigured("{0}.queryset_class does not inherit from TranslatableQuerySet".format(self.__class__.__name__))
         return self.queryset_class(self.model, using=self._db)
+
+    get_query_set = get_queryset
 
     def language(self, language_code=None):
         """
         Set the language code to assign to objects retrieved using this Manager.
         """
-        return self.get_query_set().language(language_code)
+        return self.get_queryset().language(language_code)
 
     def translated(self, *language_codes, **translated_fields):
         """
@@ -138,7 +140,7 @@ class TranslatableManager(models.Manager):
 
         This will query the translated model for the ``name`` field.
         """
-        return self.get_query_set().translated(*language_codes, **translated_fields)
+        return self.get_queryset().translated(*language_codes, **translated_fields)
 
     def active_translations(self, language_code=None, **translated_fields):
         """
@@ -149,7 +151,7 @@ class TranslatableManager(models.Manager):
 
         When ``hide_untranslated = True``, only the currently active language will be returned.
         """
-        return self.get_query_set().active_translations(language_code, **translated_fields)
+        return self.get_queryset().active_translations(language_code, **translated_fields)
 
 
 # Export the names in django-hvad style too:
