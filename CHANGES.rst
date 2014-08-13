@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Django 1.7 compatibility.
+
 Changes in version 1.0 (2014-07-07)
 -----------------------------------
 

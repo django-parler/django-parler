@@ -3,8 +3,8 @@ Django compatibility
 
 This package has been tested with:
 
-* Django versions 1.4, 1.5 and 1.6
-* Python versions 2.6, 2.7 and 3.3
+* Django versions 1.4, 1.5, 1.6 and 1.7
+* Python versions 2.6, 2.7, 3.3 and 3.4
 
 .. _orm-restrictions:
 
