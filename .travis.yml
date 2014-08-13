@@ -23,7 +23,7 @@ matrix:
 
 install:
   - pip install -q coveralls  # installs coverage
-  - pip install -q $DJANGO
+  - pip install $DJANGO
   - pip install -q -e .
 
 script:
