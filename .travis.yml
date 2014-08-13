@@ -24,7 +24,7 @@ matrix:
 install:
   - pip install -q coveralls  # installs coverage
   - pip install $DJANGO
-  - pip install -q -e .
+  - pip install -e .
 
 script:
   - coverage run --source=example/article,parler runtests.py
