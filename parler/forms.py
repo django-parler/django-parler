@@ -83,6 +83,7 @@ class TranslatableModelFormMixin(object):
             translation.validate_unique(exclude)
         except ValidationError as e:
             self._update_errors(e)
+        self.instance._translations_cache = {}
 
     def save(self, *args, **kwargs):
         # Using args, kwargs to support custom parent arguments too.
