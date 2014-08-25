@@ -15,8 +15,15 @@ class Article(TranslatableModel):
     # The translated fields:
     translations = TranslatedFields(
         title = models.CharField("Title", max_length=200),
-        slug = models.SlugField("Slug", unique=True),
-        content = models.TextField()
+        slug = models.SlugField("Slug"),
+        content = models.TextField(),
+
+        # Make slug unique per language
+        meta={
+            'unique_together': (
+                ('slug', 'language_code'),
+            ),
+        }
     )
 
     # Regular fields

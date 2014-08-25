@@ -56,7 +56,7 @@ The manager and queryset objects of django-parler can work together with django-
 from __future__ import unicode_literals
 import django
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import models, router
 from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
@@ -432,6 +432,31 @@ class TranslatableModel(models.Model):
     def delete(self, using=None):
         _delete_cached_translations(self)
         super(TranslatableModel, self).delete(using)
+
+
+    def validate_unique(self, exclude=None):
+        """
+        Also validate the unique_together of the translated model.
+        """
+        # This is called from ModelForm._post_clean() or Model.full_clean()
+        errors = {}
+        try:
+            super(TranslatableModel, self).validate_unique(exclude=exclude)
+        except ValidationError as e:
+            errors = e.message_dict  # Django 1.5 + 1.6 compatible
+
+        translations = self._translations_cache.values()
+        for translation in translations:
+            if translation is None:  # Skip fallback markers
+                continue
+
+            try:
+                translation.validate_unique(exclude=exclude)
+            except ValidationError as e:
+                errors.update(e.message_dict)
+
+        if errors:
+            raise ValidationError(errors)
 
 
     def save_translations(self, *args, **kwargs):
