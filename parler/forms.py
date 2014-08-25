@@ -1,9 +1,9 @@
 from django import forms
-from django.core.exceptions import ValidationError
-from django.forms.models import ModelFormMetaclass, BaseInlineFormSet, construct_instance
+from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
 from django.utils.translation import get_language
 from django.utils import six
 from parler.models import TranslationDoesNotExist
+
 
 __all__ = (
     'TranslatableModelForm',
@@ -66,38 +66,26 @@ class TranslatableModelFormMixin(object):
             else:
                 self.language_code = current_language or get_language()
 
-        # Make sure the language code is set as early as possible (so it's active during clean() methods)
-        #self.instance.set_current_language(self.language_code)
-
     def _post_clean(self):
-        # To check unique fields in translated model first a throwaway instance
-        # the translated model is built from the form data, then the validate
-        # unique on this instance is performed
-        super(TranslatableModelFormMixin, self)._post_clean()
-        opts = self._meta
-        translation = self.instance._get_translated_model(auto_create=True)
-        translation = construct_instance(self, translation, opts.fields, opts.exclude)
-
-        exclude = self._get_validation_exclusions()
-        try:
-            translation.validate_unique(exclude)
-        except ValidationError as e:
-            self._update_errors(e)
-        self.instance._translations_cache = {}
-
-    def save(self, *args, **kwargs):
-        # Using args, kwargs to support custom parent arguments too.
+        # Copy the translated fields into the model
+        # Make sure the language code is set as early as possible (so it's active during most clean() methods)
         self.instance.set_current_language(self.language_code)
-        self.save_translated_fields(*args, **kwargs)
-        return super(TranslatableModelFormMixin, self).save(*args, **kwargs)
+        self.save_translated_fields()
 
-    def save_translated_fields(self, *args, **kwargs):
+        # Perform the regular clean checks, this also updates self.instance
+        super(TranslatableModelFormMixin, self)._post_clean()
+
+    def save_translated_fields(self):
         """
         Save all translated fields.
         """
         # Assign translated fields to the model (using the TranslatedAttribute descriptor)
         for field in self._get_translated_fields():
-            setattr(self.instance, field, self.cleaned_data[field])
+            try:
+                value = self.cleaned_data[field]
+            except KeyError:  # Field has a ValidationError
+                continue
+            setattr(self.instance, field, value)
 
     def _get_translated_fields(self):
         return [f_name for f_name in self._meta.model._translations_model.get_translated_fields() if f_name in self.fields]
