@@ -74,3 +74,15 @@ class ConcreteModel(AbstractModel):
     translations = TranslatedFields(
         tr_title = models.CharField("Translated Title", max_length=200)
     )
+
+
+
+class UniqueTogetherModel(TranslatableModel):
+    translations = TranslatedFields(
+        slug = models.SlugField(),
+        meta = {
+            'unique_together': [
+                ('slug', 'language_code',),
+            ]
+        }
+    )

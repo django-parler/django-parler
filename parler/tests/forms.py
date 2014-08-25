@@ -1,12 +1,18 @@
+from django.core.exceptions import ValidationError
 from django.utils import translation
 from parler.forms import TranslatableModelForm
 from .utils import AppTestCase
-from .testapp.models import SimpleModel
+from .testapp.models import SimpleModel, UniqueTogetherModel
 
 
 class SimpleForm(TranslatableModelForm):
     class Meta:
         model = SimpleModel
+
+
+class UniqueTogetherForm(TranslatableModelForm):
+    class Meta:
+        model = UniqueTogetherModel
 
 
 class FormTests(AppTestCase):
@@ -42,3 +48,18 @@ class FormTests(AppTestCase):
             x = SimpleModel.objects.language('nl').get(pk=instance.pk)
             self.assertEqual(x.shared, 'TEST')
             self.assertEqual(x.tr_title, 'TRANS')
+
+
+    def test_unique_together(self):
+        UniqueTogetherModel(_current_language='en', slug='foo').save()
+
+        # Different language code, no problem
+        form = UniqueTogetherForm(data={'slug': 'foo'})
+        form.language_code = 'fr'
+        self.assertTrue(form.is_valid())
+
+        # Same language code, should raise unique_together check
+        form = UniqueTogetherForm(data={'slug': 'foo'})
+        form.language_code = 'en'
+        self.assertFalse(form.is_valid())
+        self.assertRaises(ValidationError, lambda: form.instance.validate_unique())
