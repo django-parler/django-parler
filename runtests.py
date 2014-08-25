@@ -7,7 +7,7 @@ from os import path
 if not settings.configured:
     module_root = path.dirname(path.realpath(__file__))
 
-    sys.path.append(path.join(module_root, 'example'))
+    sys.path.insert(0, path.join(module_root, 'example'))
 
     settings.configure(
         DEBUG = False,  # will be False anyway by DjangoTestRunner.
