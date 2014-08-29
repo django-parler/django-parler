@@ -12,6 +12,9 @@ if 'sdist' in sys.argv or 'develop' in sys.argv:
     try:
         os.chdir('parler')
         from django.core import management
+    except ImportError as e:
+        print e
+    else:
         management.call_command('compilemessages')
     finally:
         os.chdir('..')
