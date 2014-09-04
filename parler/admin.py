@@ -34,7 +34,7 @@ While almost every admin feature just works, there are a few special cases to ta
 * The :attr:`~django.contrib.admin.ModelAdmin.prepopulated_fields` needs to be replaced with a call
   to :func:`~django.contrib.admin.ModelAdmin.get_prepopulated_fields`.
 
-See the :ref:`admin-compat` for details.
+See the :ref:`admin compatibility page <admin-compat>` for details.
 """
 from __future__ import unicode_literals
 import django

@@ -6,6 +6,7 @@ Changes in version 1.1 (in development)
 
 * Fix checking ``unique_together`` on the translated model.
 * Added ``SortedRelatedFieldListFilter`` for displaying translated models in the ``list_filter``.
+* Added ``parler.widgets`` with ``SortedSelect`` and friends.
 
 
 Changes in version 1.0 (2014-07-07)

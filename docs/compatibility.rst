@@ -36,15 +36,40 @@ Hence, they can't be combined with other filters on translated fields,
 as that causes double joins on the translations table.
 See `the ORM documentation <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ for more details.
 
+The ``ordering`` meta field
+---------------------------
+
+It's not possible to order on translated fields by default.
+Django won't allow the following::
+
+    from django.db import models
+    from parler.models import TranslatableModel, TranslatedFields
+
+    class MyModel(TranslatableModel):
+        translations = TranslatedFields(
+            title = models.CharField(max_length=100),
+        )
+
+        class Meta:
+            ordering = ('title',)  # NOT ALLOWED
+
+        def __unicode__(self):
+            return self.title
+
+You can however, perform ordering within the queryset::
+
+    MyModel.objects.translated('en').order_by('translations__title')
+
+You can also use the provided classes to perform the sorting within Python code.
+
+* For the admin :attr:`~django.contrib.admin.ModelAdmin.list_filter` use: :class:`~parler.admin.SortedRelatedFieldListFilter`
+* For forms widgets use: :class:`~parler.widgets.SortedSelect`, :class:`~parler.widgets.SortedSelectMultiple`, :class:`~parler.widgets.SortedCheckboxSelectMultiple`
+
+
 .. _admin-compat:
 
-Django Admin compatibility
---------------------------
-
-Almost every Django admin feature just works, there are a few special cases:
-
-Using search_fields
-~~~~~~~~~~~~~~~~~~~
+Using ``search_fields`` in the admin
+------------------------------------
 
 When translated fields are included in the :attr:`~django.contrib.admin.ModelAdmin.search_fields`,
 they should be includes with their full ORM path. For example::
@@ -55,8 +80,8 @@ they should be includes with their full ORM path. For example::
         search_fields = ('translations__title',)
 
 
-Using prepopulated_fields
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Using ``prepopulated_fields`` in the admin
+------------------------------------------
 
 Using :attr:`~django.contrib.admin.ModelAdmin.prepopulated_fields` doesn't work yet,
 as the admin will complain that the field does not exist.
@@ -73,8 +98,8 @@ Use :func:`~django.contrib.admin.ModelAdmin.get_prepopulated_fields` as workarou
                 'slug': ('title',)
             }
 
-Using fieldsets in Django 1.4
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using ``fieldsets`` in Django 1.4
+---------------------------------
 
 When using Django 1.4, there is a small tweak you'll have to make in the admin.
 Instead of using :attr:`~django.contrib.admin.ModelAdmin.fieldsets`, use ``declared_fieldsets``
