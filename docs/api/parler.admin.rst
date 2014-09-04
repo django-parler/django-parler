@@ -35,3 +35,9 @@ The ``TranslatableTabularInline`` class
 ---------------------------------------
 
 .. autoclass:: parler.admin.TranslatableTabularInline
+
+
+The ``SortedRelatedFieldListFilter`` class
+------------------------------------------
+
+.. autoclass:: parler.admin.SortedRelatedFieldListFilter

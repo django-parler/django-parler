@@ -5,6 +5,7 @@ Translation support for admin forms.
 
 * Model support: :class:`TranslatableAdmin`.
 * Inline support: :class:`TranslatableInlineModelAdmin`, :class:`TranslatableStackedInline`, :class:`TranslatableTabularInline`.
+* Utilities: :class:`SortedRelatedFieldListFilter`.
 
 Admin classes can be created as expected:
 
@@ -64,6 +65,14 @@ from parler.utils.template import select_template_name
 # Code partially taken from django-hvad
 # which is (c) 2011, Jonas Obrist, BSD licensed
 
+__all__ = (
+    'BaseTranslatableAdmin',
+    'TranslatableAdmin',
+    'TranslatableInlineModelAdmin',
+    'TranslatableStackedInline',
+    'TranslatableTabularInline',
+    'SortedRelatedFieldListFilter',
+)
 
 _language_media = Media(css={
     'all': ('parler/admin/language_tabs.css',)
@@ -572,3 +581,26 @@ class TranslatableTabularInline(TranslatableInlineModelAdmin):
         else:
             # Admin default
             return 'admin/edit_inline/tabular.html'
+
+
+class SortedRelatedFieldListFilter(admin.RelatedFieldListFilter):
+    """
+    Override the standard :class:`~django.contrib.admin.RelatedFieldListFilter`,
+    to sort the values after rendering their ``__unicode__()`` values.
+    This can be used for translated models, which are difficult to sort beforehand.
+    Usage:
+
+    .. code-block:: python
+
+        from django.contrib import admin
+        from parler.admin import SortedRelatedFieldListFilter
+
+        class MyAdmin(admin.ModelAdmin):
+
+            list_filter = (
+                ('related_field_name', SortedRelatedFieldListFilter),
+            )
+    """
+    def __init__(self, *args, **kwargs):
+        super(SortedRelatedFieldListFilter, self).__init__(*args, **kwargs)
+        self.lookup_choices = sorted(self.lookup_choices, key=lambda a: a[1].lower())
