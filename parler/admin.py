@@ -1,5 +1,39 @@
 """
 Translation support for admin forms.
+
+*django-parler* provides the following classes:
+
+* Model support: :class:`TranslatableAdmin`.
+* Inline support: :class:`TranslatableInlineModelAdmin`, :class:`TranslatableStackedInline`, :class:`TranslatableTabularInline`.
+
+Admin classes can be created as expected:
+
+.. code-block:: python
+
+    from django.contrib import admin
+    from parler.admin import TranslatableAdmin
+    from myapp.models import Project
+
+    class ProjectAdmin(TranslatableAdmin):
+        list_display = ('title', 'status')
+        fieldsets = (
+            (None, {
+                'fields': ('title', 'status'),
+            }),
+        )
+
+    admin.site.register(Project, ProjectAdmin)
+
+All translated fields can be used in the :attr:`~django.contrib.admin.ModelAdmin.list_display`
+and :attr:`~django.contrib.admin.ModelAdmin.fieldsets` like normal fields.
+
+While almost every admin feature just works, there are a few special cases to take care of:
+
+* The :attr:`~django.contrib.admin.ModelAdmin.search_fields` needs the actual ORM fields.
+* The :attr:`~django.contrib.admin.ModelAdmin.prepopulated_fields` needs to be replaced with a call
+  to :func:`~django.contrib.admin.ModelAdmin.get_prepopulated_fields`.
+
+See the :ref:`admin-compat` for details.
 """
 from __future__ import unicode_literals
 import django
