@@ -219,11 +219,11 @@ class TranslatableModel(models.Model):
                 except KeyError:
                     pass
 
-        # Run original Django model __init__
-        super(TranslatableModel, self).__init__(*args, **kwargs)
-
         self._translations_cache = {}
         self._current_language = normalize_language_code(current_language or get_language())  # What you used to fetch the object is what you get.
+
+        # Run original Django model __init__
+        super(TranslatableModel, self).__init__(*args, **kwargs)
 
         # Assign translated args manually.
         if translated_kwargs:
