@@ -13,6 +13,13 @@ from parler.utils import get_language_settings
 if six.PY3:
     long = int
 
+try:
+    # In Django 1.6, a timeout of 0 seconds is accepted as valid input,
+    # and a sentinel value is used to denote the default timeout. Use that.
+    from django.core.cache.backends.base import DEFAULT_TIMEOUT
+except ImportError:
+    DEFAULT_TIMEOUT = 0
+
 
 def get_object_cache_keys(instance):
     """
@@ -82,7 +89,7 @@ def get_cached_translated_field(instance, language_code, field_name):
     return values.get(field_name, None)
 
 
-def _cache_translation(translation, timeout=0):
+def _cache_translation(translation, timeout=DEFAULT_TIMEOUT):
     """
     Store a new translation in the cache.
     """
@@ -100,7 +107,8 @@ def _cache_translation(translation, timeout=0):
     cache.set(key, values, timeout=timeout)
 
 
-def _cache_translation_needs_fallback(instance, language_code, timeout=0):
+
+def _cache_translation_needs_fallback(instance, language_code, timeout=DEFAULT_TIMEOUT):
     """
     Store the fact that a translation doesn't exist, and the fallback should be used.
     """

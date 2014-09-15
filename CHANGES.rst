@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in version 1.0.1 (2014-09-16)
+-------------------------------------
+
+* Fix storing cached translations in Django 1.6.
+
+
 Changes in version 1.0 (2014-07-07)
 -----------------------------------
 
