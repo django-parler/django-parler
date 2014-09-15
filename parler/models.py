@@ -270,6 +270,12 @@ class TranslatableModel(models.Model):
             # NOTE this may also return newly auto created translations which are not saved yet.
             return self._translations_cache[language_code] is not None
         except KeyError:
+            # Try to fetch from the cache first.
+            # If the cache returns the fallback, it means the original does not exist.
+            object = get_cached_translation(self, language_code, use_fallback=True)
+            if object is not None:
+                return object.language_code == language_code
+
             try:
                 # Fetch from DB, fill the cache.
                 self._get_translated_model(language_code, use_fallback=False, auto_create=False)
@@ -359,19 +365,20 @@ class TranslatableModel(models.Model):
         fallback_msg = None
         lang_dict = get_language_settings(language_code)
 
-        if use_fallback and (lang_dict['fallback'] != language_code):
+        if lang_dict['fallback'] != language_code:
             # Explicitly set a marker for the fact that this translation uses the fallback instead.
             # Avoid making that query again.
             self._translations_cache[language_code] = None  # None value is the marker.
             if not self._state.adding or self.pk:
                 _cache_translation_needs_fallback(self, language_code)
 
-            # Jump to fallback language, return directly.
-            # Don't cache under this language_code
-            try:
-                return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create)
-            except self._translations_model.DoesNotExist:
-                fallback_msg = " (tried fallback {0})".format(lang_dict['fallback'])
+            if use_fallback:
+                # Jump to fallback language, return directly.
+                # Don't cache under this language_code
+                try:
+                    return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create)
+                except self._translations_model.DoesNotExist:
+                    fallback_msg = " (tried fallback {0})".format(lang_dict['fallback'])
 
         # None of the above, bail out!
         raise self._translations_model.DoesNotExist(
