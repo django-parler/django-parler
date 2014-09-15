@@ -6,6 +6,7 @@ Changes in version 1.1 (in development)
 
 * Fix checking ``unique_together`` on the translated model.
 * Fix storing cached translations in Django 1.6.
+* Fix access to ``TranslatableModelForm._current_language`` in early ``__init__()`` code.
 * Added ``SortedRelatedFieldListFilter`` for displaying translated models in the ``list_filter``.
 * Added ``parler.widgets`` with ``SortedSelect`` and friends.
 
