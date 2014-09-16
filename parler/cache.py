@@ -112,7 +112,7 @@ def _cache_translation_needs_fallback(instance, language_code, timeout=DEFAULT_T
     """
     Store the fact that a translation doesn't exist, and the fallback should be used.
     """
-    if not instance.pk or instance._state.adding:
+    if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
         return
 
     key = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
