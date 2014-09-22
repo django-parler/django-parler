@@ -1,4 +1,5 @@
 # Django settings for example project.
+import django
 from os.path import join, dirname, realpath
 
 SRC_DIR = dirname(dirname(realpath(__file__)))
@@ -117,6 +118,9 @@ LOGGING = {
         },
     }
 }
+
+if django.VERSION >= (1,7):
+    TEST_RUNNER = 'django.test.runner.DiscoverRunner'  # silence system checks
 
 PARLER_DEFAULT_LANGUAGE = 'en'
 
