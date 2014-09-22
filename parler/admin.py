@@ -144,11 +144,11 @@ class BaseTranslatableAdmin(BaseModelAdmin):
             return get_language()
 
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         """
         Make sure the current language is selected.
         """
-        if django.VERSION >= (1, 7):
+        if django.VERSION >= (1, 6):
             qs = super(BaseTranslatableAdmin, self).get_queryset(request)
         else:
             qs = super(BaseTranslatableAdmin, self).queryset(request)
@@ -164,6 +164,8 @@ class BaseTranslatableAdmin(BaseModelAdmin):
 
         return qs
 
+    # For Django 1.5
+    queryset = get_queryset
 
     def get_language_tabs(self, request, obj, available_languages, css_class=None):
         """

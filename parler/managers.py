@@ -1,6 +1,7 @@
 """
 Custom generic managers
 """
+import django
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.query import QuerySet
@@ -119,7 +120,9 @@ class TranslatableManager(models.Manager):
             raise ImproperlyConfigured("{0}.queryset_class does not inherit from TranslatableQuerySet".format(self.__class__.__name__))
         return self.queryset_class(self.model, using=self._db)
 
-    get_query_set = get_queryset
+    # For Django 1.5
+    if django.VERSION < (1, 7):
+        get_query_set = get_queryset
 
     def language(self, language_code=None):
         """
