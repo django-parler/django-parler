@@ -6,7 +6,7 @@ Changes in version 1.1 (in development)
 
 * Added ``SortedRelatedFieldListFilter`` for displaying translated models in the ``list_filter``.
 * Added ``parler.widgets`` with ``SortedSelect`` and friends.
-* Added Django 1.7 compatibility. (TODO: migration support!)
+* Added Django 1.7 compatibility.
 * Fix checking ``unique_together`` on the translated model.
 * Fix storing cached translations in Django 1.6.
 * Fix access to ``TranslatableModelForm._current_language`` in early ``__init__()`` code.
