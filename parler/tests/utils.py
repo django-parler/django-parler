@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.contrib.sites.models import Site
 from django.db.models import loading
-from django.template.loaders import app_directories
 from django.test import TestCase
 from django.utils.importlib import import_module
 import os
@@ -23,6 +22,7 @@ class AppTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from django.template.loaders import app_directories  # late import, for django 1.7
         if cls.install_apps:
             # When running this app via `./manage.py test fluent_pages`, auto install the test app + models.
             run_syncdb = False

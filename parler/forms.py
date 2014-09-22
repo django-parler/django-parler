@@ -3,6 +3,7 @@ from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
 from django.utils.translation import get_language
 from django.utils import six
 from parler.models import TranslationDoesNotExist
+from parler.utils import compat
 
 
 __all__ = (
@@ -176,7 +177,7 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     Utility to create the formfield from a model field.
     When a field is not editable, a ``None`` will be returned.
     """
-    field = model._meta.get_field_by_name(name)[0]
+    field = model._meta.get_field(name)
     if not field.editable:  # see fields_for_model() logic in Django.
         return None
 
@@ -191,12 +192,14 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     return formfield
 
 
-class TranslatableModelForm(six.with_metaclass(TranslatableModelFormMetaclass, TranslatableModelFormMixin), forms.ModelForm):
+class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass, TranslatableModelFormMixin, forms.ModelForm)):
     """
     The model form to use for translated models.
     """
     # six.with_metaclass does not handle more than 2 parent classes for django < 1.6
-    # so only one is wrapped within with_metaclass
+    # but we need all of them in django 1.7 to pass check admin.E016:
+    #       "The value of 'form' must inherit from 'BaseModelForm'"
+    # so we use our copied version in parler.utils.compat
 
 
 class TranslatableBaseInlineFormSet(BaseInlineFormSet):
