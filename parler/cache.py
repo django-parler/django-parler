@@ -21,6 +21,18 @@ except ImportError:
     DEFAULT_TIMEOUT = 0
 
 
+class IsMissing(object):
+    # Allow _get_any_translated_model() to evaluate this as False.
+    def __nonzero__(self):
+        return False   # Python 2
+    def __bool__(self):
+        return False   # Python 3
+    def __repr__(self):
+        return "<IsMissing>"
+
+MISSING = IsMissing()  # sentinel value
+
+
 def get_object_cache_keys(instance):
     """
     Return the cache keys associated with an object.

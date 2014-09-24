@@ -64,7 +64,7 @@ from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext, ugettext_lazy as _
 from django.utils import six
 from parler import signals
-from parler.cache import _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field
+from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
@@ -268,7 +268,7 @@ class TranslatableModel(models.Model):
         try:
             # Check the local cache directly, and the answer is known.
             # NOTE this may also return newly auto created translations which are not saved yet.
-            return self._translations_cache[language_code] is not None
+            return self._translations_cache[language_code] is not MISSING
         except KeyError:
             # Try to fetch from the cache first.
             # If the cache returns the fallback, it means the original does not exist.
@@ -311,7 +311,7 @@ class TranslatableModel(models.Model):
             object = self._translations_cache[language_code]
 
             # If cached object indicates the language doesn't exist, need to query the fallback.
-            if object is not None:
+            if object is not MISSING:
                 return object
         except KeyError:
             # 2. No cache, need to query
@@ -333,7 +333,7 @@ class TranslatableModel(models.Model):
                     if object is not None:
                         # Track in local cache
                         if object.language_code != language_code:
-                            self._translations_cache[language_code] = None  # Set fallback marker
+                            self._translations_cache[language_code] = MISSING  # Set fallback marker
                         self._translations_cache[object.language_code] = object
                         return object
                     else:
@@ -368,7 +368,7 @@ class TranslatableModel(models.Model):
         if lang_dict['fallback'] != language_code:
             # Explicitly set a marker for the fact that this translation uses the fallback instead.
             # Avoid making that query again.
-            self._translations_cache[language_code] = None  # None value is the marker.
+            self._translations_cache[language_code] = MISSING  # None value is the marker.
             if not self._state.adding or self.pk:
                 _cache_translation_needs_fallback(self, language_code)
 
@@ -398,7 +398,7 @@ class TranslatableModel(models.Model):
             try:
                 return self._translations_cache.get(self._current_language, None) \
                     or self._translations_cache.get(self.get_fallback_language(), None) \
-                    or next(t for t in six.itervalues(self._translations_cache) if t if not None)  # Skip fallback markers.
+                    or next(t for t in six.itervalues(self._translations_cache) if t if not MISSING)  # Skip fallback markers.
             except StopIteration:
                 pass
 
@@ -454,7 +454,7 @@ class TranslatableModel(models.Model):
 
         translations = self._translations_cache.values()
         for translation in translations:
-            if translation is None:  # Skip fallback markers
+            if translation is MISSING:  # Skip fallback markers
                 continue
 
             try:
@@ -481,7 +481,7 @@ class TranslatableModel(models.Model):
         # Save all translated objects which were fetched.
         # This also supports switching languages several times, and save everything in the end.
         for translation in translations:
-            if translation is None:  # Skip fallback markers
+            if translation is MISSING:  # Skip fallback markers
                 continue
 
             self.save_translation(translation, *args, **kwargs)
