@@ -96,6 +96,9 @@ def _get_cached_values(instance, language_code, use_fallback=False):
 
     # Check for a stored fallback marker
     if values.get('__FALLBACK__', False):
+        # Internal trick, already set the fallback marker, so no query will be performed.
+        instance._translations_cache[language_code] = MISSING
+
         # Allow to return the fallback language instead.
         if use_fallback:
             lang_dict = get_language_settings(language_code)
