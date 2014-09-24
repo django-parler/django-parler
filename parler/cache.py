@@ -49,6 +49,31 @@ def get_cached_translation(instance, language_code, use_fallback=False):
     """
     Fetch an cached translation.
     """
+    values = _get_cached_values(instance, language_code, use_fallback)
+    if not values:
+        return None
+
+    translation = instance._translations_model(**values)
+    translation._state.adding = False
+    return translation
+
+
+def get_cached_translated_field(instance, language_code, field_name, use_fallback=False):
+    """
+    Fetch an cached field.
+    """
+    values = _get_cached_values(instance, language_code, use_fallback)
+    if not values:
+        return None
+
+    # Allow older cached versions where the field didn't exist yet.
+    return values.get(field_name, None)
+
+
+def _get_cached_values(instance, language_code, use_fallback=False):
+    """
+    Fetch an cached field.
+    """
     if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
         return None
 
@@ -63,30 +88,12 @@ def get_cached_translation(instance, language_code, use_fallback=False):
         if use_fallback:
             lang_dict = get_language_settings(language_code)
             if lang_dict['fallback'] != language_code:
-                return get_cached_translation(instance, lang_dict['fallback'], use_fallback=False)
+                return _get_cached_values(instance, lang_dict['fallback'], use_fallback=False)
         return None
 
     values['master'] = instance
     values['language_code'] = language_code
-    translation = instance._translations_model(**values)
-    translation._state.adding = False
-    return translation
-
-
-def get_cached_translated_field(instance, language_code, field_name):
-    """
-    Fetch an cached field.
-    """
-    if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
-        return None
-
-    key = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
-    values = cache.get(key)
-    if not values:
-        return None
-
-    # Allow older cached versions where the field didn't exist yet.
-    return values.get(field_name, None)
+    return values
 
 
 def _cache_translation(translation, timeout=DEFAULT_TIMEOUT):
