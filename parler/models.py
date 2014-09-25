@@ -521,26 +521,20 @@ class TranslatableModel(models.Model):
         Also consider using ``field = TranslatedField(any_language=True)`` in the model itself,
         to make this behavior the default for the given field.
         """
-        # By default, query via descriptor (TranslatedFieldDescriptor)
-        # which also attempts the fallback language if configured to do so.
-        tr_model = self
-
         # Extra feature: query a single field from a other translation.
         if language_code and language_code != self._current_language:
-            # Try to fetch a cached value first.
-            value = get_cached_translated_field(self, language_code, field)
-            if value is not None:
-                return value
-
             try:
                 tr_model = self._get_translated_model(language_code)
+                return getattr(tr_model, field)
             except TranslationDoesNotExist:
-                pass  # Use 'self'
-
-        try:
-            return getattr(tr_model, field)
-        except TranslationDoesNotExist:
-            pass
+                pass
+        else:
+            # By default, query via descriptor (TranslatedFieldDescriptor)
+            # which also attempts the fallback language if configured to do so.
+            try:
+                return getattr(self, field)
+            except TranslationDoesNotExist:
+                pass
 
         if any_language:
             translation = self._get_any_translated_model()
