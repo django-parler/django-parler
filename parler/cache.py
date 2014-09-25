@@ -57,10 +57,13 @@ def get_translation_cache_key(translated_model, master_id, language_code):
     return 'parler.{0}.{1}.{2}.{3}'.format(translated_model._meta.app_label, translated_model.__name__, long(master_id), language_code)
 
 
-def get_cached_translation(instance, language_code, use_fallback=False):
+def get_cached_translation(instance, language_code=None, use_fallback=False):
     """
     Fetch an cached translation.
     """
+    if language_code is None:
+        language_code = instance.get_current_language()
+
     values = _get_cached_values(instance, language_code, use_fallback)
     if not values:
         return None
@@ -70,10 +73,18 @@ def get_cached_translation(instance, language_code, use_fallback=False):
     return translation
 
 
-def get_cached_translated_field(instance, language_code, field_name, use_fallback=False):
+def get_cached_translated_field(instance, field_name, language_code=None, use_fallback=False):
     """
     Fetch an cached field.
     """
+    if language_code is None:
+        language_code = instance.get_current_language()
+
+    # In django-parler 1.1 the order of the arguments was fixed, It used to be language_code, field_name
+    # This serves as detection against backwards incompatibility issues.
+    if len(field_name) <= 5 and len(language_code) > 5:
+        raise RuntimeError("Unexpected language code, did you swap field_name, language_code?")
+
     values = _get_cached_values(instance, language_code, use_fallback)
     if not values:
         return None
