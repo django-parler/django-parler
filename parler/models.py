@@ -289,10 +289,11 @@ class TranslatableModel(models.Model):
         """
         Return the language codes of all translated variations.
         """
-        qs = self._get_translated_queryset()
-        if qs._prefetch_done:
-            return sorted(obj.language_code for obj in qs)
+        prefetch = self._get_prefetched_translations()
+        if prefetch is not None:
+            return sorted(obj.language_code for obj in prefetch)
         else:
+            qs = self._get_translated_queryset()
             return qs.values_list('language_code', flat=True).order_by('language_code')
 
 
@@ -317,12 +318,12 @@ class TranslatableModel(models.Model):
             # 2. No cache, need to query
             # Check that this object already exists, would be pointless otherwise to check for a translation.
             if not self._state.adding and self.pk:
-                qs = self._get_translated_queryset()
-                if qs._prefetch_done:
+                prefetch = self._get_prefetched_translations()
+                if prefetch is not None:
                     # 2.1, use prefetched data
                     # If the object is not found in the prefetched data (which contains all translations),
                     # it's pointless to check for memcached (2.2) or perform a single query (2.3)
-                    for object in qs:
+                    for object in prefetch:
                         if object.language_code == language_code:
                             self._translations_cache[language_code] = object
                             _cache_translation(object)  # Store in memcached
@@ -343,7 +344,7 @@ class TranslatableModel(models.Model):
                     else:
                         # 2.3, fetch from database
                         try:
-                            object = qs.get(language_code=language_code)
+                            object = self._get_translated_queryset().get(language_code=language_code)
                         except self._translations_model.DoesNotExist:
                             pass
                         else:
@@ -408,11 +409,11 @@ class TranslatableModel(models.Model):
 
         try:
             # Use prefetch if available, otherwise perform separate query.
-            qs = self._get_translated_queryset()
-            if qs._prefetch_done:
-                translation = list(qs)[0]
+            prefetch = self._get_prefetched_translations()
+            if prefetch is not None:
+                translation = prefetch[0]  # Already a list
             else:
-                translation = qs[0]
+                translation = self._get_translated_queryset()[0]
         except IndexError:
             return None
         else:
@@ -434,6 +435,17 @@ class TranslatableModel(models.Model):
             # Fallback for Django 1.4 and Django 1.5
             return accessor.get_query_set()
 
+
+    def _get_prefetched_translations(self):
+        """
+        Return the queryset with prefetch results.
+        """
+        try:
+            # Read the list directly, avoid QuerySet construction.
+            # Accessing self._get_translated_queryset()._prefetch_done is more expensive.
+            return self._prefetched_objects_cache[self._translations_field]
+        except (AttributeError, KeyError):
+            return None
 
     def save(self, *args, **kwargs):
         super(TranslatableModel, self).save(*args, **kwargs)
