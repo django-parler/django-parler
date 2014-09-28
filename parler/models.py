@@ -67,6 +67,7 @@ from parler import signals
 from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
+from parler.utils import compat
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
 import sys
 import logging
@@ -618,7 +619,7 @@ def _validate_master(new_class):
     return shared_model
 
 
-class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models.Model)):
+class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, models.Model)):
     """
     Base class for the model that holds the translated fields.
     """
