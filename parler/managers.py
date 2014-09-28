@@ -121,7 +121,9 @@ class TranslatableManager(models.Manager):
         return self.queryset_class(self.model, using=self._db)
 
     # For Django 1.5
-    if django.VERSION < (1, 7):
+    # Leave for Django 1.6/1.7, so backwards compatibility can be fixed.
+    # It will be removed in Django 1.8, so remove it here too to avoid false promises.
+    if django.VERSION < (1,8):
         get_query_set = get_queryset
 
     def language(self, language_code=None):
