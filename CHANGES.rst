@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Changes in version 1.1 (2014-09-28)
+Changes in version 1.1 (2014-09-29)
 -----------------------------------
 
 * Added Django 1.7 compatibility.
