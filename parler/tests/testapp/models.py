@@ -86,3 +86,21 @@ class UniqueTogetherModel(TranslatableModel):
             ]
         }
     )
+
+
+class ModelWithoutTranslations(models.Model):
+    
+    original_field = models.CharField(
+        default="untranslated",
+        max_length=255,
+    )
+
+
+class ExistingModelWithTranslations(TranslatableModel, ModelWithoutTranslations):
+    
+    translations = TranslatedFields(
+        original_field=models.CharField(default="translated", max_length=255)
+    )
+    
+    class Meta:
+        proxy = True
