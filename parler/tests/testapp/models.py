@@ -104,3 +104,4 @@ class ExistingModelWithTranslations(TranslatableModel, ModelWithoutTranslations)
     
     class Meta:
         proxy = True
+        verbose_name = "model with translation"  # django 1.7 forces short verbose names
