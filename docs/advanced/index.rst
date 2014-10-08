@@ -8,6 +8,7 @@ Advanced usage patterns
    slugs
    manual-models
    existing
+   migrating
    polymorphicmodel
    guardian
    multisite
