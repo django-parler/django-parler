@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in versin 1.1.1
+-----------------------
+
+* Fix accessing fields using ``safe_translation_getter(any_language=True)``
+
 Changes in version 1.1 (2014-09-29)
 -----------------------------------
 

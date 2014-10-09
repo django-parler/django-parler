@@ -404,7 +404,7 @@ class TranslatableModel(models.Model):
             try:
                 return self._translations_cache.get(self._current_language, None) \
                     or self._translations_cache.get(self.get_fallback_language(), None) \
-                    or next(t for t in six.itervalues(self._translations_cache) if t if not MISSING)  # Skip fallback markers.
+                    or next(t for t in six.itervalues(self._translations_cache) if t is not MISSING)  # Skip fallback markers.
             except StopIteration:
                 pass
 
