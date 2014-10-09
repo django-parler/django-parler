@@ -1,30 +1,9 @@
 from django.core.cache import cache
-from django.test.utils import override_settings
 from django.utils import translation
 from parler import appsettings
 
-from .utils import AppTestCase
+from .utils import AppTestCase, override_parler_settings
 from .testapp.models import SimpleModel
-
-
-class override_parler_settings(override_settings):
-    """
-    Make sure the parler.appsettings is also updated with override_settings()
-    """
-    def __init__(self, **kwargs):
-        super(override_parler_settings, self).__init__(**kwargs)
-        self.old_values = {}
-
-    def enable(self):
-        super(override_parler_settings, self).enable()
-        for key, value in self.options.items():
-            self.old_values[key] = getattr(appsettings, key)
-            setattr(appsettings, key, value)
-
-    def disable(self):
-        super(override_parler_settings, self).disable()
-        for key in self.options.keys():
-            setattr(appsettings, key, self.old_values[key])
 
 
 class QueryCountTests(AppTestCase):

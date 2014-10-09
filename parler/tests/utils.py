@@ -5,9 +5,30 @@ from django.core.management import call_command
 from django.contrib.sites.models import Site
 from django.db.models import loading
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.utils.importlib import import_module
 import os
 from parler import appsettings
+
+
+class override_parler_settings(override_settings):
+    """
+    Make sure the parler.appsettings is also updated with override_settings()
+    """
+    def __init__(self, **kwargs):
+        super(override_parler_settings, self).__init__(**kwargs)
+        self.old_values = {}
+
+    def enable(self):
+        super(override_parler_settings, self).enable()
+        for key, value in self.options.items():
+            self.old_values[key] = getattr(appsettings, key)
+            setattr(appsettings, key, value)
+
+    def disable(self):
+        super(override_parler_settings, self).disable()
+        for key in self.options.keys():
+            setattr(appsettings, key, self.old_values[key])
 
 
 class AppTestCase(TestCase):
