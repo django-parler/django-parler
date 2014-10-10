@@ -45,7 +45,8 @@ Naturally, you should still be using the same ``settings.LANGUAGE_CODE`` as your
 Instead of the above approach, it is much better to create a data migration with
 ``manage.py datamigration populate_mymodel``.
 
-Now navigate to the new data migration and write the migration, it goes something like this:
+Now navigate to the new data migration and write the migration, it goes
+something like this::
   
     def forwards(self, orm):
         "Write your forwards methods here."
