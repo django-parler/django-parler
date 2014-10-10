@@ -42,7 +42,11 @@ Now that MyModelTranslation exists, we can put data in it. To do that, we can ex
          MyModelTranslation.objects.create(master=obj, name=obj.name, language_code=settings.LANGUAGE_CODE)
 
 
-Naturally, you should still be using the same ``settings.LANGUAGE_CODE`` as your original model data was written in.
+Naturally, you should still be using the same ``settings.LANGUAGE_CODE`` as
+your original model data was written in. Just beware that if
+settings.LANGUAGE_CODE is for instance "de-DE" but you only use "de"
+in your parler languages, then you should just put "de" in the
+language_code field.
 
 
 Data migration
@@ -64,6 +68,8 @@ something like this:::
                 name=obj.name,
             )
 
+
+NB! Read the note about settings.LANGUAGE_CODE in the previous section.
 
 
 Finalizing
