@@ -49,7 +49,7 @@ Data migration
 --------------
 
 Instead of the above approach, it is much better to create a data migration with
-``manage.py datamigration populate_mymodel``.
+``manage.py datamigration myapp populate_mymodel``.
 
 Now navigate to the new data migration and write the migration, it goes
 something like this:::
