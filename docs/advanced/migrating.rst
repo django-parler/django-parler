@@ -32,6 +32,8 @@ Now, we need a translatable version, so we do the following::
 
 The, we run ``manage.py schemamigration myapp --auto``. This creates the table for MyModelTranslation.
 
+Manual migration
+----------------
 
 Now that MyModelTranslation exists, we can put data in it. To do that, we can execute the following code or create a datamigration (see after).::
 
@@ -42,11 +44,15 @@ Now that MyModelTranslation exists, we can put data in it. To do that, we can ex
 
 Naturally, you should still be using the same ``settings.LANGUAGE_CODE`` as your original model data was written in.
 
+
+Data migration
+--------------
+
 Instead of the above approach, it is much better to create a data migration with
 ``manage.py datamigration populate_mymodel``.
 
 Now navigate to the new data migration and write the migration, it goes
-something like this::
+something like this:::
   
     def forwards(self, orm):
         "Write your forwards methods here."
@@ -58,6 +64,10 @@ something like this::
                 name=obj.name,
             )
 
+
+
+Finalizing
+----------
 
 But! We are not there yet. The original field ``name`` still has to be removed from MyModel,
 otherwise there will be errors in django-parler. Thus, the example model should simply
