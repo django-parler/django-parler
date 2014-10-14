@@ -6,6 +6,7 @@ Changes in versin 1.1.1
 
 * Fix accessing fields using ``safe_translation_getter(any_language=True)``
 * Fix "dictionary changed size during iteration" in ``save_translations()`` in Python 3.
+* Added ``default_permissions=()`` for translated models in Django 1.7.
 
 
 Changes in version 1.1 (2014-09-29)
