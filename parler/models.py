@@ -323,7 +323,11 @@ class TranslatableModel(models.Model):
         except KeyError:
             # 2. No cache, need to query
             # Check that this object already exists, would be pointless otherwise to check for a translation.
-            if not self._state.adding and self.pk:
+            # benjaoming: Removing below, because self._state.adding is a
+            # default value that is possible even with pk set, and that is
+            # really wrong. 
+            #     if not self._state.adding and self.pk:
+            if self.pk:
                 prefetch = self._get_prefetched_translations()
                 if prefetch is not None:
                     # 2.1, use prefetched data
@@ -380,7 +384,11 @@ class TranslatableModel(models.Model):
             # Explicitly set a marker for the fact that this translation uses the fallback instead.
             # Avoid making that query again.
             self._translations_cache[language_code] = MISSING  # None value is the marker.
-            if not self._state.adding or self.pk:
+            # benjaoming: Removing below, because self._state.adding is a
+            # default value that is possible even with pk set, and that is
+            # really wrong. 
+            #    if not self._state.adding or self.pk:
+            if self.pk:
                 _cache_translation_needs_fallback(self, language_code)
 
         if lang_dict['fallback'] != language_code and use_fallback:

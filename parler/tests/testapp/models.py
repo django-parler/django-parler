@@ -86,3 +86,22 @@ class UniqueTogetherModel(TranslatableModel):
             ]
         }
     )
+
+
+class ModelWithoutTranslations(models.Model):
+    
+    original_field = models.CharField(
+        default="untranslated",
+        max_length=255,
+    )
+
+
+class ExistingModelWithTranslations(TranslatableModel, ModelWithoutTranslations):
+    
+    translations = TranslatedFields(
+        original_field=models.CharField(default="translated", max_length=255)
+    )
+    
+    class Meta:
+        proxy = True
+        verbose_name = "model with translation"  # django 1.7 forces short verbose names
