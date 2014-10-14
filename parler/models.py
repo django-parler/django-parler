@@ -56,7 +56,7 @@ The manager and queryset objects of django-parler can work together with django-
 from __future__ import unicode_literals
 import django
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError
 from django.db import models, router
 from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
@@ -233,6 +233,30 @@ class TranslatableModel(models.Model):
             translation = self._get_translated_model(auto_create=True)
             for field, value in six.iteritems(translated_kwargs):
                 setattr(translation, field, value)
+
+
+    def add_translation(self, language_code, **fields):
+        """
+        Add a translation to the model.
+
+        The :func:`save_translations` function is called afterwards.
+
+        The object will be saved immediately, similar to
+        calling :func:`~django.db.models.fields.related.RelatedManager.create`
+        or :func:`~django.db.models.fields.related.RelatedManager.add` on related fields.
+        """
+        if self._translations_cache.get(language_code, None):  # MISSING evaluates to False too
+            raise ValueError("Translation already exists: {0}".format(language_code))
+
+        translation = self._get_translated_model(language_code, auto_create=True)
+        translatable_fields = translation.get_translated_fields()
+        for name, value in six.iteritems(fields):
+            if name not in translatable_fields:
+                raise FieldError("Invalid field name: '{0}'".format(name))
+
+            setattr(translation, name, value)
+
+        self.save_translation(translation)
 
 
     def get_current_language(self):

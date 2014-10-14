@@ -5,6 +5,7 @@ Changes in version 1.2 (in git)
 -------------------------------
 
 * Added ``TranslatableAdmin.get_translation_objects()`` API.
+* Added ``TranslatableModel.add_translation()`` API.
 
 
 Changes in version 1.1.1 (2014-10-14)
