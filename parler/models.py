@@ -130,6 +130,11 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     meta.setdefault('db_table', shared_model._meta.db_table + '_translation')
     meta.setdefault('verbose_name', _lazy_verbose_name(shared_model))
 
+    # Avoid creating permissions for the translated model, these are not used at all.
+    # This also avoids creating lengthy permission names above 50 chars.
+    if django.VERSION >= (1,7):
+        meta.setdefault('default_permissions', ())
+
     # Define attributes for translation table
     name = str('{0}Translation'.format(shared_model.__name__))  # makes it bytes, for type()
 
@@ -493,7 +498,7 @@ class TranslatableModel(models.Model):
         :param kwargs: Any custom arguments to pass to :func:`save`.
         """
         # Copy cache, new objects (e.g. fallbacks) might be fetched if users override save_translation()
-        translations = self._translations_cache.values()
+        translations = list(self._translations_cache.values())
 
         # Save all translated objects which were fetched.
         # This also supports switching languages several times, and save everything in the end.
@@ -631,6 +636,8 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
 
     class Meta:
         abstract = True
+        if django.VERSION >= (1,7):
+            default_permissions = ()
 
     def __init__(self, *args, **kwargs):
         signals.pre_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
