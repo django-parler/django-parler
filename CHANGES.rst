@@ -1,8 +1,14 @@
 Changelog
 =========
 
-Changes in versin 1.1.1
------------------------
+Changes in version 1.2 (in git)
+-------------------------------
+
+* Added ``TranslatableAdmin.get_translation_objects()`` API.
+
+
+Changes in version 1.1.1 (2014-10-14)
+-------------------------------------
 
 * Fix accessing fields using ``safe_translation_getter(any_language=True)``
 * Fix "dictionary changed size during iteration" in ``save_translations()`` in Python 3.

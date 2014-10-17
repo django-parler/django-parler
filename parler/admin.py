@@ -371,7 +371,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         # Extend deleted objects with the inlines.
         if self.delete_inline_translations:
             shared_obj = translation.master
-            for inline, qs in self._get_inline_translations(request, translation.language_code, obj=shared_obj):
+            for qs in self.get_translation_objects(request, translation.language_code, obj=shared_obj):
                 (del2, perms2, protected2) = get_deleted_objects(qs, qs.model._meta, request.user, self.admin_site, using)
                 deleted_objects += del2
                 perms_needed = perms_needed or perms2
@@ -436,14 +436,25 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
     def delete_model_translation(self, request, translation):
         """
         Hook for deleting a translation.
+        This calls :func:`get_translation_objects` to collect all related objects for the translation.
+        By default, that includes the translations for inline objects.
         """
         translation.delete()
 
         # Also delete translations of inlines which the user has access to.
         if self.delete_inline_translations:
             master = translation.master
-            for inline, qs in self._get_inline_translations(request, translation.language_code, obj=master):
+            for qs in self.get_translation_objects(request, translation.language_code, obj=master):
                 qs.delete()
+
+
+    def get_translation_objects(self, request, language_code, obj=None):
+        """
+        Return all objects that should be deleted when a translation is deleted.
+        This method can yield all QuerySet objects for the objects.
+        """
+        for inline, qs in self._get_inline_translations(request, language_code, obj=obj):
+            yield qs
 
 
     def _get_inline_translations(self, request, language_code, obj=None):
