@@ -56,7 +56,7 @@ The manager and queryset objects of django-parler can work together with django-
 from __future__ import unicode_literals
 import django
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError
+from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
 from django.db import models, router
 from django.db.models.base import ModelBase
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
@@ -85,11 +85,13 @@ __all__ = (
 )
 
 
-class TranslationDoesNotExist(AttributeError):
+class TranslationDoesNotExist(AttributeError, ObjectDoesNotExist):
     """
     A tagging interface to detect missing translations.
     The exception inherits from :class:`~exceptions.AttributeError` to reflect what is actually happening.
     Therefore it also causes the templates to handle the missing attributes silently, which is very useful in the admin for example.
+    The exception also inherits from :class:`~django.core.exceptions.ObjectDoesNotExist`,
+    so any code that checks for this can deal with missing translations out of the box.
 
     This class is also used in the ``DoesNotExist`` object on the translated model, which inherits from:
 

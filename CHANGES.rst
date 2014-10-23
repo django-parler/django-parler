@@ -4,6 +4,8 @@ Changelog
 Changes in version 1.2 (in git)
 -------------------------------
 
+* **NOTE:** the ``TranslationDoesNotExist`` exception inherits from ``ObjectDoesNotExist`` now.
+  Check your exception handlers when upgrading.
 * Added ``TranslatableAdmin.get_translation_objects()`` API.
 * Added ``TranslatableModel.add_translation()`` API.
 
