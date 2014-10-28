@@ -4,10 +4,11 @@ Changelog
 Changes in version 1.2 (in git)
 -------------------------------
 
-* **NOTE:** the ``TranslationDoesNotExist`` exception inherits from ``ObjectDoesNotExist`` now.
-  Check your exception handlers when upgrading.
+* Added support for translations on mutlple model inheritance levels.
 * Added ``TranslatableAdmin.get_translation_objects()`` API.
 * Added ``TranslatableModel.create_translation()`` API.
+* **NOTE:** the ``TranslationDoesNotExist`` exception inherits from ``ObjectDoesNotExist`` now.
+  Check your exception handlers when upgrading.
 
 
 Changes in version 1.1.1 (2014-10-14)

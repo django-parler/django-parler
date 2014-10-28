@@ -89,7 +89,7 @@ class UniqueTogetherModel(TranslatableModel):
 
 
 class Level1(TranslatableModel):
-    translations = TranslatedFields(
+    l1_translations = TranslatedFields(
         l1_title = models.CharField("Translated Title", max_length=200)
     )
 

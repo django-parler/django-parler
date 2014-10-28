@@ -54,6 +54,7 @@ The translated model is compatible with django-hvad, making the transition betwe
 The manager and queryset objects of django-parler can work together with django-mptt and django-polymorphic.
 """
 from __future__ import unicode_literals
+from collections import defaultdict
 import django
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
@@ -71,6 +72,12 @@ from parler.utils import compat
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
 import sys
 import logging
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from django.utils.datastructures import SortedDict as OrderedDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -183,58 +190,9 @@ class TranslatedFields(object):
         self.name = None
 
     def contribute_to_class(self, cls, name):
-        self.name = name
-
         # Called from django.db.models.base.ModelBase.__new__
-        translations_model = create_translations_model(cls, name, self.meta, **self.fields)
-
-        # The metaclass (TranslatedFieldsModelBase) should configure this already:
-        assert cls._parler_meta.translations_model == translations_model
-        assert cls._parler_meta.translations_field == name
-
-
-class ParlerOptions(object):
-    """
-    Meta data for the translatable models.
-    """
-    def __init__(self, base, shared_model, translations_model, translations_field):
-        if translations_model is None is not issubclass(translations_model, TranslatedFieldsModel):
-            raise TypeError("Expected a TranslatedFieldsModel")
-
-        self.base = base
-        self.shared_model = shared_model
-        self.translations_model = translations_model
-        self.translations_field = translations_field
-
-        if base is None:
-            self._root = None
-        else:
-            self._root = base._root or base
-
-    @property
-    def root(self):
-        # Top level model with translations
-        return self._root or self
-
-    def get_translated_fields(self):
-        """
-        Return the translated fields of this model.
-        """
-        return self.translations_model.get_translated_fields()
-
-    def _has_translations_model(self, model):
-        obj = self
-        while obj is not None:
-            if obj.translations_field == model:
-                return True
-            obj = obj.base
-
-    def _has_translations_field(self, name):
-        obj = self
-        while obj is not None:
-            if obj.translations_field == name:
-                return True
-            obj = obj.base
+        self.name = name
+        create_translations_model(cls, name, self.meta, **self.fields)
 
 
 class TranslatableModel(models.Model):
@@ -266,13 +224,13 @@ class TranslatableModel(models.Model):
         current_language = None
         if kwargs:
             current_language = kwargs.pop('_current_language', None)
-            for field in self._parler_meta.get_translated_fields():
+            for field in self._parler_meta.get_all_fields():
                 try:
                     translated_kwargs[field] = kwargs.pop(field)
                 except KeyError:
                     pass
 
-        self._translations_cache = {}
+        self._translations_cache = defaultdict(dict)
         self._current_language = normalize_language_code(current_language or get_language())  # What you used to fetch the object is what you get.
 
         # Run original Django model __init__
@@ -280,9 +238,21 @@ class TranslatableModel(models.Model):
 
         # Assign translated args manually.
         if translated_kwargs:
-            translation = self._get_translated_model(auto_create=True)
-            for field, value in six.iteritems(translated_kwargs):
+            self._set_translated_fields(self._current_language, **translated_kwargs)
+
+
+    def _set_translated_fields(self, language_code=None, **fields):
+        """
+        Assign fields to the translated models.
+        """
+        objects = []  # no generator, make sure objects are all filled first
+        for parler_meta, model_fields in self._parler_meta._split_fields(**fields):
+            translation = self._get_translated_model(language_code=language_code, auto_create=True, parler_meta=parler_meta)
+            for field, value in six.iteritems(model_fields):
                 setattr(translation, field, value)
+
+            objects.append(translation)
+        return objects
 
 
     def create_translation(self, language_code, **fields):
@@ -295,18 +265,13 @@ class TranslatableModel(models.Model):
         calling :func:`~django.db.models.manager.Manager.create`
         or :func:`~django.db.models.fields.related.RelatedManager.create` on related fields.
         """
-        if self._translations_cache.get(language_code, None):  # MISSING evaluates to False too
+        meta = self._parler_meta
+        if self._translations_cache[meta.root_model].get(language_code, None):  # MISSING evaluates to False too
             raise ValueError("Translation already exists: {0}".format(language_code))
 
-        translation = self._get_translated_model(language_code, auto_create=True)
-        translatable_fields = translation.get_translated_fields()
-        for name, value in six.iteritems(fields):
-            if name not in translatable_fields:
-                raise FieldError("Invalid field name: '{0}'".format(name))
-
-            setattr(translation, name, value)
-
-        self.save_translation(translation)
+        # Save all fields in the proper translated model.
+        for translation in self._set_translated_fields(language_code, **fields):
+            self.save_translation(translation)
 
 
     def get_current_language(self):
@@ -337,47 +302,55 @@ class TranslatableModel(models.Model):
         return lang_dict['fallback'] if lang_dict['fallback'] != self._current_language else None
 
 
-    def has_translation(self, language_code=None):
+    def has_translation(self, language_code=None, related_name=None):
         """
         Return whether a translation for the given language exists.
         Defaults to the current language code.
+
+        .. versionadded 1.2 Added the ``related_name`` parameter.
         """
         if language_code is None:
             language_code = self._current_language
 
+        meta = self._parler_meta._get_extension_by_related_name(related_name)
+
         try:
             # Check the local cache directly, and the answer is known.
             # NOTE this may also return newly auto created translations which are not saved yet.
-            return self._translations_cache[language_code] is not MISSING
+            return self._translations_cache[meta.model][language_code] is not MISSING
         except KeyError:
             # Try to fetch from the cache first.
             # If the cache returns the fallback, it means the original does not exist.
-            object = get_cached_translation(self, language_code, use_fallback=True)
+            object = get_cached_translation(self, language_code, related_name=related_name, use_fallback=True)
             if object is not None:
                 return object.language_code == language_code
 
             try:
                 # Fetch from DB, fill the cache.
-                self._get_translated_model(language_code, use_fallback=False, auto_create=False)
-            except self._parler_meta.translations_model.DoesNotExist:
+                self._get_translated_model(language_code, use_fallback=False, auto_create=False, parler_meta=meta)
+            except meta.model.DoesNotExist:
                 return False
             else:
                 return True
 
 
-    def get_available_languages(self):
+    def get_available_languages(self, related_name=None):
         """
         Return the language codes of all translated variations.
+
+        .. versionadded 1.2 Added the ``related_name`` parameter.
         """
+        meta = self._parler_meta._get_extension_by_related_name(related_name)
+
         prefetch = self._get_prefetched_translations()
         if prefetch is not None:
             return sorted(obj.language_code for obj in prefetch)
         else:
-            qs = self._get_translated_queryset()
+            qs = self._get_translated_queryset(parler_meta=meta)
             return qs.values_list('language_code', flat=True).order_by('language_code')
 
 
-    def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False):
+    def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False, parler_meta=None):
         """
         Fetch the translated fields model.
         """
@@ -387,9 +360,12 @@ class TranslatableModel(models.Model):
         if not language_code:
             language_code = self._current_language
 
+        meta = parler_meta or self._parler_meta.root  # using .root clears any root_model vs 'model' differences.
+        local_cache = self._translations_cache[meta.model]
+
         # 1. fetch the object from the local cache
         try:
-            object = self._translations_cache[language_code]
+            object = local_cache[language_code]
 
             # If cached object indicates the language doesn't exist, need to query the fallback.
             if object is not MISSING:
@@ -405,30 +381,30 @@ class TranslatableModel(models.Model):
                     # it's pointless to check for memcached (2.2) or perform a single query (2.3)
                     for object in prefetch:
                         if object.language_code == language_code:
-                            self._translations_cache[language_code] = object
+                            local_cache[language_code] = object
                             _cache_translation(object)  # Store in memcached
                             return object
                 else:
                     # 2.2, fetch from memcached
-                    object = get_cached_translation(self, language_code, use_fallback=use_fallback)
+                    object = get_cached_translation(self, language_code, related_name=meta.rel_name, use_fallback=use_fallback)
                     if object is not None:
                         # Track in local cache
                         if object.language_code != language_code:
-                            self._translations_cache[language_code] = MISSING  # Set fallback marker
-                        self._translations_cache[object.language_code] = object
+                            local_cache[language_code] = MISSING  # Set fallback marker
+                        local_cache[object.language_code] = object
                         return object
-                    elif self._translations_cache.get(language_code, None) is MISSING:
+                    elif local_cache.get(language_code, None) is MISSING:
                         # If get_cached_translation() explicitly set the "does not exist" marker,
                         # there is no need to try a database query.
                         pass
                     else:
                         # 2.3, fetch from database
                         try:
-                            object = self._get_translated_queryset().get(language_code=language_code)
-                        except self._parler_meta.translations_model.DoesNotExist:
+                            object = self._get_translated_queryset(meta).get(language_code=language_code)
+                        except meta.model.DoesNotExist:
                             pass
                         else:
-                            self._translations_cache[language_code] = object
+                            local_cache[language_code] = object
                             _cache_translation(object)  # Store in memcached
                             return object
 
@@ -438,11 +414,11 @@ class TranslatableModel(models.Model):
         # 3. Auto create?
         if auto_create:
             # Auto create policy first (e.g. a __set__ call)
-            object = self._parler_meta.translations_model(
+            object = meta.model(
                 language_code=language_code,
                 master=self  # ID might be None at this point
             )
-            self._translations_cache[language_code] = object
+            local_cache[language_code] = object
             # Not stored in memcached here yet, first fill + save it.
             return object
 
@@ -450,80 +426,98 @@ class TranslatableModel(models.Model):
         fallback_msg = None
         lang_dict = get_language_settings(language_code)
 
-        if language_code not in self._translations_cache:
+        if language_code not in local_cache:
             # Explicitly set a marker for the fact that this translation uses the fallback instead.
             # Avoid making that query again.
-            self._translations_cache[language_code] = MISSING  # None value is the marker.
+            local_cache[language_code] = MISSING  # None value is the marker.
             if not self._state.adding or self.pk:
-                _cache_translation_needs_fallback(self, language_code)
+                _cache_translation_needs_fallback(self, language_code, related_name=meta.rel_name)
 
         if lang_dict['fallback'] != language_code and use_fallback:
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
             try:
-                return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create)
-            except self._parler_meta.translations_model.DoesNotExist:
+                return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create, parler_meta=meta)
+            except meta.model.DoesNotExist:
                 fallback_msg = " (tried fallback {0})".format(lang_dict['fallback'])
 
         # None of the above, bail out!
-        raise self._parler_meta.translations_model.DoesNotExist(
+        raise meta.model.DoesNotExist(
             "{0} does not have a translation for the current language!\n"
             "{0} ID #{1}, language={2}{3}".format(self._meta.verbose_name, self.pk, language_code, fallback_msg or ''
         ))
 
 
-    def _get_any_translated_model(self):
+    def _get_any_translated_model(self, parler_meta=None):
         """
         Return any available translation.
         Returns None if there are no translations at all.
         """
-        if self._translations_cache:
+        if parler_meta is None:
+            tr_model = self._parler_meta.root_model
+        else:
+            tr_model = parler_meta.model
+
+        local_cache = self._translations_cache[tr_model]
+        if local_cache:
             # There is already a language available in the case. No need for queries.
             # Give consistent answers if they exist.
             try:
-                return self._translations_cache.get(self._current_language, None) \
-                    or self._translations_cache.get(self.get_fallback_language(), None) \
-                    or next(t for t in six.itervalues(self._translations_cache) if t is not MISSING)  # Skip fallback markers.
+                return local_cache.get(self._current_language, None) \
+                    or local_cache.get(self.get_fallback_language(), None) \
+                    or next(t for t in six.itervalues(local_cache) if t is not MISSING)  # Skip fallback markers.
             except StopIteration:
                 pass
 
         try:
             # Use prefetch if available, otherwise perform separate query.
-            prefetch = self._get_prefetched_translations()
+            prefetch = self._get_prefetched_translations(parler_meta=parler_meta)
             if prefetch is not None:
                 translation = prefetch[0]  # Already a list
             else:
-                translation = self._get_translated_queryset()[0]
+                translation = self._get_translated_queryset(parler_meta=parler_meta)[0]
         except IndexError:
             return None
         else:
-            self._translations_cache[translation.language_code] = translation
+            local_cache[translation.language_code] = translation
             _cache_translation(translation)
             return translation
 
 
-    def _get_translated_queryset(self):
+    def _get_translated_queryset(self, parler_meta):
         """
         Return the queryset that points to the translated model.
         If there is a prefetch, it can be read from this queryset.
         """
         # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
-        accessor = getattr(self, self._parler_meta.translations_field)
-        try:
+        if parler_meta is None:
+            related_name = self._parler_meta.root_rel_name
+        else:
+            related_name = parler_meta.rel_name
+
+        accessor = getattr(self, related_name)
+        if django.VERSION >= (1,6):
+            # Call latest version
             return accessor.get_queryset()
-        except AttributeError:
-            # Fallback for Django 1.4 and Django 1.5
+        else:
+            # Must call RelatedManager.get_query_set() and avoid calling a custom get_queryset()
+            # method for packages with Django 1.6/1.7 compatibility.
             return accessor.get_query_set()
 
 
-    def _get_prefetched_translations(self):
+    def _get_prefetched_translations(self, parler_meta=None):
         """
         Return the queryset with prefetch results.
         """
+        if parler_meta is None:
+            related_name = self._parler_meta.root_rel_name
+        else:
+            related_name = parler_meta.rel_name
+
         try:
             # Read the list directly, avoid QuerySet construction.
-            # Accessing self._get_translated_queryset()._prefetch_done is more expensive.
-            return self._prefetched_objects_cache[self._parler_meta.translations_field]
+            # Accessing self._get_translated_queryset(parler_meta)._prefetch_done is more expensive.
+            return self._prefetched_objects_cache[related_name]
         except (AttributeError, KeyError):
             return None
 
@@ -548,15 +542,15 @@ class TranslatableModel(models.Model):
         except ValidationError as e:
             errors = e.message_dict  # Django 1.5 + 1.6 compatible
 
-        translations = self._translations_cache.values()
-        for translation in translations:
-            if translation is MISSING:  # Skip fallback markers
-                continue
+        for local_cache in six.itervalues(self._translations_cache):
+            for translation in six.itervalues(local_cache):
+                if translation is MISSING:  # Skip fallback markers
+                    continue
 
-            try:
-                translation.validate_unique(exclude=exclude)
-            except ValidationError as e:
-                errors.update(e.message_dict)
+                try:
+                    translation.validate_unique(exclude=exclude)
+                except ValidationError as e:
+                    errors.update(e.message_dict)
 
         if errors:
             raise ValidationError(errors)
@@ -572,15 +566,17 @@ class TranslatableModel(models.Model):
         :param kwargs: Any custom arguments to pass to :func:`save`.
         """
         # Copy cache, new objects (e.g. fallbacks) might be fetched if users override save_translation()
-        translations = list(self._translations_cache.values())
+        # Go though all object levels found in the cache.
+        for local_cache in list(self._translations_cache.values()):
+            translations = list(local_cache.values())
 
-        # Save all translated objects which were fetched.
-        # This also supports switching languages several times, and save everything in the end.
-        for translation in translations:
-            if translation is MISSING:  # Skip fallback markers
-                continue
+            # Save all translated objects which were fetched.
+            # This also supports switching languages several times, and save everything in the end.
+            for translation in translations:
+                if translation is MISSING:  # Skip fallback markers
+                    continue
 
-            self.save_translation(translation, *args, **kwargs)
+                self.save_translation(translation, *args, **kwargs)
 
 
     def save_translation(self, translation, *args, **kwargs):
@@ -616,10 +612,12 @@ class TranslatableModel(models.Model):
         Also consider using ``field = TranslatedField(any_language=True)`` in the model itself,
         to make this behavior the default for the given field.
         """
+        meta = self._parler_meta._get_extension_by_field(field)
+
         # Extra feature: query a single field from a other translation.
         if language_code and language_code != self._current_language:
             try:
-                tr_model = self._get_translated_model(language_code)
+                tr_model = self._get_translated_model(language_code, parler_meta=meta)
                 return getattr(tr_model, field)
             except TranslationDoesNotExist:
                 pass
@@ -632,7 +630,7 @@ class TranslatableModel(models.Model):
                 pass
 
         if any_language:
-            translation = self._get_any_translated_model()
+            translation = self._get_any_translated_model(parler_meta=meta)
             if translation is not None:
                 return getattr(translation, field, default)
 
@@ -641,6 +639,8 @@ class TranslatableModel(models.Model):
 
 class TranslatedFieldsModelBase(ModelBase):
     """
+    .. versionadded 1.2
+
     Meta-class for the translated fields model.
 
     It performs the following steps:
@@ -805,14 +805,14 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
             base,
             shared_model=shared_model,
             translations_model=cls,
-            translations_field=cls.master.field.rel.related_name
+            related_name=cls.master.field.rel.related_name
         )
 
         # Set fields for backwards compatibility.
         # Some packages were already reading these private fields.
         if base is None:
-            shared_model._translations_model = shared_model._parler_meta.translations_model
-            shared_model._translations_field = shared_model._parler_meta.translations_field
+            shared_model._translations_model = shared_model._parler_meta.root_model
+            shared_model._translations_field = shared_model._parler_meta.root_rel_name
 
 
         # Assign the proxy fields
@@ -850,3 +850,148 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         return "<{0}: #{1}, {2}, master: #{3}>".format(
             self.__class__.__name__, self.pk, self.language_code, self.master_id
         )
+
+
+
+class ParlerOptions(object):
+    """
+    Meta data for the translatable models.
+    """
+    def __init__(self, base, shared_model, translations_model, related_name):
+        if translations_model is None is not issubclass(translations_model, TranslatedFieldsModel):
+            raise TypeError("Expected a TranslatedFieldsModel")
+
+        self.base = base
+
+        # Store meta information of *this* level
+        self.shared_model = shared_model
+        self.model = translations_model
+        self.rel_name = related_name
+
+        if base is None:
+            # Make access easier.
+            self.root_model = self.model
+            self.root_rel_name = self.rel_name
+
+            # Initial state for lookups
+            self._root = None
+            self._extensions = [self]
+            self._fields_to_model = OrderedDict()
+        else:
+            # Inherited situation
+            # Still take the base situation as starting point,
+            # and register the added translations as extension.
+            root = base._root or base
+            self._root = root
+            self.root_model = root.model
+            self.root_rel_name = root.rel_name
+
+            # This object will amend the caches of the previous object
+            # The _extensions list gives access to all inheritance levels where ParlerOptions is defined.
+            self._extensions = list(base._extensions)
+            self._extensions.append(
+                ParlerOptions(None, shared_model, translations_model, related_name)
+            )
+            self._fields_to_model = base._fields_to_model.copy()
+
+        # Fill/amend the caches
+        for name in translations_model.get_translated_fields():
+            self._fields_to_model[name] = translations_model
+
+    def __repr__(self):
+        return "<ParlerOptions: <{0} model>.{1} -> <{1} model>{2}>".format(
+            self.shared_model.__name__,
+            self.rel_name,
+            self.model.__name__,
+            '' if len(self._extensions) == 1 else ", {0} extensions".format(len(self._extensions))
+        )
+
+    @property
+    def root(self):
+        """
+        The top level object in the inheritance chain.
+        """
+        return self._root or self
+
+    def get_all_models(self):
+        """
+        Return all translated models associated with the the shared model.
+        """
+        return [meta.model for meta in self._extensions]
+
+    def get_all_fields(self):
+        """
+        Return all related fields associated with this model.
+        """
+        return list(self._fields_to_model.keys())
+
+    def get_fields_with_model(self):
+        """
+        Convenience function, return all translated fields with their model.
+        """
+        return six.iteritems(self._fields_to_model)
+
+    def get_translated_fields(self, related_name=None):
+        """
+        Return the translated fields of this model.
+        """
+        meta = self._get_extension_by_related_name(related_name)
+        # root_model always points to the real model for extensions
+        return meta.root_model.get_translated_fields()
+
+    def get_model_by_field(self, name):
+        try:
+            return self._fields_to_model[name]
+        except KeyError:
+            raise FieldError("Translated field does not exist: '{0}'".format(name))
+
+    def get_model_by_related_name(self, related_name):
+        meta = self._get_extension_by_related_name(related_name)
+        return meta.model  # extensions have no base set, so root model is correct here.
+
+    def _has_translations_model(self, model):
+        return any(meta.model == model for meta in self._extensions)
+
+    def _has_translations_field(self, name):
+        return any(meta.rel_name == name for meta in self._extensions)
+
+    def _get_extension_by_field(self, name):
+        """
+        Find the ParlerOptions object that corresponds with the given translated field.
+        """
+        if name is None:
+            raise TypeError("Expected field name")
+
+        # Reuse existing lookups.
+        tr_model = self.get_model_by_field(name)
+        for meta in self._extensions:
+            if meta.model == tr_model:
+                return meta
+
+    def _get_extension_by_related_name(self, related_name):
+        """
+        Find which model is connected to a given related name.
+        If the related name is ``None``, the :attr:`root_model` will be returned.
+        """
+        if related_name is None:
+            return self._root or self
+
+        for meta in self._extensions:
+            if meta.rel_name == related_name:
+                return meta
+
+        raise ValueError("No translated model of '{0}' has a reverse name of '{1}'".format(
+            self.model.__name__, related_name
+        ))
+
+    def _split_fields(self, **fields):
+        # Split fields over their translated models.
+        for meta in self._extensions:
+            model_fields = {}
+            for field in meta.model.get_translated_fields():
+                try:
+                    model_fields[field] = fields[field]
+                except KeyError:
+                    pass
+
+            yield (meta, model_fields)

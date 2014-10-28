@@ -120,7 +120,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
             # This also works when assigning `form = TranslatableModelForm` in the admin,
             # since the admin always uses modelform_factory() on the form class, and therefore triggering this metaclass.
             if form_model:
-                translations_model = form_model._parler_meta.translations_model
+                translations_model = form_model._parler_meta.root_model
                 fields = getattr(form_new_meta, 'fields', form_meta.fields)
                 exclude = getattr(form_new_meta, 'exclude', form_meta.exclude) or ()
                 widgets = getattr(form_new_meta, 'widgets', form_meta.widgets) or ()

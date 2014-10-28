@@ -10,6 +10,7 @@ It's also useful for abstract models; add a :class:`TranslatedField` to
 indicate that the derived model is expected to provide that translatable field.
 """
 from __future__ import unicode_literals
+from django.core.exceptions import FieldError
 from django.db.models.fields import Field
 from django.forms.forms import pretty_name
 
@@ -47,6 +48,7 @@ class TranslatedField(object):
         self.model = None
         self.name = None
         self.any_language = any_language
+        self._meta = None
 
     def contribute_to_class(self, cls, name):
         #super(TranslatedField, self).contribute_to_class(cls, name)
@@ -55,6 +57,12 @@ class TranslatedField(object):
 
         # Add the proxy attribute
         setattr(cls, self.name, TranslatedFieldDescriptor(self))
+
+    @property
+    def meta(self):
+        if self._meta is None:
+            self._meta = self.model._parler_meta._get_extension_by_field(self.name)
+        return self._meta
 
 
 class TranslatedFieldDescriptor(object):
@@ -78,10 +86,10 @@ class TranslatedFieldDescriptor(object):
         # Better use a fallback instead, just like gettext does.
         translation = None
         try:
-            translation = instance._get_translated_model(use_fallback=True)
-        except instance._parler_meta.translations_model.DoesNotExist as e:
+            translation = instance._get_translated_model(use_fallback=True, parler_meta=self.field.meta)
+        except instance._parler_meta.root_model.DoesNotExist as e:
             if self.field.any_language:
-                translation = instance._get_any_translated_model()  # returns None on error.
+                translation = instance._get_any_translated_model(parler_meta=self.field.meta)  # returns None on error.
 
             if translation is None:
                 # Improve error message
@@ -96,14 +104,14 @@ class TranslatedFieldDescriptor(object):
 
         # When assigning the property, assign to the current language.
         # No fallback is used in this case.
-        translation = instance._get_translated_model(use_fallback=False, auto_create=True)
+        translation = instance._get_translated_model(use_fallback=False, auto_create=True, parler_meta=self.field.meta)
         setattr(translation, self.field.name, value)
 
     def __delete__(self, instance):
         # No autocreate or fallback, as this is delete.
         # Rather blow it all up when the attribute doesn't exist.
         # Similar to getting a KeyError on `del dict['UNKNOWN_KEY']`
-        translation = instance._get_translated_model()
+        translation = instance._get_translated_model(parler_meta=self.field.meta)
         delattr(translation, self.field.name)
 
     def __repr__(self):
@@ -120,9 +128,10 @@ class TranslatedFieldDescriptor(object):
         hence it falls back to reading the attribute and trying ``short_description``.
         Ideally, translated fields should also appear in this list, to be treated like regular fields.
         """
-        model = self.field.model
-        translations_model = model._parler_meta.translations_model
-        if translations_model is None:
+        meta = self.field.meta
+        try:
+            translations_model = meta.get_model_by_field(self.field.name)
+        except FieldError:
             # This only happens with abstract models. The code is accessing the descriptor at the base model directly,
             # not the upgraded descriptor version that contribute_translations() installed.
             # Fallback to what the admin label_for_field() would have done otherwise.
