@@ -7,6 +7,7 @@ Changes in version 1.2 (in git)
 * Added support for translations on mutlple model inheritance levels.
 * Added ``TranslatableAdmin.get_translation_objects()`` API.
 * Added ``TranslatableModel.create_translation()`` API.
+* Added ``include_unsaved=False`` argument to ``get_available_languages()``.
 * **NOTE:** the ``TranslationDoesNotExist`` exception inherits from ``ObjectDoesNotExist`` now.
   Check your exception handlers when upgrading.
 

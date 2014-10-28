@@ -334,20 +334,26 @@ class TranslatableModel(models.Model):
                 return True
 
 
-    def get_available_languages(self, related_name=None):
+    def get_available_languages(self, related_name=None, include_unsaved=False):
         """
         Return the language codes of all translated variations.
 
-        .. versionadded 1.2 Added the ``related_name`` parameter.
+        .. versionadded 1.2 Added the ``include_unsaved`` and ``related_name`` parameters.
         """
         meta = self._parler_meta._get_extension_by_related_name(related_name)
 
         prefetch = self._get_prefetched_translations()
         if prefetch is not None:
-            return sorted(obj.language_code for obj in prefetch)
+            db_languages = sorted(obj.language_code for obj in prefetch)
         else:
             qs = self._get_translated_queryset(parler_meta=meta)
-            return qs.values_list('language_code', flat=True).order_by('language_code')
+            db_languages = qs.values_list('language_code', flat=True).order_by('language_code')
+
+        if include_unsaved:
+            local_languages = (k for k,v in six.iteritems(self._translations_cache[meta.model]) if v is not MISSING)
+            return list(set(db_languages) | set(local_languages))
+        else:
+            return db_languages
 
 
     def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False, parler_meta=None):
