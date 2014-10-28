@@ -197,13 +197,15 @@ class ParlerOptions(object):
     """
     Meta data for the translatable models.
     """
-    def __init__(self, base, translations_model, translations_field):
+    def __init__(self, base, shared_model, translations_model, translations_field):
         if translations_model is None is not issubclass(translations_model, TranslatedFieldsModel):
             raise TypeError("Expected a TranslatedFieldsModel")
 
         self.base = base
-        self.translations_field = translations_field
+        self.shared_model = shared_model
         self.translations_model = translations_model
+        self.translations_field = translations_field
+
         if base is None:
             self._root = None
         else:
@@ -219,6 +221,20 @@ class ParlerOptions(object):
         Return the translated fields of this model.
         """
         return self.translations_model.get_translated_fields()
+
+    def _has_translations_model(self, model):
+        obj = self
+        while obj is not None:
+            if obj.translations_field == model:
+                return True
+            obj = obj.base
+
+    def _has_translations_field(self, name):
+        obj = self
+        while obj is not None:
+            if obj.translations_field == name:
+                return True
+            obj = obj.base
 
 
 class TranslatableModel(models.Model):
@@ -670,17 +686,21 @@ def _validate_master(new_class):
         logger.error(msg)
         raise TypeError(msg)
 
-    shared_model = new_class.master.field.rel.to
+    rel = new_class.master.field.rel
+    shared_model = rel.to
+
     if not issubclass(shared_model, models.Model):
         # Not supporting models.ForeignKey("tablename") yet. Can't use get_model() as the models are still being constructed.
         msg = "{0}.master should point to a model class, can't use named field here.".format(new_class.__name__)
         logger.error(msg)
         raise TypeError(msg)
 
-    if shared_model._parler_meta is not None:
-        msg = "The model '{0}' already has an associated translation table!".format(shared_model.__name__)
-        logger.error(msg)
-        raise TypeError(msg)
+    meta = shared_model._parler_meta
+    if meta is not None:
+        if meta._has_translations_model(new_class):
+            raise TypeError("The model '{0}' already has an associated translation table!".format(shared_model.__name__))
+        if meta._has_translations_field(rel.related_name):
+            raise TypeError("The model '{0}' already has an associated translation field named '{1}'!".format(shared_model.__name__, rel.related_name))
 
     return shared_model
 
@@ -783,6 +803,7 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         # Link the translated fields model to the shared model.
         shared_model._parler_meta = ParlerOptions(
             base,
+            shared_model=shared_model,
             translations_model=cls,
             translations_field=cls.master.field.rel.related_name
         )

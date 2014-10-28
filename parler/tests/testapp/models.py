@@ -86,3 +86,15 @@ class UniqueTogetherModel(TranslatableModel):
             ]
         }
     )
+
+
+class Level1(TranslatableModel):
+    translations = TranslatedFields(
+        l1_title = models.CharField("Translated Title", max_length=200)
+    )
+
+
+class Level2(Level1):
+    l2_translations = TranslatedFields(
+        l2_title = models.CharField("Translated Title", max_length=200)
+    )
