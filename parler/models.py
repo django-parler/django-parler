@@ -189,8 +189,36 @@ class TranslatedFields(object):
         translations_model = create_translations_model(cls, name, self.meta, **self.fields)
 
         # The metaclass (TranslatedFieldsModelBase) should configure this already:
-        assert cls._translations_model == translations_model
-        assert cls._translations_field == name
+        assert cls._parler_meta.translations_model == translations_model
+        assert cls._parler_meta.translations_field == name
+
+
+class ParlerOptions(object):
+    """
+    Meta data for the translatable models.
+    """
+    def __init__(self, base, translations_model, translations_field):
+        if translations_model is None is not issubclass(translations_model, TranslatedFieldsModel):
+            raise TypeError("Expected a TranslatedFieldsModel")
+
+        self.base = base
+        self.translations_field = translations_field
+        self.translations_model = translations_model
+        if base is None:
+            self._root = None
+        else:
+            self._root = base._root or base
+
+    @property
+    def root(self):
+        # Top level model with translations
+        return self._root or self
+
+    def get_translated_fields(self):
+        """
+        Return the translated fields of this model.
+        """
+        return self.translations_model.get_translated_fields()
 
 
 class TranslatableModel(models.Model):
@@ -202,8 +230,12 @@ class TranslatableModel(models.Model):
     class Meta:
         abstract = True
 
+    #: Access to the metadata of the translatable model
+    _parler_meta = None
+
     # Consider these fields "protected" or "internal" attributes.
     # Not part of the public API, but used internally in the class hierarchy.
+    # These are replaced by _parler_meta, but kept for backwards compatibility reasons.
     _translations_field = None
     _translations_model = None
 
@@ -745,9 +777,22 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         """
         Add the proxy attributes to the shared model.
         """
+        # Instance at previous inheritance level, if set.
+        base = shared_model._parler_meta
+
         # Link the translated fields model to the shared model.
-        shared_model._translations_model = cls
-        shared_model._translations_field = cls.master.field.rel.related_name
+        shared_model._parler_meta = ParlerOptions(
+            base,
+            translations_model=cls,
+            translations_field=cls.master.field.rel.related_name
+        )
+
+        # Set fields for backwards compatibility.
+        # Some packages were already reading these private fields.
+        if base is None:
+            shared_model._translations_model = shared_model._parler_meta.translations_model
+            shared_model._translations_field = shared_model._parler_meta.translations_field
+
 
         # Assign the proxy fields
         for name in cls.get_translated_fields():
