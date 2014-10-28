@@ -237,15 +237,15 @@ class TranslatableModel(models.Model):
                 setattr(translation, field, value)
 
 
-    def add_translation(self, language_code, **fields):
+    def create_translation(self, language_code, **fields):
         """
         Add a translation to the model.
 
         The :func:`save_translations` function is called afterwards.
 
         The object will be saved immediately, similar to
-        calling :func:`~django.db.models.fields.related.RelatedManager.create`
-        or :func:`~django.db.models.fields.related.RelatedManager.add` on related fields.
+        calling :func:`~django.db.models.manager.Manager.create`
+        or :func:`~django.db.models.fields.related.RelatedManager.create` on related fields.
         """
         if self._translations_cache.get(language_code, None):  # MISSING evaluates to False too
             raise ValueError("Translation already exists: {0}".format(language_code))
@@ -544,6 +544,9 @@ class TranslatableModel(models.Model):
         :param args: Any custom arguments to pass to :func:`save`.
         :param kwargs: Any custom arguments to pass to :func:`save`.
         """
+        if not self.pk or self._state.adding:
+            raise RuntimeError("Can't save translations when the master object is not yet saved.")
+
         # Translation models without any fields are also supported.
         # This is useful for parent objects that have inlines;
         # the parent object defines how many translations there are.

@@ -31,7 +31,7 @@ class ModelAttributeTests(AppTestCase):
         Test whether simple language assignments work.
         """
         with translation.override('ca-fr'):
-            x = SimpleModel()   # should use get_language()
+            x = SimpleModel(id=99)   # uses get_language(), ID is to avoid reading cached items for 'en'
             self.assertEqual(x.get_current_language(), translation.get_language())
             self.assertEqual(translation.get_language(), 'ca-fr')
 
@@ -112,6 +112,14 @@ class ModelAttributeTests(AppTestCase):
         x.save()
 
         self.assertEqual(sorted(x.get_available_languages()), ['en', 'fr', 'nl'])
+
+
+    def test_create_translation(self):
+        x = SimpleModel.objects.create()
+        x.create_translation('en', tr_title='TITLE_EN')
+        x.create_translation('fr', tr_title='TITLE_FR')
+
+        self.assertEqual(sorted(x.get_available_languages()), ['en', 'fr'])
 
 
     def test_fallback_language(self):
