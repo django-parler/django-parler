@@ -89,7 +89,7 @@ class TranslatableModelFormMixin(object):
             setattr(self.instance, field, value)
 
     def _get_translated_fields(self):
-        return [f_name for f_name in self._meta.model._translations_model.get_translated_fields() if f_name in self.fields]
+        return [f_name for f_name in self._meta.model._parler_meta.get_translated_fields() if f_name in self.fields]
 
 
 
@@ -120,7 +120,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
             # This also works when assigning `form = TranslatableModelForm` in the admin,
             # since the admin always uses modelform_factory() on the form class, and therefore triggering this metaclass.
             if form_model:
-                translations_model = form_model._translations_model
+                translations_model = form_model._parler_meta.translations_model
                 fields = getattr(form_new_meta, 'fields', form_meta.fields)
                 exclude = getattr(form_new_meta, 'exclude', form_meta.exclude) or ()
                 widgets = getattr(form_new_meta, 'widgets', form_meta.widgets) or ()

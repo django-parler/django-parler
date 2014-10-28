@@ -14,11 +14,11 @@ class ModelConstructionTests(AppTestCase):
         # Test whether the link has taken place
         self.assertIsInstance(ManualModel().translations, Manager)  # RelatedManager class
         self.assertIs(ManualModel().translations.model, ManualModelTranslations)
-        self.assertIs(ManualModel._translations_model, ManualModelTranslations)
+        self.assertIs(ManualModel._parler_meta.translations_model, ManualModelTranslations)
 
 
     def test_simple_model(self):
         """
         Test the simple model syntax.
         """
-        self.assertIs(SimpleModel().translations.model, SimpleModel._translations_model)
+        self.assertIs(SimpleModel().translations.model, SimpleModel._parler_meta.translations_model)

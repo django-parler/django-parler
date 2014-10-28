@@ -11,7 +11,7 @@ class AdminTests(AppTestCase):
 
     def test_list_label(self):
         # Ensure model data is correct
-        self.assertEqual(SimpleModel._translations_model._meta.get_field_by_name('tr_title')[0].verbose_name, "Translated Title")
+        self.assertEqual(SimpleModel._parler_meta.translations_model._meta.get_field_by_name('tr_title')[0].verbose_name, "Translated Title")
 
         # See that adding a field to the admin list_display also receives the translated title
         # This happens by TranslatedFieldDescriptor.short_description
@@ -19,7 +19,7 @@ class AdminTests(AppTestCase):
 
     def test_list_label_abc(self):
         # Ensure model data is correct
-        self.assertEqual(ConcreteModel._translations_model._meta.get_field_by_name('tr_title')[0].verbose_name, "Translated Title")
+        self.assertEqual(ConcreteModel._parler_meta.translations_model._meta.get_field_by_name('tr_title')[0].verbose_name, "Translated Title")
 
         # See that the TranslatedFieldDescriptor of the concrete model properly routes to the proper model
         self.assertEqual(label_for_field('tr_title', ConcreteModel), "Translated Title")

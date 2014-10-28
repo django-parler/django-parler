@@ -58,7 +58,7 @@ class TranslatableQuerySet(QuerySet):
 
             This will query the translated model for the ``name`` field.
         """
-        relname = self.model._translations_field
+        relname = self.model._parler_meta.translations_field
 
         if not language_codes:
             language_codes = (get_language(),)

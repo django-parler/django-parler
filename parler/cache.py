@@ -43,7 +43,7 @@ def get_object_cache_keys(instance):
     keys = []
     # TODO: performs a query to fetch the language codes. Store that in memcached too.
     for language in instance.get_available_languages():
-        keys.append(get_translation_cache_key(instance._translations_model, instance.pk, language))
+        keys.append(get_translation_cache_key(instance._parler_meta.translations_model, instance.pk, language))
 
     return keys
 
@@ -68,7 +68,7 @@ def get_cached_translation(instance, language_code=None, use_fallback=False):
     if not values:
         return None
 
-    translation = instance._translations_model(**values)
+    translation = instance._parler_meta.translations_model(**values)
     translation._state.adding = False
     return translation
 
@@ -100,7 +100,7 @@ def _get_cached_values(instance, language_code, use_fallback=False):
     if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
         return None
 
-    key = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
+    key = get_translation_cache_key(instance._parler_meta.translations_model, instance.pk, language_code)
     values = cache.get(key)
     if not values:
         return None
@@ -151,7 +151,7 @@ def _cache_translation_needs_fallback(instance, language_code, timeout=DEFAULT_T
     if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
         return
 
-    key = get_translation_cache_key(instance._translations_model, instance.pk, language_code)
+    key = get_translation_cache_key(instance._parler_meta.translations_model, instance.pk, language_code)
     cache.set(key, {'__FALLBACK__': True}, timeout=timeout)
 
 

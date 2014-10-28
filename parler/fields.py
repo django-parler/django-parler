@@ -79,7 +79,7 @@ class TranslatedFieldDescriptor(object):
         translation = None
         try:
             translation = instance._get_translated_model(use_fallback=True)
-        except instance._translations_model.DoesNotExist as e:
+        except instance._parler_meta.translations_model.DoesNotExist as e:
             if self.field.any_language:
                 translation = instance._get_any_translated_model()  # returns None on error.
 
@@ -121,7 +121,7 @@ class TranslatedFieldDescriptor(object):
         Ideally, translated fields should also appear in this list, to be treated like regular fields.
         """
         model = self.field.model
-        translations_model = model._translations_model
+        translations_model = model._parler_meta.translations_model
         if translations_model is None:
             # This only happens with abstract models. The code is accessing the descriptor at the base model directly,
             # not the upgraded descriptor version that contribute_translations() installed.

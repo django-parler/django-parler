@@ -250,7 +250,7 @@ class TranslatableModel(models.Model):
         current_language = None
         if kwargs:
             current_language = kwargs.pop('_current_language', None)
-            for field in self._translations_model.get_translated_fields():
+            for field in self._parler_meta.get_translated_fields():
                 try:
                     translated_kwargs[field] = kwargs.pop(field)
                 except KeyError:
@@ -343,7 +343,7 @@ class TranslatableModel(models.Model):
             try:
                 # Fetch from DB, fill the cache.
                 self._get_translated_model(language_code, use_fallback=False, auto_create=False)
-            except self._translations_model.DoesNotExist:
+            except self._parler_meta.translations_model.DoesNotExist:
                 return False
             else:
                 return True
@@ -365,7 +365,7 @@ class TranslatableModel(models.Model):
         """
         Fetch the translated fields model.
         """
-        if not self._translations_model or not self._translations_field:
+        if self._parler_meta is None:
             raise ImproperlyConfigured("No translation is assigned to the current model!")
 
         if not language_code:
@@ -409,7 +409,7 @@ class TranslatableModel(models.Model):
                         # 2.3, fetch from database
                         try:
                             object = self._get_translated_queryset().get(language_code=language_code)
-                        except self._translations_model.DoesNotExist:
+                        except self._parler_meta.translations_model.DoesNotExist:
                             pass
                         else:
                             self._translations_cache[language_code] = object
@@ -422,7 +422,7 @@ class TranslatableModel(models.Model):
         # 3. Auto create?
         if auto_create:
             # Auto create policy first (e.g. a __set__ call)
-            object = self._translations_model(
+            object = self._parler_meta.translations_model(
                 language_code=language_code,
                 master=self  # ID might be None at this point
             )
@@ -446,11 +446,11 @@ class TranslatableModel(models.Model):
             # Don't cache under this language_code
             try:
                 return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create)
-            except self._translations_model.DoesNotExist:
+            except self._parler_meta.translations_model.DoesNotExist:
                 fallback_msg = " (tried fallback {0})".format(lang_dict['fallback'])
 
         # None of the above, bail out!
-        raise self._translations_model.DoesNotExist(
+        raise self._parler_meta.translations_model.DoesNotExist(
             "{0} does not have a translation for the current language!\n"
             "{0} ID #{1}, language={2}{3}".format(self._meta.verbose_name, self.pk, language_code, fallback_msg or ''
         ))
@@ -492,7 +492,7 @@ class TranslatableModel(models.Model):
         If there is a prefetch, it can be read from this queryset.
         """
         # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
-        accessor = getattr(self, self._translations_field)
+        accessor = getattr(self, self._parler_meta.translations_field)
         try:
             return accessor.get_queryset()
         except AttributeError:
@@ -507,7 +507,7 @@ class TranslatableModel(models.Model):
         try:
             # Read the list directly, avoid QuerySet construction.
             # Accessing self._get_translated_queryset()._prefetch_done is more expensive.
-            return self._prefetched_objects_cache[self._translations_field]
+            return self._prefetched_objects_cache[self._parler_meta.translations_field]
         except (AttributeError, KeyError):
             return None
 
@@ -677,7 +677,7 @@ def _validate_master(new_class):
         logger.error(msg)
         raise TypeError(msg)
 
-    if shared_model._translations_model:
+    if shared_model._parler_meta is not None:
         msg = "The model '{0}' already has an associated translation table!".format(shared_model.__name__)
         logger.error(msg)
         raise TypeError(msg)
@@ -810,7 +810,7 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
                     raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
 
                 # When the descriptor was placed on an abstract model,
-                # it doesn't point to the real model that holds the _translations_model
+                # it doesn't point to the real model that holds the translations_model
                 # "Upgrade" the descriptor on the class
                 if shared_field.field.model is not shared_model:
                     TranslatedField(any_language=shared_field.field.any_language).contribute_to_class(shared_model, name)
