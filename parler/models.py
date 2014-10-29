@@ -71,15 +71,11 @@ from parler.managers import TranslatableManager
 from parler.utils import compat
 from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title
 import sys
-import logging
 
 try:
     from collections import OrderedDict
 except ImportError:
     from django.utils.datastructures import SortedDict as OrderedDict
-
-
-logger = logging.getLogger(__name__)
 
 
 __all__ = (
@@ -693,25 +689,21 @@ def _validate_master(new_class):
     Check whether the 'master' field on a TranslatedFieldsModel is correctly configured.
     """
     if not new_class.master or not isinstance(new_class.master, ReverseSingleRelatedObjectDescriptor):
-        msg = "{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__)
-        logger.error(msg)
-        raise TypeError(msg)
+        raise ImproperlyConfigured("{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__))
 
     rel = new_class.master.field.rel
     shared_model = rel.to
 
     if not issubclass(shared_model, models.Model):
         # Not supporting models.ForeignKey("tablename") yet. Can't use get_model() as the models are still being constructed.
-        msg = "{0}.master should point to a model class, can't use named field here.".format(new_class.__name__)
-        logger.error(msg)
-        raise TypeError(msg)
+        raise ImproperlyConfigured("{0}.master should point to a model class, can't use named field here.".format(new_class.__name__))
 
     meta = shared_model._parler_meta
     if meta is not None:
         if meta._has_translations_model(new_class):
-            raise TypeError("The model '{0}' already has an associated translation table!".format(shared_model.__name__))
+            raise ImproperlyConfigured("The model '{0}' already has an associated translation table!".format(shared_model.__name__))
         if meta._has_translations_field(rel.related_name):
-            raise TypeError("The model '{0}' already has an associated translation field named '{1}'!".format(shared_model.__name__, rel.related_name))
+            raise ImproperlyConfigured("The model '{0}' already has an associated translation field named '{1}'!".format(shared_model.__name__, rel.related_name))
 
     return shared_model
 
