@@ -203,12 +203,7 @@ class TranslatableModel(models.Model):
     #: Access to the metadata of the translatable model
     _parler_meta = None
 
-    # Consider these fields "protected" or "internal" attributes.
-    # Not part of the public API, but used internally in the class hierarchy.
-    # These are replaced by _parler_meta, but kept for backwards compatibility reasons.
-    _translations_field = None
-    _translations_model = None
-
+    #: Access to the language code
     language_code = LanguageCodeDescriptor()
 
     # change the default manager to the translation manager
@@ -810,12 +805,6 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
             translations_model=cls,
             related_name=cls.master.field.rel.related_name
         )
-
-        # Set fields for backwards compatibility.
-        # Some packages were already reading these private fields.
-        if base is None:
-            shared_model._translations_model = shared_model._parler_meta.root_model
-            shared_model._translations_field = shared_model._parler_meta.root_rel_name
 
 
         # Assign the proxy fields
