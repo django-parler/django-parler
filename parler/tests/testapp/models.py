@@ -90,25 +90,25 @@ class UniqueTogetherModel(TranslatableModel):
 
 class Level1(TranslatableModel):
     l1_translations = TranslatedFields(
-        l1_title = models.CharField("Translated Title", max_length=200)
+        l1_title = models.CharField(max_length=200)
     )
 
 
 class Level2(Level1):
     l2_translations = TranslatedFields(
-        l2_title = models.CharField("Translated Title", max_length=200)
+        l2_title = models.CharField(max_length=200)
     )
 
 
 class ProxyBase(TranslatableModel):
     base_translations = TranslatedFields(
-        base_title = models.CharField("Translated Title", max_length=200)
+        base_title = models.CharField(max_length=200)
     )
 
 
 class ProxyModel(ProxyBase):
     proxy_translations = TranslatedFields(
-        proxy_title = models.CharField("Translated Title", max_length=200)
+        proxy_title = models.CharField(max_length=200)
     )
 
     class Meta:
