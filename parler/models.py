@@ -356,6 +356,14 @@ class TranslatableModel(models.Model):
             return db_languages
 
 
+    def get_translation(self, language_code, related_name=None):
+        """
+        Fetch the translated model
+        """
+        meta = self._parler_meta._get_extension_by_related_name(related_name)
+        return self._get_translated_model(language_code, parler_meta=meta)
+
+
     def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False, parler_meta=None):
         """
         Fetch the translated fields model.
