@@ -1,6 +1,6 @@
 from django.db.models import Manager
 from .utils import AppTestCase
-from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel
+from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel, DoubleModel
 
 
 class ModelConstructionTests(AppTestCase):
@@ -65,3 +65,13 @@ class ModelConstructionTests(AppTestCase):
         self.assertEqual(ProxyModel._parler_meta.root_model.__name__, 'ProxyBaseTranslation')
         self.assertEqual(ProxyModel._parler_meta.root_rel_name, 'base_translations')
         self.assertEqual(ProxyModel._parler_meta.root, ProxyBase._parler_meta.root)
+
+
+    def test_double_translation_table(self):
+        """
+        Test how assigning two translation tables works.
+        """
+        self.assertIsNone(DoubleModel._parler_meta.base)  # Should call .add_meta() instead of overwriting/chaining it.
+        self.assertEqual(len(DoubleModel._parler_meta), 2)
+        self.assertEqual(DoubleModel._parler_meta[0].rel_name, "base_translations")
+        self.assertEqual(DoubleModel._parler_meta[1].rel_name, "more_translations")

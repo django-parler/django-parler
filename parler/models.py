@@ -798,14 +798,22 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         # Instance at previous inheritance level, if set.
         base = shared_model._parler_meta
 
-        # Link the translated fields model to the shared model.
-        shared_model._parler_meta = ParlerOptions(
-            base,
-            shared_model=shared_model,
-            translations_model=cls,
-            related_name=cls.master.field.rel.related_name
-        )
-
+        if base is not None and base[-1].shared_model is shared_model:
+            # If a second translations model is added, register it in the same object level.
+            base.add_meta(ParlerMeta(
+                shared_model=shared_model,
+                translations_model=cls,
+                related_name=cls.master.field.rel.related_name
+            ))
+        else:
+            # Place a new _parler_meta at the current inheritance level.
+            # It links to the previous base.
+            shared_model._parler_meta = ParlerOptions(
+                base,
+                shared_model=shared_model,
+                translations_model=cls,
+                related_name=cls.master.field.rel.related_name
+            )
 
         # Assign the proxy fields
         for name in cls.get_translated_fields():
@@ -878,6 +886,7 @@ class ParlerOptions(object):
             raise TypeError("Expected a TranslatedFieldsModel")
 
         self.base = base
+        self.inherited = False
 
         if base is None:
             # Make access easier.
@@ -886,9 +895,14 @@ class ParlerOptions(object):
 
             # Initial state for lookups
             self._root = None
-            self._extensions = [ParlerMeta(shared_model, translations_model, related_name)]
+            self._extensions = []
             self._fields_to_model = OrderedDict()
         else:
+            # For now
+            if base.inherited:
+                raise RuntimeError("Adding translations afterwards to an already inherited model is not supported yet.")
+            base.inherited = True
+
             # Inherited situation
             # Still take the base situation as starting point,
             # and register the added translations as extension.
@@ -900,12 +914,15 @@ class ParlerOptions(object):
             # This object will amend the caches of the previous object
             # The _extensions list gives access to all inheritance levels where ParlerOptions is defined.
             self._extensions = list(base._extensions)
-            self._extensions.append(
-                ParlerMeta(shared_model, translations_model, related_name)
-            )
             self._fields_to_model = base._fields_to_model.copy()
 
+        self.add_meta(ParlerMeta(shared_model, translations_model, related_name))
+
+    def add_meta(self, meta):
+        self._extensions.append(meta)
+
         # Fill/amend the caches
+        translations_model = meta.model
         for name in translations_model.get_translated_fields():
             self._fields_to_model[name] = translations_model
 

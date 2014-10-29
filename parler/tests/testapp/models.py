@@ -113,3 +113,15 @@ class ProxyModel(ProxyBase):
 
     class Meta:
         proxy = True
+
+
+class DoubleModel(TranslatableModel):
+    shared = models.CharField(max_length=200, default='')
+
+class DoubleModelTranslations(TranslatedFieldsModel):
+    master = models.ForeignKey(DoubleModel, related_name='base_translations')
+    l1_title = models.CharField(max_length=200)
+
+class DoubleModelMoreTranslations(TranslatedFieldsModel):
+    master = models.ForeignKey(DoubleModel, related_name='more_translations')
+    l2_title = models.CharField(max_length=200)
