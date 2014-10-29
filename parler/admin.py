@@ -232,7 +232,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if obj:
             return obj.get_available_languages()
         else:
-            return self.model._translations_model.objects.none()
+            return self.model._parler_meta.root_model.objects.none()
 
 
     def get_object(self, request, object_id):
@@ -347,7 +347,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         The 'delete translation' admin view for this model.
         """
         opts = self.model._meta
-        translations_model = self.model._translations_model
+        translations_model = self.model._parler_meta.root_model
 
         try:
             translation = translations_model.objects.select_related('master').get(master=unquote(object_id), language_code=language_code)
@@ -479,7 +479,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                     rel_name: obj
                 }
 
-                qs = inline.model._translations_model.objects.filter(**filters)
+                qs = inline.model._parler_meta.root_model.objects.filter(**filters)
                 if obj is not None:
                     qs = qs.using(obj._state.db)
 
@@ -569,10 +569,10 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
             filter = {
                 'master__{0}'.format(formset.fk.name): obj
             }
-            return self.model._translations_model.objects.using(obj._state.db).filter(**filter) \
+            return self.model._parler_meta.root_model.objects.using(obj._state.db).filter(**filter) \
                    .values_list('language_code', flat=True).distinct().order_by('language_code')
         else:
-            return self.model._translations_model.objects.none()
+            return self.model._parler_meta.root_model.objects.none()
 
 
 class TranslatableStackedInline(TranslatableInlineModelAdmin):
