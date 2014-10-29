@@ -247,7 +247,7 @@ class TranslatableModel(models.Model):
         """
         objects = []  # no generator, make sure objects are all filled first
         for parler_meta, model_fields in self._parler_meta._split_fields(**fields):
-            translation = self._get_translated_model(language_code=language_code, auto_create=True, parler_meta=parler_meta)
+            translation = self._get_translated_model(language_code=language_code, auto_create=True, meta=parler_meta)
             for field, value in six.iteritems(model_fields):
                 setattr(translation, field, value)
 
@@ -327,7 +327,7 @@ class TranslatableModel(models.Model):
 
             try:
                 # Fetch from DB, fill the cache.
-                self._get_translated_model(language_code, use_fallback=False, auto_create=False, parler_meta=meta)
+                self._get_translated_model(language_code, use_fallback=False, auto_create=False, meta=meta)
             except meta.model.DoesNotExist:
                 return False
             else:
@@ -346,7 +346,7 @@ class TranslatableModel(models.Model):
         if prefetch is not None:
             db_languages = sorted(obj.language_code for obj in prefetch)
         else:
-            qs = self._get_translated_queryset(parler_meta=meta)
+            qs = self._get_translated_queryset(meta=meta)
             db_languages = qs.values_list('language_code', flat=True).order_by('language_code')
 
         if include_unsaved:
@@ -361,10 +361,10 @@ class TranslatableModel(models.Model):
         Fetch the translated model
         """
         meta = self._parler_meta._get_extension_by_related_name(related_name)
-        return self._get_translated_model(language_code, parler_meta=meta)
+        return self._get_translated_model(language_code, meta=meta)
 
 
-    def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False, parler_meta=None):
+    def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False, meta=None):
         """
         Fetch the translated fields model.
         """
@@ -373,8 +373,9 @@ class TranslatableModel(models.Model):
 
         if not language_code:
             language_code = self._current_language
+        if meta is None:
+            meta = self._parler_meta.root  # work on base model by default
 
-        meta = parler_meta or self._parler_meta.root  # using .root clears any root_model vs 'model' differences.
         local_cache = self._translations_cache[meta.model]
 
         # 1. fetch the object from the local cache
@@ -451,7 +452,7 @@ class TranslatableModel(models.Model):
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
             try:
-                return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create, parler_meta=meta)
+                return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create, meta=meta)
             except meta.model.DoesNotExist:
                 fallback_msg = " (tried fallback {0})".format(lang_dict['fallback'])
 
@@ -462,15 +463,15 @@ class TranslatableModel(models.Model):
         ))
 
 
-    def _get_any_translated_model(self, parler_meta=None):
+    def _get_any_translated_model(self, meta=None):
         """
         Return any available translation.
         Returns None if there are no translations at all.
         """
-        if parler_meta is None:
-            parler_meta = self._parler_meta.root
+        if meta is None:
+            meta = self._parler_meta.root
 
-        tr_model = parler_meta.model
+        tr_model = meta.model
         local_cache = self._translations_cache[tr_model]
         if local_cache:
             # There is already a language available in the case. No need for queries.
@@ -484,11 +485,11 @@ class TranslatableModel(models.Model):
 
         try:
             # Use prefetch if available, otherwise perform separate query.
-            prefetch = self._get_prefetched_translations(parler_meta=parler_meta)
+            prefetch = self._get_prefetched_translations(meta=meta)
             if prefetch is not None:
                 translation = prefetch[0]  # Already a list
             else:
-                translation = self._get_translated_queryset(parler_meta=parler_meta)[0]
+                translation = self._get_translated_queryset(meta=meta)[0]
         except IndexError:
             return None
         else:
@@ -497,18 +498,16 @@ class TranslatableModel(models.Model):
             return translation
 
 
-    def _get_translated_queryset(self, parler_meta):
+    def _get_translated_queryset(self, meta=None):
         """
         Return the queryset that points to the translated model.
         If there is a prefetch, it can be read from this queryset.
         """
         # Get via self.TRANSLATIONS_FIELD.get(..) so it also uses the prefetch/select_related cache.
-        if parler_meta is None:
-            related_name = self._parler_meta.root_rel_name
-        else:
-            related_name = parler_meta.rel_name
+        if meta is None:
+            meta = self._parler_meta.root
 
-        accessor = getattr(self, related_name)
+        accessor = getattr(self, meta.rel_name)
         if django.VERSION >= (1,6):
             # Call latest version
             return accessor.get_queryset()
@@ -518,15 +517,14 @@ class TranslatableModel(models.Model):
             return accessor.get_query_set()
 
 
-    def _get_prefetched_translations(self, parler_meta=None):
+    def _get_prefetched_translations(self, meta=None):
         """
         Return the queryset with prefetch results.
         """
-        if parler_meta is None:
-            related_name = self._parler_meta.root_rel_name
-        else:
-            related_name = parler_meta.rel_name
+        if meta is None:
+            meta = self._parler_meta.root
 
+        related_name = meta.rel_name
         try:
             # Read the list directly, avoid QuerySet construction.
             # Accessing self._get_translated_queryset(parler_meta)._prefetch_done is more expensive.
@@ -630,7 +628,7 @@ class TranslatableModel(models.Model):
         # Extra feature: query a single field from a other translation.
         if language_code and language_code != self._current_language:
             try:
-                tr_model = self._get_translated_model(language_code, parler_meta=meta)
+                tr_model = self._get_translated_model(language_code, meta=meta)
                 return getattr(tr_model, field)
             except TranslationDoesNotExist:
                 pass
@@ -643,7 +641,7 @@ class TranslatableModel(models.Model):
                 pass
 
         if any_language:
-            translation = self._get_any_translated_model(parler_meta=meta)
+            translation = self._get_any_translated_model(meta=meta)
             if translation is not None:
                 return getattr(translation, field, default)
 

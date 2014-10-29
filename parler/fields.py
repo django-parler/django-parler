@@ -85,11 +85,12 @@ class TranslatedFieldDescriptor(object):
         # Auto create is useless for __get__, will return empty titles everywhere.
         # Better use a fallback instead, just like gettext does.
         translation = None
+        meta = self.field.meta
         try:
-            translation = instance._get_translated_model(use_fallback=True, parler_meta=self.field.meta)
-        except instance._parler_meta.root_model.DoesNotExist as e:
+            translation = instance._get_translated_model(use_fallback=True, meta=meta)
+        except meta.model.DoesNotExist as e:
             if self.field.any_language:
-                translation = instance._get_any_translated_model(parler_meta=self.field.meta)  # returns None on error.
+                translation = instance._get_any_translated_model(meta=meta)  # returns None on error.
 
             if translation is None:
                 # Improve error message
@@ -104,14 +105,14 @@ class TranslatedFieldDescriptor(object):
 
         # When assigning the property, assign to the current language.
         # No fallback is used in this case.
-        translation = instance._get_translated_model(use_fallback=False, auto_create=True, parler_meta=self.field.meta)
+        translation = instance._get_translated_model(use_fallback=False, auto_create=True, meta=self.field.meta)
         setattr(translation, self.field.name, value)
 
     def __delete__(self, instance):
         # No autocreate or fallback, as this is delete.
         # Rather blow it all up when the attribute doesn't exist.
         # Similar to getting a KeyError on `del dict['UNKNOWN_KEY']`
-        translation = instance._get_translated_model(parler_meta=self.field.meta)
+        translation = instance._get_translated_model(meta=self.field.meta)
         delattr(translation, self.field.name)
 
     def __repr__(self):
