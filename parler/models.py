@@ -129,6 +129,10 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     if not meta:
         meta = {}
 
+    if shared_model._meta.abstract:
+        # This can't be done, because `master = ForeignKey(shared_model)` would fail.
+        raise TypeError("Can't create TranslatedFieldsModel for abstract class {0}".format(shared_model.__name__))
+
     # Define inner Meta class
     meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
     meta['app_label'] = shared_model._meta.app_label
@@ -898,15 +902,11 @@ class ParlerOptions(object):
             self._extensions = []
             self._fields_to_model = OrderedDict()
         else:
-            # For now
-            if base.inherited:
-                raise RuntimeError("Adding translations afterwards to an already inherited model is not supported yet.")
-            base.inherited = True
-
             # Inherited situation
             # Still take the base situation as starting point,
             # and register the added translations as extension.
             root = base._root or base
+            base.inherited = True
             self._root = root
             self.root_model = root.root_model
             self.root_rel_name = root.root_rel_name
@@ -919,6 +919,9 @@ class ParlerOptions(object):
         self.add_meta(ParlerMeta(shared_model, translations_model, related_name))
 
     def add_meta(self, meta):
+        if self.inherited:
+            raise RuntimeError("Adding translations afterwards to an already inherited model is not supported yet.")
+
         self._extensions.append(meta)
 
         # Fill/amend the caches
