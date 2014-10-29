@@ -98,3 +98,18 @@ class Level2(Level1):
     l2_translations = TranslatedFields(
         l2_title = models.CharField("Translated Title", max_length=200)
     )
+
+
+class ProxyBase(TranslatableModel):
+    base_translations = TranslatedFields(
+        base_title = models.CharField("Translated Title", max_length=200)
+    )
+
+
+class ProxyModel(ProxyBase):
+    proxy_translations = TranslatedFields(
+        proxy_title = models.CharField("Translated Title", max_length=200)
+    )
+
+    class Meta:
+        proxy = True
