@@ -89,7 +89,8 @@ class TranslatableModelFormMixin(object):
             setattr(self.instance, field, value)
 
     def _get_translated_fields(self):
-        return [f_name for f_name in self._meta.model._parler_meta.get_translated_fields() if f_name in self.fields]
+        field_names = self._meta.model._parler_meta.get_all_fields()
+        return [f_name for f_name in field_names if f_name in self.fields]
 
 
 
@@ -120,42 +121,42 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
             # This also works when assigning `form = TranslatableModelForm` in the admin,
             # since the admin always uses modelform_factory() on the form class, and therefore triggering this metaclass.
             if form_model:
-                translations_model = form_model._parler_meta.root_model
-                fields = getattr(form_new_meta, 'fields', form_meta.fields)
-                exclude = getattr(form_new_meta, 'exclude', form_meta.exclude) or ()
-                widgets = getattr(form_new_meta, 'widgets', form_meta.widgets) or ()
-                formfield_callback = attrs.get('formfield_callback', None)
+                for translations_model in form_model._parler_meta.get_all_models():
+                    fields = getattr(form_new_meta, 'fields', form_meta.fields)
+                    exclude = getattr(form_new_meta, 'exclude', form_meta.exclude) or ()
+                    widgets = getattr(form_new_meta, 'widgets', form_meta.widgets) or ()
+                    formfield_callback = attrs.get('formfield_callback', None)
 
-                if fields == '__all__':
-                    fields = None
+                    if fields == '__all__':
+                        fields = None
 
-                for f_name in translations_model.get_translated_fields():
-                    # Add translated field if not already added, and respect exclude options.
-                    if f_name in translated_fields:
-                        # The TranslatedField placeholder can be replaced directly with actual field, so do that.
-                        attrs[f_name] = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **translated_fields[f_name].kwargs)
-                    # The next code holds the same logic as fields_for_model()
-                    # The f.editable check happens in _get_model_form_field()
-                    elif f_name not in form_base_fields \
-                     and (fields is None or f_name in fields) \
-                     and f_name not in exclude \
-                     and not f_name in attrs:
-                        # Get declared widget kwargs
-                        if f_name in widgets:
-                            # Not combined with declared fields (e.g. the TranslatedField placeholder)
-                            kwargs = {'widget': widgets[f_name]}
-                        else:
-                            kwargs = {}
+                    for f_name in translations_model.get_translated_fields():
+                        # Add translated field if not already added, and respect exclude options.
+                        if f_name in translated_fields:
+                            # The TranslatedField placeholder can be replaced directly with actual field, so do that.
+                            attrs[f_name] = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **translated_fields[f_name].kwargs)
+                        # The next code holds the same logic as fields_for_model()
+                        # The f.editable check happens in _get_model_form_field()
+                        elif f_name not in form_base_fields \
+                         and (fields is None or f_name in fields) \
+                         and f_name not in exclude \
+                         and not f_name in attrs:
+                            # Get declared widget kwargs
+                            if f_name in widgets:
+                                # Not combined with declared fields (e.g. the TranslatedField placeholder)
+                                kwargs = {'widget': widgets[f_name]}
+                            else:
+                                kwargs = {}
 
-                        # See if this formfield was previously defined using a TranslatedField placeholder.
-                        placeholder = _get_mro_attribute(bases, f_name)
-                        if placeholder and isinstance(placeholder, TranslatedField):
-                            kwargs.update(placeholder.kwargs)
+                            # See if this formfield was previously defined using a TranslatedField placeholder.
+                            placeholder = _get_mro_attribute(bases, f_name)
+                            if placeholder and isinstance(placeholder, TranslatedField):
+                                kwargs.update(placeholder.kwargs)
 
-                        # Add the form field as attribute to the class.
-                        formfield = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **kwargs)
-                        if formfield is not None:
-                            attrs[f_name] = formfield
+                            # Add the form field as attribute to the class.
+                            formfield = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **kwargs)
+                            if formfield is not None:
+                                attrs[f_name] = formfield
 
         # Call the super class with updated `attrs` dict.
         return super(TranslatableModelFormMetaclass, mcs).__new__(mcs, name, bases, attrs)
