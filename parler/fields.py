@@ -128,10 +128,8 @@ class TranslatedFieldDescriptor(object):
         hence it falls back to reading the attribute and trying ``short_description``.
         Ideally, translated fields should also appear in this list, to be treated like regular fields.
         """
-        meta = self.field.meta
-        try:
-            translations_model = meta.get_model_by_field(self.field.name)
-        except FieldError:
+        translations_model = self.field.meta.model
+        if translations_model is None:
             # This only happens with abstract models. The code is accessing the descriptor at the base model directly,
             # not the upgraded descriptor version that contribute_translations() installed.
             # Fallback to what the admin label_for_field() would have done otherwise.

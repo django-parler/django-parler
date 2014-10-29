@@ -27,5 +27,5 @@ class ModelInheritanceTests(AppTestCase):
         self.assertEqual(x.l2_title, "LEVEL2")
 
         # check that the translations exist after saving
-        translation = Level2._parler_meta.model.objects.get(master=x)
+        translation = Level2._parler_meta[-1].model.objects.get(master=x)
         self.assertEqual(translation.l2_title, "LEVEL2")

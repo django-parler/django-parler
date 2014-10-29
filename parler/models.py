@@ -468,10 +468,9 @@ class TranslatableModel(models.Model):
         Returns None if there are no translations at all.
         """
         if parler_meta is None:
-            tr_model = self._parler_meta.root_model
-        else:
-            tr_model = parler_meta.model
+            parler_meta = self._parler_meta.root
 
+        tr_model = parler_meta.model
         local_cache = self._translations_cache[tr_model]
         if local_cache:
             # There is already a language available in the case. No need for queries.
@@ -866,6 +865,30 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         )
 
 
+class ParlerMeta(object):
+    """
+    Meta data for a single inheritance level.
+    """
+    def __init__(self, shared_model, translations_model, related_name):
+        # Store meta information of *this* level
+        self.shared_model = shared_model
+        self.model = translations_model
+        self.rel_name = related_name
+
+    def get_translated_fields(self):
+        """
+        Return the translated fields of this model.
+        """
+        # root_model always points to the real model for extensions
+        return self.model.get_translated_fields()
+
+    def __repr__(self):
+        return "<ParlerMeta: {0}.{1} to {2}>".format(
+            self.shared_model.__name__,
+            self.rel_name,
+            self.model.__name__
+        )
+
 
 class ParlerOptions(object):
     """
@@ -877,19 +900,14 @@ class ParlerOptions(object):
 
         self.base = base
 
-        # Store meta information of *this* level
-        self.shared_model = shared_model
-        self.model = translations_model
-        self.rel_name = related_name
-
         if base is None:
             # Make access easier.
-            self.root_model = self.model
-            self.root_rel_name = self.rel_name
+            self.root_model = translations_model
+            self.root_rel_name = related_name
 
             # Initial state for lookups
             self._root = None
-            self._extensions = [self]
+            self._extensions = [ParlerMeta(shared_model, translations_model, related_name)]
             self._fields_to_model = OrderedDict()
         else:
             # Inherited situation
@@ -897,14 +915,14 @@ class ParlerOptions(object):
             # and register the added translations as extension.
             root = base._root or base
             self._root = root
-            self.root_model = root.model
-            self.root_rel_name = root.rel_name
+            self.root_model = root.root_model
+            self.root_rel_name = root.root_rel_name
 
             # This object will amend the caches of the previous object
             # The _extensions list gives access to all inheritance levels where ParlerOptions is defined.
             self._extensions = list(base._extensions)
             self._extensions.append(
-                ParlerOptions(None, shared_model, translations_model, related_name)
+                ParlerMeta(shared_model, translations_model, related_name)
             )
             self._fields_to_model = base._fields_to_model.copy()
 
@@ -913,10 +931,9 @@ class ParlerOptions(object):
             self._fields_to_model[name] = translations_model
 
     def __repr__(self):
-        return "<ParlerOptions: <{0} model>.{1} -> <{1} model>{2}>".format(
-            self.shared_model.__name__,
-            self.rel_name,
-            self.model.__name__,
+        return "<ParlerOptions: *.{0} to {1}{2}>".format(
+            self.root_rel_name,
+            self.root_model.__name__,
             '' if len(self._extensions) == 1 else ", {0} extensions".format(len(self._extensions))
         )
 
@@ -924,8 +941,32 @@ class ParlerOptions(object):
     def root(self):
         """
         The top level object in the inheritance chain.
+        This is an alias for accessing the first item in the collection.
         """
-        return self._root or self
+        return self._extensions[0]
+
+    def __iter__(self):
+        """
+        Access all :class:`ParlerMeta` objects associated.
+        """
+        return iter(self._extensions)
+
+    def __getitem__(self, item):
+        """
+        Get an :class:`ParlerMeta` object by index or model.
+        """
+        try:
+            if isinstance(item, (int,long)):
+                return self._extensions[item]
+            elif isinstance(item, six.string_types):
+                return self._get_extension_by_related_name(related_name=item)
+            else:
+                return next(meta for meta in self._extensions if meta.model == item)
+        except (StopIteration, IndexError, KeyError):
+            raise KeyError("Item '{0}' not found".format(item))
+
+    def __len__(self):
+        return len(self._extensions)
 
     def get_all_models(self):
         """
@@ -950,8 +991,7 @@ class ParlerOptions(object):
         Return the translated fields of this model.
         """
         meta = self._get_extension_by_related_name(related_name)
-        # root_model always points to the real model for extensions
-        return meta.root_model.get_translated_fields()
+        return meta.get_translated_fields()
 
     def get_model_by_field(self, name):
         try:
@@ -988,7 +1028,7 @@ class ParlerOptions(object):
         If the related name is ``None``, the :attr:`root_model` will be returned.
         """
         if related_name is None:
-            return self._root or self
+            return self._extensions[0]
 
         for meta in self._extensions:
             if meta.rel_name == related_name:

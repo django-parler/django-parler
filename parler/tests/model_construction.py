@@ -28,13 +28,18 @@ class ModelConstructionTests(AppTestCase):
         """
         Test the inherited model syntax.
         """
-        self.assertEqual(Level1._parler_meta.rel_name, 'l1_translations')
-        self.assertEqual(Level2._parler_meta.rel_name, 'l2_translations')
+        # First level has 1 ParlerMeta object
+        self.assertEqual(Level1._parler_meta.root.rel_name, 'l1_translations')
+        self.assertEqual(Level1._parler_meta.root.model.__name__, 'Level1Translation')
+        self.assertEqual(len(Level1._parler_meta), 1)
 
-        self.assertEqual(Level1._parler_meta.model.__name__, 'Level1Translation')
-        self.assertEqual(Level2._parler_meta.model.__name__, 'Level2Translation')
+        # Second level has 2 ParlerMeta objects.
+        self.assertEqual(len(Level2._parler_meta), 2)
+        self.assertEqual(Level2._parler_meta[0].rel_name, 'l1_translations')
+        self.assertEqual(Level2._parler_meta[1].rel_name, 'l2_translations')
+        self.assertEqual(Level2._parler_meta[1].model.__name__, 'Level2Translation')
 
         # Level 2 root attributes should point to the top-level object (Level1)
         self.assertEqual(Level2._parler_meta.root_model.__name__, 'Level1Translation')
         self.assertEqual(Level2._parler_meta.root_rel_name, 'l1_translations')
-        self.assertEqual(Level2._parler_meta.root, Level1._parler_meta)
+        self.assertEqual(Level2._parler_meta.root, Level1._parler_meta.root)
