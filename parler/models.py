@@ -970,7 +970,7 @@ class ParlerOptions(object):
         Get an :class:`ParlerMeta` object by index or model.
         """
         try:
-            if isinstance(item, (int,long)):
+            if isinstance(item, six.integer_types):
                 return self._extensions[item]
             elif isinstance(item, six.string_types):
                 return self._get_extension_by_related_name(related_name=item)
