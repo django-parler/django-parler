@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Changes in version 1.2 (in git)
--------------------------------
+Changes in version 1.2 (2014-10-30)
+-----------------------------------
 
 * Added support for translations on mutlple model inheritance levels.
 * Added ``TranslatableAdmin.get_translation_objects()`` API.
