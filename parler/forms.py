@@ -48,16 +48,17 @@ class TranslatableModelFormMixin(object):
         # Load the initial values for the translated fields
         instance = kwargs.get('instance', None)
         if instance:
-            try:
-                # By not auto creating a model, any template code that reads the fields
-                # will continue to see one of the other translations.
-                # This also causes admin inlines to show the fallback title in __unicode__.
-                translation = instance._get_translated_model()
-            except TranslationDoesNotExist:
-                pass
-            else:
-                for field in self._get_translated_fields():
-                    self.initial.setdefault(field, getattr(translation, field))
+            for meta in instance._parler_meta:
+                try:
+                    # By not auto creating a model, any template code that reads the fields
+                    # will continue to see one of the other translations.
+                    # This also causes admin inlines to show the fallback title in __unicode__.
+                    translation = instance._get_translated_model(meta=meta)
+                except TranslationDoesNotExist:
+                    pass
+                else:
+                    for field in meta.get_translated_fields():
+                        self.initial.setdefault(field, getattr(translation, field))
 
         # Typically already set by admin
         if self.language_code is None:
