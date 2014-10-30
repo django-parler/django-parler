@@ -591,6 +591,12 @@ class TranslatableModel(models.Model):
         """
         Save the translation when it's modified, or unsaved.
 
+        .. note::
+
+           When a derived model provides additional translated fields,
+           this method receives both the original and extended translation.
+           To distinguish between both objects, check for ``translation.related_name``.
+
         :param translation: The translation
         :type translation: TranslatedFieldsModel
         :param args: Any custom arguments to pass to :func:`save`.
@@ -751,6 +757,13 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         Returns the shared model this model is linked to.
         """
         return self.__class__.master.field.rel.to
+
+    @property
+    def related_name(self):
+        """
+        Returns the related name that this model is known at in the shared model.
+        """
+        return self.__class__.master.field.rel.related_name
 
     def save_base(self, raw=False, using=None, **kwargs):
         # Send the pre_save signal
