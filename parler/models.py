@@ -572,8 +572,10 @@ class TranslatableModel(models.Model):
         :param kwargs: Any custom arguments to pass to :func:`save`.
         """
         # Copy cache, new objects (e.g. fallbacks) might be fetched if users override save_translation()
-        # Go though all object levels found in the cache.
-        for local_cache in list(self._translations_cache.values()):
+        # Not looping over the cache, but using _parler_meta so the translations are processed in the order of inheritance.
+        local_caches = self._translations_cache.copy()
+        for meta in self._parler_meta:
+            local_cache = local_caches[meta.model]
             translations = list(local_cache.values())
 
             # Save all translated objects which were fetched.
