@@ -347,35 +347,46 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         The 'delete translation' admin view for this model.
         """
         opts = self.model._meta
-        translations_model = self.model._parler_meta.root_model
+        root_model = self.model._parler_meta.root_model
 
+        # Get object and translation
+        shared_obj = self.get_object(request, unquote(object_id))
+        shared_obj.set_current_language(language_code)
         try:
-            translation = translations_model.objects.select_related('master').get(master=unquote(object_id), language_code=language_code)
-        except translations_model.DoesNotExist:
+            translation = root_model.objects.get(master=shared_obj, language_code=language_code)
+        except root_model.DoesNotExist:
             raise Http404
 
         if not self.has_delete_permission(request, translation):
             raise PermissionDenied
 
-        if self.get_available_languages(translation.master).count() <= 1:
+        if self.get_available_languages(shared_obj).count() <= 1:
             return self.deletion_not_allowed(request, translation, language_code)
 
         # Populate deleted_objects, a data structure of all related objects that
         # will also be deleted.
 
-        using = router.db_for_write(translations_model)
+        using = router.db_for_write(root_model)  # NOTE: all same DB for now.
         lang = get_language_title(language_code)
-        (deleted_objects, perms_needed, protected) = get_deleted_objects(
-            [translation], translations_model._meta, request.user, self.admin_site, using)
+
+        # There are potentially multiple objects to delete;
+        # the translation object at the base level,
+        # and additional objects that can be added by inherited models.
+        deleted_objects = []
+        perms_needed = False
+        protected = []
 
         # Extend deleted objects with the inlines.
-        if self.delete_inline_translations:
-            shared_obj = translation.master
-            for qs in self.get_translation_objects(request, translation.language_code, obj=shared_obj):
-                (del2, perms2, protected2) = get_deleted_objects(qs, qs.model._meta, request.user, self.admin_site, using)
-                deleted_objects += del2
-                perms_needed = perms_needed or perms2
-                protected += protected2
+        for qs in self.get_translation_objects(request, translation.language_code, obj=shared_obj, inlines=self.delete_inline_translations):
+            if isinstance(qs, (list,tuple)):
+                qs_opts = qs[0]._meta
+            else:
+                qs_opts = qs.model._meta
+
+            (del2, perms2, protected2) = get_deleted_objects(qs, qs_opts, request.user, self.admin_site, using)
+            deleted_objects += del2
+            perms_needed = perms_needed or perms2
+            protected += protected2
 
         if request.POST: # The user has already confirmed the deletion.
             if perms_needed:
@@ -439,22 +450,37 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         This calls :func:`get_translation_objects` to collect all related objects for the translation.
         By default, that includes the translations for inline objects.
         """
-        translation.delete()
-
-        # Also delete translations of inlines which the user has access to.
-        if self.delete_inline_translations:
-            master = translation.master
-            for qs in self.get_translation_objects(request, translation.language_code, obj=master):
+        master = translation.master
+        for qs in self.get_translation_objects(request, translation.language_code, obj=master, inlines=self.delete_inline_translations):
+            if isinstance(qs, (tuple,list)):
+                # The objects are deleted one by one.
+                # This triggers the post_delete signals and such.
+                for obj in qs:
+                    obj.delete()
+            else:
+                # Also delete translations of inlines which the user has access to.
+                # This doesn't trigger signals, just like the regular
                 qs.delete()
 
 
-    def get_translation_objects(self, request, language_code, obj=None):
+    def get_translation_objects(self, request, language_code, obj=None, inlines=True):
         """
         Return all objects that should be deleted when a translation is deleted.
-        This method can yield all QuerySet objects for the objects.
+        This method can yield all QuerySet objects or lists for the objects.
         """
-        for inline, qs in self._get_inline_translations(request, language_code, obj=obj):
-            yield qs
+        if obj is not None:
+            # A single model can hold multiple TranslatedFieldsModel objects.
+            # Return them all.
+            for translations_model in obj._parler_meta.get_all_models():
+                try:
+                    translation = translations_model.objects.get(master=obj, language_code=language_code)
+                except translations_model.DoesNotExist:
+                    continue
+                yield [translation]
+
+        if inlines:
+            for inline, qs in self._get_inline_translations(request, language_code, obj=obj):
+                yield qs
 
 
     def _get_inline_translations(self, request, language_code, obj=None):
@@ -479,11 +505,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                     rel_name: obj
                 }
 
-                qs = inline.model._parler_meta.root_model.objects.filter(**filters)
-                if obj is not None:
-                    qs = qs.using(obj._state.db)
+                for translations_model in inline.model._parler_meta.get_all_models():
+                    qs = translations_model.objects.filter(**filters)
+                    if obj is not None:
+                        qs = qs.using(obj._state.db)
 
-                yield inline, qs
+                    yield inline, qs
 
 
     def get_change_form_base_template(self):
