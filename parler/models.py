@@ -337,7 +337,7 @@ class TranslatableModel(models.Model):
         """
         meta = self._parler_meta._get_extension_by_related_name(related_name)
 
-        prefetch = self._get_prefetched_translations()
+        prefetch = self._get_prefetched_translations(meta=meta)
         if prefetch is not None:
             db_languages = sorted(obj.language_code for obj in prefetch)
         else:
@@ -384,7 +384,7 @@ class TranslatableModel(models.Model):
             # 2. No cache, need to query
             # Check that this object already exists, would be pointless otherwise to check for a translation.
             if not self._state.adding and self.pk:
-                prefetch = self._get_prefetched_translations()
+                prefetch = self._get_prefetched_translations(meta=meta)
                 if prefetch is not None:
                     # 2.1, use prefetched data
                     # If the object is not found in the prefetched data (which contains all translations),
