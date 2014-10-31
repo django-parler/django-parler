@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in version 1.2.1 (2014-10-31)
+-------------------------------------
+
+* Fixed fetching correct translations when using ``prefetch_related()``.
+
+
 Changes in version 1.2 (2014-10-30)
 -----------------------------------
 
