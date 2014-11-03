@@ -1,6 +1,7 @@
+from django.core.cache import cache
 from django.db.models import Manager
 from .utils import AppTestCase
-from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel, DoubleModel
+from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel, DoubleModel, RegularModel
 
 
 class ModelConstructionTests(AppTestCase):
@@ -75,3 +76,17 @@ class ModelConstructionTests(AppTestCase):
         self.assertEqual(len(DoubleModel._parler_meta), 2)
         self.assertEqual(DoubleModel._parler_meta[0].rel_name, "base_translations")
         self.assertEqual(DoubleModel._parler_meta[1].rel_name, "more_translations")
+
+
+    def test_overlapping_proxy_model(self):
+        """
+        Test the simple model syntax.
+        """
+        from parler.tests.testapp.invalid_models import RegularModelProxy
+
+        # Create an object without translations
+        RegularModel.objects.create(id=98, original_field='untranslated')
+        self.assertEquals(RegularModelProxy.objects.count(), 1)
+
+        # Refetch from db, should raise an error.
+        self.assertRaises(RuntimeError, lambda: RegularModelProxy.objects.all()[0])

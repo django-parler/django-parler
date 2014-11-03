@@ -225,13 +225,19 @@ class TranslatableModel(models.Model):
                 except KeyError:
                     pass
 
-        self._translations_cache = defaultdict(dict)
-        self._current_language = normalize_language_code(current_language or get_language())  # What you used to fetch the object is what you get.
+        # Have the attributes available, but they can't be ready yet;
+        # self._state.adding is always True at this point,
+        # the QuerySet.iterator() code changes it after construction.
+        self._translations_cache = None
+        self._current_language = None
 
         # Run original Django model __init__
         super(TranslatableModel, self).__init__(*args, **kwargs)
 
         # Assign translated args manually.
+        self._translations_cache = defaultdict(dict)
+        self._current_language = normalize_language_code(current_language or get_language())  # What you used to fetch the object is what you get.
+
         if translated_kwargs:
             self._set_translated_fields(self._current_language, **translated_kwargs)
 
@@ -365,6 +371,8 @@ class TranslatableModel(models.Model):
         """
         if self._parler_meta is None:
             raise ImproperlyConfigured("No translation is assigned to the current model!")
+        if self._translations_cache is None:
+            raise RuntimeError("Accessing translated fields before super.__init__() is not possible.")
 
         if not language_code:
             language_code = self._current_language
@@ -837,8 +845,11 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         # Assign the proxy fields
         for name in cls.get_translated_fields():
             try:
-                # Check if the field already exists.
+                # Check if an attribute already exists.
                 # Note that the descriptor even proxies this request, so it should return our field.
+                #
+                # A model field might not be added yet, as this all happens in the contribute_to_class() loop.
+                # Hence, only checking attributes here. The real fields are checked for in the _prepare() code.
                 shared_field = getattr(shared_model, name)
             except AttributeError:
                 # Add the proxy field for the shared field.

@@ -125,3 +125,8 @@ class DoubleModelTranslations(TranslatedFieldsModel):
 class DoubleModelMoreTranslations(TranslatedFieldsModel):
     master = models.ForeignKey(DoubleModel, related_name='more_translations')
     l2_title = models.CharField(max_length=200)
+
+
+class RegularModel(models.Model):
+    # Normal model without translations. Test how replacing the field works.
+    original_field = models.CharField(default="untranslated", max_length=255)
