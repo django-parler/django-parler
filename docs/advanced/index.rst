@@ -10,6 +10,7 @@ Advanced usage patterns
    existing
    polymorphicmodel
    guardian
+   rest-framework
    multisite
    caching
    manual-models
