@@ -36,6 +36,8 @@ Hence, they can't be combined with other filters on translated fields,
 as that causes double joins on the translations table.
 See `the ORM documentation <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_ for more details.
 
+.. _ordering:
+
 The ``ordering`` meta field
 ---------------------------
 
