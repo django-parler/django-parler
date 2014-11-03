@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in development (git version)
+------------------------------------
+
+* Detect when translatable fields are assigned too early.
+
+
 Changes in version 1.2.1 (2014-10-31)
 -------------------------------------
 
