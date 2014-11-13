@@ -905,6 +905,7 @@ class ParlerMeta(object):
         """
         Return the translated fields of this model.
         """
+        # TODO: should be named get_fields() ?
         # root_model always points to the real model for extensions
         return self.model.get_translated_fields()
 
@@ -965,9 +966,11 @@ class ParlerOptions(object):
             self._fields_to_model[name] = translations_model
 
     def __repr__(self):
-        return "<ParlerOptions: *.{0} to {1}{2}>".format(
-            self.root_rel_name,
-            self.root_model.__name__,
+        root = self.root
+        return "<ParlerOptions: {0}.{1} to {2}{3}>".format(
+            root.shared_model.__name__,
+            root.rel_name,
+            root.model.__name__,
             '' if len(self._extensions) == 1 else ", {0} extensions".format(len(self._extensions))
         )
 
@@ -1010,7 +1013,7 @@ class ParlerOptions(object):
 
     def get_all_fields(self):
         """
-        Return all related fields associated with this model.
+        Return all translated fields associated with this model.
         """
         return list(self._fields_to_model.keys())
 
@@ -1023,11 +1026,16 @@ class ParlerOptions(object):
     def get_translated_fields(self, related_name=None):
         """
         Return the translated fields of this model.
+        By default, the top-level translation is required, unless ``related_name`` is provided.
         """
+        # TODO: should be named get_fields() ?
         meta = self._get_extension_by_related_name(related_name)
         return meta.get_translated_fields()
 
     def get_model_by_field(self, name):
+        """
+        Find the :class:`TranslatedFieldsModel` that contains the given field.
+        """
         try:
             return self._fields_to_model[name]
         except KeyError:
