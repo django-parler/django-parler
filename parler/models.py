@@ -1077,7 +1077,7 @@ class ParlerOptions(object):
                 return meta
 
         raise ValueError("No translated model of '{0}' has a reverse name of '{1}'".format(
-            self.model.__name__, related_name
+            self.root.shared_model.__name__, related_name
         ))
 
     def _split_fields(self, **fields):
