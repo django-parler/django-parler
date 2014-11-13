@@ -183,6 +183,15 @@ class TranslatedFields(object):
             translations = TranslatedFields(
                 title = models.CharField("Title", max_length=200)
             )
+
+    When the class is initialized, the attribute will point
+    to a :class:`~django.db.models.fields.related.ForeignRelatedObjectsDescriptor` object.
+    Hence, accessing ``MyModel.translations.related.model`` returns the original model
+    via the :class:`django.db.models.related.RelatedObject` class.
+
+    ..
+       To fetch the attribute, you can also query the Parler metadata:
+       MyModel._parler_meta.get_model_by_related_name('translations')
     """
     def __init__(self, meta=None, **fields):
         self.fields = fields
