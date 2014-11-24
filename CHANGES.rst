@@ -4,7 +4,9 @@ Changelog
 Changes in development (git version)
 ------------------------------------
 
+* Added ``parler.contrib.rest_framework`` package for django-rest-framework_ integration.
 * Detect when translatable fields are assigned too early.
+* Fix missing 404 check in delete-translation view.
 
 
 Changes in version 1.2.1 (2014-10-31)
@@ -154,3 +156,4 @@ Changes in version 0.9 (beta)
 
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
+.. _django-rest-framework: https://github.com/tomchristie/django-rest-framework

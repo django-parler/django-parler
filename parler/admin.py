@@ -351,6 +351,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
         # Get object and translation
         shared_obj = self.get_object(request, unquote(object_id))
+        if shared_obj is None:
+            raise Http404
+
         shared_obj.set_current_language(language_code)
         try:
             translation = root_model.objects.get(master=shared_obj, language_code=language_code)
