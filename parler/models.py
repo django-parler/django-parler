@@ -648,7 +648,7 @@ class TranslatableModel(models.Model):
         # Extra feature: query a single field from a other translation.
         if language_code and language_code != self._current_language:
             try:
-                tr_model = self._get_translated_model(language_code, meta=meta)
+                tr_model = self._get_translated_model(language_code, meta=meta, use_fallback=True)
                 return getattr(tr_model, field)
             except TranslationDoesNotExist:
                 pass
