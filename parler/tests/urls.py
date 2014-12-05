@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, resolve
 from django.test import RequestFactory
 from django.utils import translation
 from parler.templatetags.parler_tags import get_translated_url
@@ -57,7 +57,8 @@ class UrlTests(AppTestCase):
                 'object': self.article
             }
 
-            # Simulate {% get_translated_url CODE object %} syntax
+            # Simulate {% get_translated_url CODE object %} syntax.
+            # The object.get_absolute_url() will be used to get a translated URL.
             self.assertEqual(get_translated_url(context, lang_code=self.other_lang2), '/{0}/article/lang2/'.format(self.other_lang2))
             self.assertEqual(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/article/default/'.format(self.conf_fallback))
 
@@ -72,8 +73,10 @@ class UrlTests(AppTestCase):
             context = {
                 'request': RequestFactory().get(url),
             }
+            context['request'].resolver_match = resolve(url)  # Simulate WSGIHandler.get_response()
 
-            # Simulate {% get_translated_url CODE object %} syntax
+            # Simulate {% get_translated_url CODE %} syntax
+            # The request.resolver_match will be used to get a translated URL.
             self.assertEqual(get_translated_url(context, lang_code=self.other_lang2), '/{0}/tests/kwargs-view/'.format(self.other_lang2))
             self.assertEqual(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/tests/kwargs-view/'.format(self.conf_fallback))
 

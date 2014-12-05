@@ -7,6 +7,7 @@ Changes in development (git version)
 * Added ``parler.contrib.rest_framework`` package for django-rest-framework_ integration.
 * Detect when translatable fields are assigned too early.
 * Fix missing 404 check in delete-translation view.
+* Improve ``{% get_translated_url %}``, using ``request.resolver_match`` value.
 
 
 Changes in version 1.2.1 (2014-10-31)

@@ -1,5 +1,5 @@
 import inspect
-from django.core.urlresolvers import resolve, reverse, Resolver404
+from django.core.urlresolvers import reverse
 from django.template import Node, Library, TemplateSyntaxError
 from django.utils.translation import get_language
 from django.utils import six
@@ -135,17 +135,16 @@ def get_translated_url(context, lang_code, object=None):
 
     # Just reverse the current URL again in a new language, and see where we end up.
     # This doesn't handle translated slugs, but will resolve to the proper view name.
-    path = context['request'].path
-    try:
-        resolvermatch = resolve(path)
-    except Resolver404:
+    request = context['request']
+    resolver_match = request.resolver_match  # Set by BaseHandler.get_response(), reading resolve(request.path_info)
+    if resolver_match is None:
         # Can't resolve the page itself, the page is apparently a 404.
         # This can also happen for the homepage in an i18n_patterns situation.
         return ''
 
     with smart_override(lang_code):
-        clean_kwargs = _cleanup_urlpattern_kwargs(resolvermatch.kwargs)
-        return reverse(resolvermatch.view_name, args=resolvermatch.args, kwargs=clean_kwargs)
+        clean_kwargs = _cleanup_urlpattern_kwargs(resolver_match.kwargs)
+        return reverse(resolver_match.view_name, args=resolver_match.args, kwargs=clean_kwargs, current_app=resolver_match.app_name)
 
 
 @register.filter
