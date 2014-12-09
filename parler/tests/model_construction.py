@@ -1,7 +1,7 @@
 from django.core.cache import cache
 from django.db.models import Manager
 from .utils import AppTestCase
-from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel, DoubleModel, RegularModel
+from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel, DoubleModel, RegularModel, CharModel
 
 
 class ModelConstructionTests(AppTestCase):
@@ -90,3 +90,11 @@ class ModelConstructionTests(AppTestCase):
 
         # Refetch from db, should raise an error.
         self.assertRaises(RuntimeError, lambda: RegularModelProxy.objects.all()[0])
+
+
+    def test_model_with_different_pks(self):
+        """
+        Test that TranslatableModels works with different types of pks
+        """
+        self.assertIsInstance(SimpleModel.objects.create(tr_title='Test'), SimpleModel)
+        self.assertIsInstance(CharModel.objects.create(pk='test', tr_title='Test'), CharModel)
