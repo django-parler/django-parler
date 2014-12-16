@@ -400,7 +400,7 @@ class TranslatableModel(models.Model):
         except KeyError:
             # 2. No cache, need to query
             # Check that this object already exists, would be pointless otherwise to check for a translation.
-            if not self._state.adding and self.pk:
+            if not self._state.adding and self.pk is not None:
                 prefetch = self._get_prefetched_translations(meta=meta)
                 if prefetch is not None:
                     # 2.1, use prefetched data
