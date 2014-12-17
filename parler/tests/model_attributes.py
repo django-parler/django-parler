@@ -182,8 +182,9 @@ class ModelAttributeTests(AppTestCase):
         x = SimpleModel()
         x.set_current_language(self.other_lang1)
         x.tr_title = "TITLE_XX"
-        x.set_current_language(self.other_lang2)
-
+        x.set_current_language(self.other_lang2)       
+        # try fetching, causing an fallback marker
+        x.safe_translation_getter('tr_title', any_language=True)
         # Now save. This should not raise errors
         x.save()
 
