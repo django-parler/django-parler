@@ -183,8 +183,23 @@ class ModelAttributeTests(AppTestCase):
         x.set_current_language(self.other_lang1)
         x.tr_title = "TITLE_XX"
         x.set_current_language(self.other_lang2)
-        # try fetching, causing an fallback marker
-        x.safe_translation_getter('tr_title', any_language=True)
 
         # Now save. This should not raise errors
         x.save()
+
+    def test_model_with_zero_pk(self):
+	"""
+	tests that the traslated model is returned also when the pk is 0
+	"""
+	x = SimpleModel()
+	x.set_current_language(self.other_lang1)
+	x.pk = 0
+	x.tr_title = "EMPTY_PK"	
+
+        x.save()
+
+        # Refetch
+	try:
+            x = SimpleModel.objects.get(pk=x.pk)
+	except TranslationDoesNotExist:
+            self.fail("zero pk is not supported!")
