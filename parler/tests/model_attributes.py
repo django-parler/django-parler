@@ -174,7 +174,6 @@ class ModelAttributeTests(AppTestCase):
             self.assertNumQueries(0, lambda: x._get_any_translated_model())   # Can fetch from cache next time.
             self.assertEqual(x._get_any_translated_model().language_code, self.other_lang1)
 
-
     def test_save_ignore_fallback_marker(self):
         """
         Test whether the ``save_translations()`` method skips fallback languages
@@ -189,18 +188,18 @@ class ModelAttributeTests(AppTestCase):
         x.save()
 
     def test_model_with_zero_pk(self):
-	"""
-	tests that the traslated model is returned also when the pk is 0
-	"""
-	x = SimpleModel()
-	x.set_current_language(self.other_lang1)
-	x.pk = 0
-	x.tr_title = "EMPTY_PK"	
+        """
+        tests that the translated model is returned also when the pk is 0
+        """
+        x = SimpleModel()
+        x.set_current_language(self.other_langgit 1)
+        x.pk = 0
+        x.tr_title = "EMPTY_PK"	
 
         x.save()
-
-        # Refetch
-	try:
-            x = SimpleModel.objects.get(pk=x.pk)
-	except TranslationDoesNotExist:
+        
+        # now fetch it from db
+        try:
+            SimpleModel.objects.get(pk=x.pk)
+        except TranslationDoesNotExist:
             self.fail("zero pk is not supported!")
