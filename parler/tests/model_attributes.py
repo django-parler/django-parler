@@ -192,7 +192,7 @@ class ModelAttributeTests(AppTestCase):
         tests that the translated model is returned also when the pk is 0
         """
         x = SimpleModel()
-        x.set_current_language(self.other_langgit 1)
+        x.set_current_language(self.other_lang1)
         x.pk = 0
         x.tr_title = "EMPTY_PK"	
 
