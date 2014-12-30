@@ -400,7 +400,7 @@ class TranslatableModel(models.Model):
         except KeyError:
             # 2. No cache, need to query
             # Check that this object already exists, would be pointless otherwise to check for a translation.
-            if not self._state.adding and self.pk:
+            if not self._state.adding and self.pk is not None:
                 prefetch = self._get_prefetched_translations(meta=meta)
                 if prefetch is not None:
                     # 2.1, use prefetched data
@@ -457,7 +457,7 @@ class TranslatableModel(models.Model):
             # Explicitly set a marker for the fact that this translation uses the fallback instead.
             # Avoid making that query again.
             local_cache[language_code] = MISSING  # None value is the marker.
-            if not self._state.adding or self.pk:
+            if not self._state.adding or self.pk is not None:
                 _cache_translation_needs_fallback(self, language_code, related_name=meta.rel_name)
 
         if lang_dict['fallback'] != language_code and use_fallback:
@@ -619,7 +619,7 @@ class TranslatableModel(models.Model):
         :param args: Any custom arguments to pass to :func:`save`.
         :param kwargs: Any custom arguments to pass to :func:`save`.
         """
-        if not self.pk or self._state.adding:
+        if self.pk is None or self._state.adding:
             raise RuntimeError("Can't save translations when the master object is not yet saved.")
 
         # Translation models without any fields are also supported.
