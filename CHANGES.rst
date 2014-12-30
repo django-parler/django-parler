@@ -8,6 +8,9 @@ Changes in development (git version)
 * Detect when translatable fields are assigned too early.
 * Fix missing 404 check in delete-translation view.
 * Fix caching for models that have a string value as primary key.
+* Fix support for a primary-key value of ``0``.
+* Fix ``get_form_class()`` override check for ``TranslatableModelFormMixin`` for Python 3.
+* Fix calling manager methods on related objects in Django 1.4/1.5.
 * Improve ``{% get_translated_url %}``, using ``request.resolver_match`` value.
 
 
