@@ -5,6 +5,7 @@ Changes in development (git version)
 ------------------------------------
 
 * Added ``parler.contrib.rest_framework`` package for django-rest-framework_ integration.
+* Added support for ``MyModel.objects.language(..).create(..)``.
 * Detect when translatable fields are assigned too early.
 * Fix missing 404 check in delete-translation view.
 * Fix caching for models that have a string value as primary key.

@@ -30,6 +30,14 @@ class TranslatableQuerySet(QuerySet):
         return c
 
 
+    def create(self, **kwargs):
+        # Pass language setting to the object, as people start assuming things
+        # like .language('xx').create(..) which is a nice API after all.
+        if self._language:
+            kwargs['_language'] = self._language
+        return super(TranslatableQuerySet, self).create(**kwargs)
+
+
     def language(self, language_code=None):
         """
         Set the language code to assign to objects retrieved using this QuerySet.
