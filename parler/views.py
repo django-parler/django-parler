@@ -290,7 +290,9 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
         Return a ``TranslatableModelForm`` by default if no form_class is set.
         """
         super_method = super(TranslatableModelFormMixin, self).get_form_class
-        if not (super_method.__func__ is ModelFormMixin.get_form_class.__func__):
+        # no "__func__" on the class level function in python 3
+        default_method = getattr(ModelFormMixin.get_form_class, '__func__', ModelFormMixin.get_form_class)
+        if not (super_method.__func__ is default_method):
             # Don't get in your way, if you've overwritten stuff.
             return super_method()
         else:
