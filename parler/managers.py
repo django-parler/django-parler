@@ -34,7 +34,7 @@ class TranslatableQuerySet(QuerySet):
         # Pass language setting to the object, as people start assuming things
         # like .language('xx').create(..) which is a nice API after all.
         if self._language:
-            kwargs['_language'] = self._language
+            kwargs['_current_language'] = self._language
         return super(TranslatableQuerySet, self).create(**kwargs)
 
 

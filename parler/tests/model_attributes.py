@@ -61,6 +61,12 @@ class ModelAttributeTests(AppTestCase):
         self.assertEqual(y.tr_title, "TRANS_TITLE")
 
 
+    def test_create_args(self):
+        y = SimpleModel.objects.language('nl').create(tr_title='TRANS_TITLE')
+        self.assertEqual(y.get_current_language(), 'nl')
+        self.assertEqual(y.tr_title, "TRANS_TITLE")
+
+
     def test_save_multiple(self):
         """
         Test the save_translations() function to store multiple languages.
