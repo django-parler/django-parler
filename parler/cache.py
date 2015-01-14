@@ -37,7 +37,7 @@ def get_object_cache_keys(instance):
     """
     Return the cache keys associated with an object.
     """
-    if not instance.pk or instance._state.adding:
+    if instance.pk is None or instance._state.adding:
         return []
 
     keys = []
