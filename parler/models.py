@@ -134,9 +134,11 @@ def create_translations_model(shared_model, related_name, meta, **fields):
         raise TypeError("Can't create TranslatedFieldsModel for abstract class {0}".format(shared_model.__name__))
 
     # Define inner Meta class
-    meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
     meta['app_label'] = shared_model._meta.app_label
-    meta.setdefault('db_table', shared_model._meta.db_table + '_translation')
+    meta['db_tablespace'] = shared_model._meta.db_tablespace
+    meta['managed'] = shared_model._meta.managed
+    meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
+    meta.setdefault('db_table', '{0}_translation'.format(shared_model._meta.db_table))
     meta.setdefault('verbose_name', _lazy_verbose_name(shared_model))
 
     # Avoid creating permissions for the translated model, these are not used at all.
