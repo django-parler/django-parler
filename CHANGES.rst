@@ -12,6 +12,7 @@ Changes in development (git version)
 * Fix ``get_form_class()`` override check for ``TranslatableModelFormMixin`` for Python 3.
 * Fix calling manager methods on related objects in Django 1.4/1.5.
 * Improve ``{% get_translated_url %}``, using ``request.resolver_match`` value.
+* Fix preserving query-string in ``{% get_translated_url %}``, unless an object is explicitly passed.
 
 
 Changes in version 1.2.1 (2014-10-31)
