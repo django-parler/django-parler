@@ -74,7 +74,12 @@ def get_cached_translation(instance, language_code=None, related_name=None, use_
     if not values:
         return None
 
-    translation = translated_model(**values)
+    try:
+        translation = translated_model(**values)
+    except TypeError:
+        # Some model field was removed, cache entry is no longer working.
+        return None
+
     translation._state.adding = False
     return translation
 
