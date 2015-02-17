@@ -163,7 +163,8 @@ def get_translated_url(context, lang_code, object=None):
 
 def _url_qs(url, qs):
     if qs and '?' not in url:
-        return u"{0}?{1}".format(url, qs)
+        # Leaving original encoding of str/unicode as is.
+        return url + "?" + qs
     else:
         return url
 

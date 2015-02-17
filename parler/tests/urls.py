@@ -80,6 +80,30 @@ class UrlTests(AppTestCase):
             self.assertEqual(get_translated_url(context, lang_code=self.other_lang2), '/{0}/tests/kwargs-view/'.format(self.other_lang2))
             self.assertEqual(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/tests/kwargs-view/'.format(self.conf_fallback))
 
+    def test_get_translated_url_query_string(self):
+        """
+        Test that the querystring is copied to the translated URL.
+        """
+        # Pretend there is a request on /af/article-lang1/
+        with translation.override(self.other_lang1):
+            self.article.set_current_language(self.other_lang1)
+            context = {
+                'request': RequestFactory().get('/{0}/article/lang1/'.format(self.other_lang1), {
+                    'next': u'/fr/propri\xe9t\xe9/add/'
+                }),
+                'object': self.article
+            }
+
+            # Simulate {% get_translated_url CODE object %} syntax.
+            # The object.get_absolute_url() will be used to get a translated URL.
+            added_qs = "?next=%2Ffr%2Fpropri%C3%A9t%C3%A9%2Fadd%2F"
+            self.assertEqual(get_translated_url(context, lang_code=self.other_lang2), '/{0}/article/lang2/{1}'.format(self.other_lang2, added_qs))
+            self.assertEqual(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/article/default/{1}'.format(self.conf_fallback, added_qs))
+
+            # If the object is passed explicitly, it's likely not the current page.
+            # Hence the querystring will not be copied in this case.
+            self.assertEqual(get_translated_url(context, lang_code=self.other_lang2, object=self.article), '/{0}/article/lang2/'.format(self.other_lang2))
+
     def test_translatable_slug_mixin(self):
         """
         Test whether translated slugs are properly resolved.
