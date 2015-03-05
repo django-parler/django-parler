@@ -110,7 +110,7 @@ def get_translated_url(context, lang_code, object=None):
               or context.get('page', None)
 
         # Assuming current page, preserve query string filters.
-        qs = request.META['QUERY_STRING']
+        qs = request.META.get('QUERY_STRING', '')
 
     try:
         if view is not None:
