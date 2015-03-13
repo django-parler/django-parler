@@ -6,6 +6,7 @@ Changes in development (git version)
 
 * Added support for ``MyModel.objects.language(..).create(..)``.
 * Detect when translatable fields are assigned too early.
+* Fix adding ``choices=LANGUAGES`` to all Django 1.7 migrations.
 * Fix missing 404 check in delete-translation view.
 * Fix caching for models that have a string value as primary key.
 * Fix support for a primary-key value of ``0``.

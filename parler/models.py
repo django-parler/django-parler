@@ -738,7 +738,7 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
     """
     Base class for the model that holds the translated fields.
     """
-    language_code = models.CharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
+    language_code = compat.HideChoicesCharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
 
     #: The mandatory Foreign key field to the shared model.
     master = None   # FK to shared model.
