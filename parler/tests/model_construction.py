@@ -86,7 +86,7 @@ class ModelConstructionTests(AppTestCase):
 
         # Create an object without translations
         RegularModel.objects.create(id=98, original_field='untranslated')
-        self.assertEquals(RegularModelProxy.objects.count(), 1)
+        self.assertEqual(RegularModelProxy.objects.count(), 1)
 
         # Refetch from db, should raise an error.
         self.assertRaises(RuntimeError, lambda: RegularModelProxy.objects.all()[0])
