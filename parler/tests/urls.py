@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.core.urlresolvers import reverse, resolve
 from django.test import RequestFactory
 from django.utils import translation
@@ -89,7 +90,7 @@ class UrlTests(AppTestCase):
             self.article.set_current_language(self.other_lang1)
             context = {
                 'request': RequestFactory().get('/{0}/article/lang1/'.format(self.other_lang1), {
-                    'next': u'/fr/propri\xe9t\xe9/add/'
+                    'next': '/fr/propri\xe9t\xe9/add/'
                 }),
                 'object': self.article
             }
