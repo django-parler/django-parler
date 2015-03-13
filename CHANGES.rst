@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Changes in development (git version)
-------------------------------------
+Changes in version 1.3 (2015-03-13)
+-----------------------------------
 
 * Added support for ``MyModel.objects.language(..).create(..)``.
 * Detect when translatable fields are assigned too early.
