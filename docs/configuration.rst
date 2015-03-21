@@ -107,8 +107,7 @@ PARLER_ENABLE_CACHING
 
     PARLER_ENABLE_CACHING = True
 
-If needed, caching can be disabled.
-This is likely not needed.
+This setting is strictly for experts or for troubleshooting situations, where disabling caching can be beneficial.
 
 .. _PARLER_SHOW_EXCLUDED_LANGUAGE_TABS:
 
