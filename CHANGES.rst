@@ -5,6 +5,7 @@ Changes in version 1.3.1 (git)
 ------------------------------
 
 * Fix unwanted migration changes in Django 1.6/South for the internal ``HideChoicesCharField``.
+* Fix overriding get_current_language() / get_form_language() in the ``TranslatableModelFormMixin``/``TranslatableCreateView``/``TranslatableUpdateView``.
 
 
 Changes in version 1.3 (2015-03-13)

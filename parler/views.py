@@ -316,7 +316,9 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
 
 
     # Backwards compatibility
-    get_form_language = LanguageChoiceMixin.get_current_language
+    # Make sure overriding get_current_language() affects get_form_language() too.
+    def get_form_language(self):
+        return self.get_current_language()
 
 
 # For the lazy ones:
