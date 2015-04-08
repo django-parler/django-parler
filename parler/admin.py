@@ -235,11 +235,15 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return self.model._parler_meta.root_model.objects.none()
 
 
-    def get_object(self, request, object_id):
+    def get_object(self, request, object_id, from_field=None):
         """
         Make sure the object is fetched in the correct language.
         """
-        obj = super(TranslatableAdmin, self).get_object(request, object_id)
+        if django.VERSION <= (1,8):
+            obj = super(TranslatableAdmin, self).get_object(request, object_id, from_field=from_field)
+        else:
+            obj = super(TranslatableAdmin, self).get_object(request, object_id)
+
         if obj is not None and self._has_translatable_model():  # Allow fallback to regular models.
             obj.set_current_language(self._language(request, obj), initialize=True)
 

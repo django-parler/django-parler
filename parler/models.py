@@ -823,10 +823,16 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         # Return all field values in a consistent (sorted) manner.
         return [getattr(self, field.get_attname()) for field, _ in self._meta.get_fields_with_model()]
 
-    @classmethod
-    def get_translated_fields(cls):
-        # Not using get `get_all_field_names()` because that also invokes a model scan.
-        return [f.name for f, _ in cls._meta.get_fields_with_model() if f.name not in ('language_code', 'master', 'id')]
+    if django.VERSION >= (1,8):
+        @classmethod
+        def get_translated_fields(cls):
+            # Not using get `get_all_field_names()` because that also invokes a model scan.
+            return [f.name for f in cls._meta.local_fields if f.name not in ('language_code', 'master', 'id')]
+    else:
+        @classmethod
+        def get_translated_fields(cls):
+            # Not using get `get_all_field_names()` because that also invokes a model scan.
+            return [f.name for f, _ in cls._meta.get_fields_with_model() if f.name not in ('language_code', 'master', 'id')]
 
     @classmethod
     def contribute_translations(cls, shared_model):
