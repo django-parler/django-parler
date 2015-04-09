@@ -8,11 +8,13 @@ from .testapp.models import SimpleModel, UniqueTogetherModel
 class SimpleForm(TranslatableModelForm):
     class Meta:
         model = SimpleModel
+        fields = '__all__'
 
 
 class UniqueTogetherForm(TranslatableModelForm):
     class Meta:
         model = UniqueTogetherModel
+        fields = '__all__'
 
 
 class FormTests(AppTestCase):

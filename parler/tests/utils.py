@@ -43,6 +43,8 @@ class AppTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(AppTestCase, cls).setUpClass()
+
         from django.template.loaders import app_directories  # late import, for django 1.7
         if cls.install_apps:
             # When running this app via `./manage.py test fluent_pages`, auto install the test app + models.

@@ -76,6 +76,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(AdminArticleTestCase, cls).setUpClass()
         cls.user, _ = auth.models.User.objects.get_or_create(is_superuser=True, is_staff=True, username=cls.credentials['username'])
         cls.user.set_password(cls.credentials['password'])
         cls.user.save()
