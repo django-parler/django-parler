@@ -15,7 +15,7 @@ if six.PY3:
 
 try:
     DEFAULT_TIMEOUT = cache.cache.default_timeout
-except ImportError:
+except AttributeError:
     DEFAULT_TIMEOUT = 0
 
 
