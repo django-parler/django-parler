@@ -1,9 +1,11 @@
 Changelog
 =========
 
-Changes in version 1.3.1 (git)
-------------------------------
+Changes in version 1.4
+----------------------
 
+* Added Django 1.8 support
+* Fix caching when using redis-cache
 * Fix unwanted migration changes in Django 1.6/South for the internal ``HideChoicesCharField``.
 * Fix overriding get_current_language() / get_form_language() in the ``TranslatableModelFormMixin``/``TranslatableCreateView``/``TranslatableUpdateView``.
 
