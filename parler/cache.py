@@ -14,9 +14,7 @@ if six.PY3:
     long = int
 
 try:
-    # In Django 1.6, a timeout of 0 seconds is accepted as valid input,
-    # and a sentinel value is used to denote the default timeout. Use that.
-    from django.core.cache.backends.base import DEFAULT_TIMEOUT
+    DEFAULT_TIMEOUT = cache.cache.default_timeout
 except ImportError:
     DEFAULT_TIMEOUT = 0
 
