@@ -443,10 +443,14 @@ class TranslatableModel(models.Model):
         # 3. Auto create?
         if auto_create:
             # Auto create policy first (e.g. a __set__ call)
-            object = meta.model(
-                language_code=language_code,
-                master=self  # ID might be None at this point
-            )
+            kwargs = {
+                'language_code': language_code,
+            }
+            if self.pk:
+                # ID might be None at this point, and Django 1.8 does not allow that.
+                kwargs['master'] = self
+
+            object = meta.model(**kwargs)
             local_cache[language_code] = object
             # Not stored in memcached here yet, first fill + save it.
             return object
@@ -821,18 +825,11 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
 
     def _get_field_values(self):
         # Return all field values in a consistent (sorted) manner.
-        return [getattr(self, field.get_attname()) for field, _ in self._meta.get_fields_with_model()]
+        return [getattr(self, field.get_attname()) for field in self._meta.get_fields()]
 
-    if django.VERSION >= (1,8):
-        @classmethod
-        def get_translated_fields(cls):
-            # Not using get `get_all_field_names()` because that also invokes a model scan.
-            return [f.name for f in cls._meta.local_fields if f.name not in ('language_code', 'master', 'id')]
-    else:
-        @classmethod
-        def get_translated_fields(cls):
-            # Not using get `get_all_field_names()` because that also invokes a model scan.
-            return [f.name for f, _ in cls._meta.get_fields_with_model() if f.name not in ('language_code', 'master', 'id')]
+    @classmethod
+    def get_translated_fields(cls):
+        return [f.name for f in cls._meta.local_fields if f.name not in ('language_code', 'master', 'id')]
 
     @classmethod
     def contribute_translations(cls, shared_model):
