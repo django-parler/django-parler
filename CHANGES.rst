@@ -6,6 +6,7 @@ Changes in version 1.4
 
 * Added Django 1.8 support
 * Fix caching when using redis-cache
+* Fix handling ``update_fields`` in ``save()`` (needed for combining parler with django-mptt_ 0.7)
 * Fix unwanted migration changes in Django 1.6/South for the internal ``HideChoicesCharField``.
 * Fix overriding get_current_language() / get_form_language() in the ``TranslatableModelFormMixin``/``TranslatableCreateView``/``TranslatableUpdateView``.
 
@@ -173,4 +174,5 @@ Changes in version 0.9 (beta)
 
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
+.. _django-mptt: https://github.com/django-mptt/django-mptt
 .. _django-rest-framework: https://github.com/tomchristie/django-rest-framework

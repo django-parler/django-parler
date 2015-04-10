@@ -552,6 +552,11 @@ class TranslatableModel(models.Model):
 
     def save(self, *args, **kwargs):
         super(TranslatableModel, self).save(*args, **kwargs)
+
+        # Makes no sense to add these for translated model
+        # Even worse: mptt 0.7 injects this parameter when it avoids updating the lft/rgt fields,
+        # but that misses all the translated fields.
+        kwargs.pop('update_fields', None)
         self.save_translations(*args, **kwargs)
 
 
