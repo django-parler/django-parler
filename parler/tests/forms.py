@@ -1,3 +1,4 @@
+import django
 from django.core.exceptions import ValidationError
 from django.utils import translation
 from parler.forms import TranslatableModelForm
@@ -8,13 +9,15 @@ from .testapp.models import SimpleModel, UniqueTogetherModel
 class SimpleForm(TranslatableModelForm):
     class Meta:
         model = SimpleModel
-        fields = '__all__'
+        if django.VERSION >= (1,6):
+            fields = '__all__'
 
 
 class UniqueTogetherForm(TranslatableModelForm):
     class Meta:
         model = UniqueTogetherModel
-        fields = '__all__'
+        if django.VERSION >= (1,6):
+            fields = '__all__'
 
 
 class FormTests(AppTestCase):
