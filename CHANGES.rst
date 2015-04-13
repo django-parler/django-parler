@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Changes in version 1.4
-----------------------
+Changes in version 1.4 (2015-04-13)
+-----------------------------------
 
 * Added Django 1.8 support
 * Fix caching when using redis-cache
