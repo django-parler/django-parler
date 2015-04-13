@@ -33,7 +33,7 @@ def find_version(*parts):
 setup(
     name='django-parler',
     version=find_version('parler', '__init__.py'),
-    license='Apache License, Version 2.0',
+    license='Apache 2.0',
 
     requires=[
         'Django (>=1.4.2)',
