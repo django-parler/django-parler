@@ -47,9 +47,9 @@ Say we have a base ``Category`` model that needs to be translatable:
 Combining managers
 ------------------
 
-The managers can be combined by inheriting them, and specifying
-the :attr:`~parler.managers.TranslatableManager.queryset_class` attribute
-with both *django-parler* and django-mptt_ use.
+The managers can be combined by inheriting them.
+Unfortunately, django-mptt_ 0.7 overrides the ``get_querset()`` method,
+so it needs to be redefined:
 
 .. code-block:: python
 
@@ -64,10 +64,9 @@ with both *django-parler* and django-mptt_ use.
         class CategoryManager(TreeManager, TranslatableManager):
             queryset_class = CategoryQuerySet
 
-            # Nasty:
-            # As of django-mptt 0.7, TreeManager.get_querset() no longer calls super(), breaking django-parler.
-            # Hence, redefine get_queryset() here to have the logic from django-parler and django-mptt.
             def get_queryset(self):
+                # Nasty: As of django-mptt 0.7, TreeManager.get_querset() no longer calls super(), breaking integration.
+                # Hence, redefine get_queryset() here to have the logic from django-parler and django-mptt.
                 return self.queryset_class(self.model, using=self._db).order_by(self.tree_id_attr, self.left_attr)
 
 
