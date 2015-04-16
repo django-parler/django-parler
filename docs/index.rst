@@ -35,6 +35,7 @@ In depth topics
 
    advanced/index
    compatibility
+   performance
    background
 
 API documentation
