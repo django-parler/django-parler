@@ -2,7 +2,7 @@ Integration with django-rest-framework
 ======================================
 
 To integrate the translated fields in django-rest-framework,
-the :mod:`parler.contrib.rest_framework` module provides serializer fields.
+the django-parler-rest_ module provides serializer fields.
 These fields can be used to integrate translations into the REST output.
 
 Example code
@@ -34,7 +34,8 @@ The following code is used in the serializer:
 
 .. code-block:: python
 
-    from parler.contrib.rest_framework import TranslatableModelSerializer, TranslatedFieldsField
+    from parler_rest.serializers import TranslatableModelSerializer
+    from parler_rest.fields import TranslatedFieldsField
     from myapp.models import Country
 
     class CountrySerializer(TranslatableModelSerializer):
@@ -43,3 +44,6 @@ The following code is used in the serializer:
         class Meta:
             model = Country
             fields = ('code', 'translations')
+
+
+.. _django-parler-rest: https://github.com/edoburu/django-parler-rest
