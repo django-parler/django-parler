@@ -3,7 +3,6 @@ Performance guidelines
 
 The translations of each model is stored in a separate table.
 In some cases, this may cause in N-query issue.
-
 *django-parler* offers two ways to handle the performance of the dabase.
 
 Caching
@@ -11,7 +10,6 @@ Caching
 
 All translated contents is cached by default.
 Hence, when an object is read again, no query is performed.
-
 This works out of the box when the project uses a proper caching:
 
 .. code-block:: python
@@ -29,12 +27,12 @@ You have to make sure your project has the proper backend support available::
 
     pip install python-memcached
 
-Now, the translation table only has to be read once.
+Now, the translation table only has to be read once per day.
 
 Query prefetching
 -----------------
 
-By using :func:`django.db.models.query.QuerySet.prefetch_related`,
+By using :func:`~django.db.models.query.QuerySet.prefetch_related`,
 all translations can be fetched in a single query:
 
 .. code-block:: python
