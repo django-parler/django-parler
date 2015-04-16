@@ -49,7 +49,7 @@ Combining managers
 
 The managers can be combined by inheriting them, and specifying
 the :attr:`~parler.managers.TranslatableManager.queryset_class` attribute
-with both *django-parler* and django-polymorphic_ use.
+with both *django-parler* and django-mptt_ use.
 
 .. code-block:: python
 
@@ -64,11 +64,11 @@ with both *django-parler* and django-polymorphic_ use.
         class CategoryManager(TreeManager, TranslatableManager):
             queryset_class = CategoryQuerySet
 
-        # Nasty:
-        # Re-apply the logic from django-polymorphic and django-mptt.
-        # As of django-mptt 0.7, TreeManager.get_querset() no longer calls super()
-        def get_queryset(self):
-            return self.queryset_class(self.model, using=self._db).order_by(self.tree_id_attr, self.left_attr)
+            # Nasty:
+            # As of django-mptt 0.7, TreeManager.get_querset() no longer calls super(), breaking django-parler.
+            # Hence, redefine get_queryset() here to have the logic from django-parler and django-mptt.
+            def get_queryset(self):
+                return self.queryset_class(self.model, using=self._db).order_by(self.tree_id_attr, self.left_attr)
 
 
 Assign the manager to the model ``objects`` attribute.
@@ -77,10 +77,7 @@ Assign the manager to the model ``objects`` attribute.
 Implementing the admin
 ----------------------
 
-It is perfectly possible to to register individual polymorphic models in the Django admin interface.
-However, to use these models in a single cohesive interface, some extra base classes are available.
-
-This admin interface adds translatable fields to a polymorphic model:
+By merging the base classes, the admin interface supports translatable MPTT models:
 
 .. code-block:: python
 
