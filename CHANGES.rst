@@ -36,7 +36,7 @@ Changes in version 1.2.1 (2014-10-31)
 Changes in version 1.2 (2014-10-30)
 -----------------------------------
 
-* Added support for translations on mutlple model inheritance levels.
+* Added support for translations on multiple model inheritance levels.
 * Added ``TranslatableAdmin.get_translation_objects()`` API.
 * Added ``TranslatableModel.create_translation()`` API.
 * Added ``TranslatableModel.get_translation()`` API.
