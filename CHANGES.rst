@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in git
+--------------
+
+* Fix Django 1.4 support for using ``request.resolver_match``.
+
+
 Changes in version 1.4 (2015-04-13)
 -----------------------------------
 
