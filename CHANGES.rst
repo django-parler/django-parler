@@ -5,6 +5,7 @@ Changes in git
 --------------
 
 * Fix Django 1.4 support for using ``request.resolver_match``.
+* Return to change view after deleting a translation.
 
 
 Changes in version 1.4 (2015-04-13)

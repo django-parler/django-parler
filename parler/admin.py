@@ -410,7 +410,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             ))
 
             if self.has_change_permission(request, None):
-                return HttpResponseRedirect(reverse('admin:{0}_{1}_changelist'.format(opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name), current_app=self.admin_site.name))
+                return HttpResponseRedirect(reverse('admin:{0}_{1}_change'.format(opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name), args=(object_id,), current_app=self.admin_site.name))
             else:
                 return HttpResponseRedirect(reverse('admin:index', current_app=self.admin_site.name))
 
