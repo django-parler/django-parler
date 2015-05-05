@@ -307,11 +307,20 @@ class TranslatableModel(models.Model):
 
     def get_fallback_language(self):
         """
+        Backwards compatible fallback language getter
+        """
+        fallbacks = self.get_fallback_languages()
+        return fallbacks[0] if fallbacks else None
+
+
+    def get_fallback_languages(self):
+        """
         Return the fallback language code,
         which is used in case there is no translation for the currently active language.
         """
         lang_dict = get_language_settings(self._current_language)
-        return lang_dict['fallback'] if lang_dict['fallback'] != self._current_language else None
+        fallbacks = [lang for lang in lang_dict['fallbacks'] if lang != self._current_language]
+        return fallbacks or None
 
 
     def has_translation(self, language_code=None, related_name=None):
@@ -466,13 +475,14 @@ class TranslatableModel(models.Model):
             if not self._state.adding or self.pk is not None:
                 _cache_translation_needs_fallback(self, language_code, related_name=meta.rel_name)
 
-        if lang_dict['fallback'] != language_code and use_fallback:
+        if language_code not in lang_dict['fallbacks'] and use_fallback:
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
-            try:
-                return self._get_translated_model(lang_dict['fallback'], use_fallback=False, auto_create=auto_create, meta=meta)
-            except meta.model.DoesNotExist:
-                fallback_msg = " (tried fallback {0})".format(lang_dict['fallback'])
+            for fallback_lang in lang_dict['fallbacks']:
+                try:
+                    return self._get_translated_model(fallback_lang, use_fallback=False, auto_create=auto_create, meta=meta)
+                except meta.model.DoesNotExist:
+                    fallback_msg = " (tried fallbacks {0})".format(', '.join(lang_dict['fallbacks']))
 
         # None of the above, bail out!
         raise meta.model.DoesNotExist(
@@ -494,10 +504,13 @@ class TranslatableModel(models.Model):
         if local_cache:
             # There is already a language available in the case. No need for queries.
             # Give consistent answers if they exist.
+            check_languages = [self._current_language] + self.get_fallback_languages()
             try:
-                return local_cache.get(self._current_language, None) \
-                    or local_cache.get(self.get_fallback_language(), None) \
-                    or next(t for t in six.itervalues(local_cache) if t is not MISSING)  # Skip fallback markers.
+                for fallback_lang in check_languages:
+                    trans = local_cache.get(fallback_lang, None)
+                    if trans:
+                        return trans
+                return next(t for t in six.itervalues(local_cache) if t is not MISSING)
             except StopIteration:
                 pass
 
