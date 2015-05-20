@@ -5,6 +5,7 @@ Changes in git
 --------------
 
 * Fix Django 1.4 support for using ``request.resolver_match``.
+* Fix admin delete translation view when using ``prefetch_related('translations')`` by default in the managers ``get_queryset()`` method.
 * Return to change view after deleting a translation.
 
 
