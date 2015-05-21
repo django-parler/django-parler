@@ -6,6 +6,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
 from django.utils.translation import get_language
 from parler.utils.i18n import is_supported_django_language
+import warnings
 
 
 def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', **extra_defaults):
@@ -43,6 +44,14 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     languages_list.setdefault('default', {})
     defaults = languages_list['default']
     defaults.setdefault('hide_untranslated', False)   # Whether queries with .active_translations() may or may not return the fallback language.
+
+    if 'fallback' in defaults:
+        #warnings.warn("Please use 'fallbacks' instead of 'fallback' in the 'defaults' section of {0}".format(var_name), DeprecationWarning)
+        defaults['fallbacks'] = [defaults.pop('fallback')]
+    if 'fallback' in extra_defaults:
+        #warnings.warn("Please use 'fallbacks' instead of 'fallback' in parameters for {0} = add_default_language_settings(..)".format(var_name), DeprecationWarning)
+        extra_defaults['fallbacks'] = [extra_defaults.pop('fallback')]
+
     defaults.update(extra_defaults)  # Also allow to override code and fallback this way.
 
     # This function previously existed in appsettings, where it could reference the defaults directly.
