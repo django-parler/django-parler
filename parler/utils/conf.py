@@ -52,9 +52,9 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     if 'code' not in defaults:
         from parler import appsettings
         defaults['code'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
-    if 'fallback' not in defaults:
+    if 'fallbacks' not in defaults:
         from parler import appsettings
-        defaults['fallback'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+        defaults['fallbacks'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
 
     if not is_supported_django_language(defaults['code']):
         raise ImproperlyConfigured("The value for {0}['defaults']['code'] ('{1}') does not exist in LANGUAGES".format(var_name, defaults['code']))
@@ -104,28 +104,24 @@ class LanguagesSetting(dict):
     def get_active_choices(self, language_code=None, site_id=None):
         """
         Find out which translations should be visible in the site.
-        It returns a tuple with either a single choice (the current language),
-        or a tuple with the current language + fallback language.
+        It returns a list with either a single choice (the current language),
+        or a list with the current language + fallback language.
         """
         if language_code is None:
             language_code = get_language()
 
         lang_dict = self.get_language(language_code, site_id=site_id)
-        if not lang_dict['hide_untranslated'] and lang_dict['fallback'] != language_code:
-            return (language_code, lang_dict['fallback'])
+        if not lang_dict['hide_untranslated']:
+            return [language_code] + [lang for lang in lang_dict['fallbacks'] if lang != language_code]
         else:
-            return (language_code,)
+            return [language_code]
 
 
-    def get_fallback_language(self, language_code=None, site_id=None):
+    def get_fallback_languages(self, language_code=None, site_id=None):
         """
         Find out what the fallback language is for a given language choice.
         """
-        choices = self.get_active_choices(language_code, site_id=site_id)
-        if choices and len(choices) > 1:
-            return choices[-1]
-        else:
-            return None
+        return self.get_active_choices(language_code, site_id=site_id)
 
 
     def get_default_language(self):
