@@ -310,7 +310,7 @@ class TranslatableModel(models.Model):
         Backwards compatible fallback language getter
         """
         fallbacks = self.get_fallback_languages()
-        return fallbacks[0] if fallbacks else None
+        return fallbacks[0] if fallbacks else []
 
 
     def get_fallback_languages(self):
@@ -482,7 +482,9 @@ class TranslatableModel(models.Model):
                 try:
                     return self._get_translated_model(fallback_lang, use_fallback=False, auto_create=auto_create, meta=meta)
                 except meta.model.DoesNotExist:
-                    fallback_msg = " (tried fallbacks {0})".format(', '.join(lang_dict['fallbacks']))
+                    pass
+                    
+            fallback_msg = " (tried fallbacks {0})".format(', '.join(lang_dict['fallbacks']))
 
         # None of the above, bail out!
         raise meta.model.DoesNotExist(
