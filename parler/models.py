@@ -636,7 +636,7 @@ class TranslatableModel(models.Model):
         # Translation models without any fields are also supported.
         # This is useful for parent objects that have inlines;
         # the parent object defines how many translations there are.
-        if translation.is_modified or (translation.is_empty and not translation.pk):
+        if not translation.pk or translation.is_modified or translation.is_empty:
             if not translation.master_id:  # Might not exist during first construction
                 translation._state.db = self._state.db
                 translation.master = self
