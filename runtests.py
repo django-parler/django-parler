@@ -56,7 +56,7 @@ if not settings.configured:
                 {'code': 'en'},
             ),
             'default': {
-                'fallback': 'en',
+                'fallbacks': ['en'],
             },
         },
     )

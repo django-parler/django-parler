@@ -365,7 +365,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if not self.has_delete_permission(request, translation):
             raise PermissionDenied
 
-        if self.get_available_languages(shared_obj).count() <= 1:
+        if len(self.get_available_languages(shared_obj)) <= 1:
             return self.deletion_not_allowed(request, translation, language_code)
 
         # Populate deleted_objects, a data structure of all related objects that

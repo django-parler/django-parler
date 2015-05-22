@@ -133,6 +133,6 @@ PARLER_LANGUAGES = {
         {'code': 'es'},
     ),
     'default': {
-        #'fallback': 'en',
+        #'fallbacks': ['en'],
     }
 }
