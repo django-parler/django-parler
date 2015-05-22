@@ -37,6 +37,16 @@ class AnyLanguageModel(TranslatableModel):
         return self.tr_title
 
 
+class NotRequiredModel(TranslatableModel):
+    shared = models.CharField(max_length=200, default='')
+
+    translations = TranslatedFields(
+        tr_title = models.CharField(max_length=200, default='DEFAULT_TRANS_TITLE')
+    )
+
+    def __unicode__(self):
+        return self.tr_title
+
 
 class EmptyModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
