@@ -58,7 +58,7 @@ class TranslatableModelFormMixin(object):
                     pass
                 else:
                     for field in meta.get_translated_fields():
-                        self.initial.setdefault(field, getattr(translation, field))
+                        self.initial.setdefault(field, getattr(translation, field, None))
 
         # Typically already set by admin
         if self.language_code is None:
