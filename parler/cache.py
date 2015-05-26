@@ -123,8 +123,8 @@ def _get_cached_values(instance, translated_model, language_code, use_fallback=F
         # Allow to return the fallback language instead.
         if use_fallback:
             lang_dict = get_language_settings(language_code)
-            if lang_dict['fallback'] != language_code:
-                return _get_cached_values(instance, translated_model, lang_dict['fallback'], use_fallback=False)
+            if lang_dict['fallbacks'] != language_code:
+                return _get_cached_values(instance, translated_model, lang_dict['fallbacks'], use_fallback=False)
         return None
 
     values['master'] = instance
