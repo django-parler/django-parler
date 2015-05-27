@@ -320,7 +320,7 @@ class TranslatableModel(models.Model):
         """
         lang_dict = get_language_settings(self._current_language)
         fallbacks = [lang for lang in lang_dict['fallbacks'] if lang != self._current_language]
-        return fallbacks or None
+        return fallbacks or []
 
 
     def has_translation(self, language_code=None, related_name=None):
