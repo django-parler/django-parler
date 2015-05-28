@@ -129,8 +129,28 @@ class LanguagesSetting(dict):
     def get_fallback_languages(self, language_code=None, site_id=None):
         """
         Find out what the fallback language is for a given language choice.
+
+        .. versionadded 1.5
         """
-        return self.get_active_choices(language_code, site_id=site_id)
+        choices = self.get_active_choices(language_code, site_id=site_id)
+        return choices[1:]
+
+
+    def get_fallback_language(self, language_code=None, site_id=None):
+        """
+        Find out what the fallback language is for a given language choice.
+
+        .. deprecated:: 1.5
+           Use :func:`get_fallback_languages` instead.
+        """
+        choices = self.get_active_choices(language_code, site_id=site_id)
+        if choices and len(choices) > 1:
+            # Still take the last, like previous code.
+            # With multiple fallback languages that means taking the base language.
+            # Hence, upgrade the code to use get_fallback_languages() instead.
+            return choices[-1]
+        else:
+            return None
 
 
     def get_default_language(self):
