@@ -307,16 +307,17 @@ class TranslatableModel(models.Model):
 
     def get_fallback_language(self):
         """
-        Backwards compatible fallback language getter
+        .. deprecated:: 1.5
+           Use :func:`get_fallback_languages` instead.
         """
         fallbacks = self.get_fallback_languages()
-        return fallbacks[0] if fallbacks else []
+        return fallbacks[0] if fallbacks else None
 
 
     def get_fallback_languages(self):
         """
-        Return the fallback language code,
-        which is used in case there is no translation for the currently active language.
+        Return the fallback language codes,
+        which are used in case there is no translation for the currently active language.
         """
         lang_dict = get_language_settings(self._current_language)
         fallbacks = [lang for lang in lang_dict['fallbacks'] if lang != self._current_language]
