@@ -23,6 +23,7 @@ matrix:
 
 install:
   - travis_retry pip install -q coveralls  # installs coverage
+  - travis_retry pip install -q django-polymorphic
   - travis_retry pip install $DJANGO
   - pip install -e .
 
