@@ -4,6 +4,8 @@ from django.db import models
 from parler.fields import TranslatedField
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
 from parler.utils.context import switch_language
+from parler.managers import TranslatableManager
+from polymorphic import PolymorphicModel
 
 
 class ManualModel(TranslatableModel):
@@ -143,8 +145,35 @@ class CharModelTranslation(TranslatedFieldsModel):
     tr_title = models.CharField(max_length=200)
 
 
+
 class ForeignKeyTranslationModel(TranslatableModel):
     translations = TranslatedFields(
         translated_foreign = models.ForeignKey('RegularModel'),
     )
     shared = models.CharField(max_length=200)
+
+
+# Prevent regression of issue #51:
+# These classes are just copied from the docs, on how to combine polymorphic with parler
+# Currently on Django-1.7 this does not work, its not even possible to create a migration
+# In Django-1.6 it works fine
+class Product(PolymorphicModel):
+    code = models.CharField(blank=False, default='', max_length=16)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
+class Book(TranslatableModel, Product):
+    default_manager = TranslatableManager()
+
+    translations = TranslatedFields(
+        name=models.CharField(blank=False, default='', max_length=128),
+        slug=models.SlugField(blank=False, default='', max_length=128)
+    )
+
+
+class Pen(TranslatableModel, Product):
+    default_manager = TranslatableManager()
+
+    translations = TranslatedFields(
+        identifier=models.CharField(blank=False, default='', max_length=255)
+    )
