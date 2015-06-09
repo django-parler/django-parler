@@ -21,7 +21,10 @@ def normalize_language_code(code):
     """
     Undo the differences between language code notations
     """
-    return code.lower().replace('_', '-')
+    if code is None:
+        return None
+    else:
+        return code.lower().replace('_', '-')
 
 
 def is_supported_django_language(language_code):

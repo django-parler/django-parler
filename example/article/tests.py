@@ -76,6 +76,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(AdminArticleTestCase, cls).setUpClass()
         cls.user, _ = auth.models.User.objects.get_or_create(is_superuser=True, is_staff=True, username=cls.credentials['username'])
         cls.user.set_password(cls.credentials['password'])
         cls.user.save()
@@ -194,7 +195,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
             reverse('admin:article_article_delete_translation', args=[self.art_id, 'en']),
             {"post": "yes"}
         )
-        self.assertRedirects(resp, reverse('admin:article_article_changelist'))
+        self.assertRedirects(resp, reverse('admin:article_article_change', args=(self.art_id,)))
         self.assertEqual(0, Article.objects.filter(translations__slug='cheese-omelet').count())
 
         # try to delete something that is not there

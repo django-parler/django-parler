@@ -1,6 +1,25 @@
 Changelog
 =========
 
+Changes in git
+--------------
+
+* Added support for multiple fallback languages!
+* Fix Django 1.4 support for using ``request.resolver_match``.
+* Fix admin delete translation view when using ``prefetch_related('translations')`` by default in the managers ``get_queryset()`` method.
+* Return to change view after deleting a translation.
+
+
+Changes in version 1.4 (2015-04-13)
+-----------------------------------
+
+* Added Django 1.8 support
+* Fix caching when using redis-cache
+* Fix handling ``update_fields`` in ``save()`` (needed for combining parler with django-mptt_ 0.7)
+* Fix unwanted migration changes in Django 1.6/South for the internal ``HideChoicesCharField``.
+* Fix overriding get_current_language() / get_form_language() in the ``TranslatableModelFormMixin``/``TranslatableCreateView``/``TranslatableUpdateView``.
+
+
 Changes in version 1.3 (2015-03-13)
 -----------------------------------
 
@@ -26,7 +45,7 @@ Changes in version 1.2.1 (2014-10-31)
 Changes in version 1.2 (2014-10-30)
 -----------------------------------
 
-* Added support for translations on mutlple model inheritance levels.
+* Added support for translations on multiple model inheritance levels.
 * Added ``TranslatableAdmin.get_translation_objects()`` API.
 * Added ``TranslatableModel.create_translation()`` API.
 * Added ``TranslatableModel.get_translation()`` API.
@@ -164,4 +183,5 @@ Changes in version 0.9 (beta)
 
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
+.. _django-mptt: https://github.com/django-mptt/django-mptt
 .. _django-rest-framework: https://github.com/tomchristie/django-rest-framework

@@ -56,6 +56,11 @@ class HideChoicesCharField(models.CharField):
 
         return name, path, args, kwargs
 
+    def south_field_triple(self):
+        from south.modelsinspector import introspector
+        args, kwargs = introspector(self)
+        return ('django.db.models.fields.CharField', args, kwargs)
+
 try:
     from south.modelsinspector import add_introspection_rules
 except ImportError:

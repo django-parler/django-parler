@@ -135,7 +135,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                         # Add translated field if not already added, and respect exclude options.
                         if f_name in translated_fields:
                             # The TranslatedField placeholder can be replaced directly with actual field, so do that.
-                            attrs[f_name] = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **translated_fields[f_name].kwargs)
+                            attrs[f_name] = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **attrs[f_name].kwargs)
                         # The next code holds the same logic as fields_for_model()
                         # The f.editable check happens in _get_model_form_field()
                         elif f_name not in form_base_fields \

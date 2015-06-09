@@ -235,11 +235,13 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return self.model._parler_meta.root_model.objects.none()
 
 
-    def get_object(self, request, object_id):
+    def get_object(self, request, object_id, *args, **kwargs):
         """
         Make sure the object is fetched in the correct language.
         """
-        obj = super(TranslatableAdmin, self).get_object(request, object_id)
+        # The args/kwargs are to support Django 1.8, which adds a from_field parameter
+        obj = super(TranslatableAdmin, self).get_object(request, object_id, *args, **kwargs)
+
         if obj is not None and self._has_translatable_model():  # Allow fallback to regular models.
             obj.set_current_language(self._language(request, obj), initialize=True)
 
@@ -363,7 +365,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if not self.has_delete_permission(request, translation):
             raise PermissionDenied
 
-        if self.get_available_languages(shared_obj).count() <= 1:
+        if len(self.get_available_languages(shared_obj)) <= 1:
             return self.deletion_not_allowed(request, translation, language_code)
 
         # Populate deleted_objects, a data structure of all related objects that
@@ -386,7 +388,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             else:
                 qs_opts = qs.model._meta
 
-            (del2, perms2, protected2) = get_deleted_objects(qs, qs_opts, request.user, self.admin_site, using)
+            deleted_result = get_deleted_objects(qs, qs_opts, request.user, self.admin_site, using)
+            if django.VERSION >= (1,8):
+                (del2, model_counts, perms2, protected2) = deleted_result
+            else:
+                (del2, perms2, protected2) = deleted_result
+
             deleted_objects += del2
             perms_needed = perms_needed or perms2
             protected += protected2
@@ -403,9 +410,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             ))
 
             if self.has_change_permission(request, None):
-                return HttpResponseRedirect(reverse('admin:{0}_{1}_changelist'.format(opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name)))
+                return HttpResponseRedirect(reverse('admin:{0}_{1}_change'.format(opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name), args=(object_id,), current_app=self.admin_site.name))
             else:
-                return HttpResponseRedirect(reverse('admin:index'))
+                return HttpResponseRedirect(reverse('admin:index', current_app=self.admin_site.name))
 
         object_name = _('{0} Translation').format(force_text(opts.verbose_name))
         if perms_needed or protected:

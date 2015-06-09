@@ -43,6 +43,8 @@ class AppTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(AppTestCase, cls).setUpClass()
+
         from django.template.loaders import app_directories  # late import, for django 1.7
         if cls.install_apps:
             # When running this app via `./manage.py test fluent_pages`, auto install the test app + models.
@@ -69,6 +71,7 @@ class AppTestCase(TestCase):
         cls.user, _ = User.objects.get_or_create(is_superuser=True, is_staff=True, username="admin")
 
         # Be supportive for other project settings too.
-        cls.conf_fallback = appsettings.PARLER_LANGUAGES['default']['fallback'] or 'en'
+        cls.conf_fallbacks = appsettings.PARLER_LANGUAGES['default']['fallbacks'] or ['en']
+        cls.conf_fallback = cls.conf_fallbacks[0]
         cls.other_lang1 = next(x for x, _ in settings.LANGUAGES if x != cls.conf_fallback)
         cls.other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (cls.conf_fallback, cls.other_lang1))

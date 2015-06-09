@@ -6,6 +6,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
 from django.utils.translation import get_language
 from parler.utils.i18n import is_supported_django_language
+import warnings
 
 
 def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', **extra_defaults):
@@ -43,6 +44,14 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     languages_list.setdefault('default', {})
     defaults = languages_list['default']
     defaults.setdefault('hide_untranslated', False)   # Whether queries with .active_translations() may or may not return the fallback language.
+
+    if 'fallback' in defaults:
+        #warnings.warn("Please use 'fallbacks' instead of 'fallback' in the 'defaults' section of {0}".format(var_name), DeprecationWarning)
+        defaults['fallbacks'] = [defaults.pop('fallback')]
+    if 'fallback' in extra_defaults:
+        #warnings.warn("Please use 'fallbacks' instead of 'fallback' in parameters for {0} = add_default_language_settings(..)".format(var_name), DeprecationWarning)
+        extra_defaults['fallbacks'] = [extra_defaults.pop('fallback')]
+
     defaults.update(extra_defaults)  # Also allow to override code and fallback this way.
 
     # This function previously existed in appsettings, where it could reference the defaults directly.
@@ -52,9 +61,9 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     if 'code' not in defaults:
         from parler import appsettings
         defaults['code'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
-    if 'fallback' not in defaults:
+    if 'fallbacks' not in defaults:
         from parler import appsettings
-        defaults['fallback'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+        defaults['fallbacks'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
 
     if not is_supported_django_language(defaults['code']):
         raise ImproperlyConfigured("The value for {0}['defaults']['code'] ('{1}') does not exist in LANGUAGES".format(var_name, defaults['code']))
@@ -104,25 +113,41 @@ class LanguagesSetting(dict):
     def get_active_choices(self, language_code=None, site_id=None):
         """
         Find out which translations should be visible in the site.
-        It returns a tuple with either a single choice (the current language),
-        or a tuple with the current language + fallback language.
+        It returns a list with either a single choice (the current language),
+        or a list with the current language + fallback language.
         """
         if language_code is None:
             language_code = get_language()
 
         lang_dict = self.get_language(language_code, site_id=site_id)
-        if not lang_dict['hide_untranslated'] and lang_dict['fallback'] != language_code:
-            return (language_code, lang_dict['fallback'])
+        if not lang_dict['hide_untranslated']:
+            return [language_code] + [lang for lang in lang_dict['fallbacks'] if lang != language_code]
         else:
-            return (language_code,)
+            return [language_code]
+
+
+    def get_fallback_languages(self, language_code=None, site_id=None):
+        """
+        Find out what the fallback language is for a given language choice.
+
+        .. versionadded 1.5
+        """
+        choices = self.get_active_choices(language_code, site_id=site_id)
+        return choices[1:]
 
 
     def get_fallback_language(self, language_code=None, site_id=None):
         """
         Find out what the fallback language is for a given language choice.
+
+        .. deprecated:: 1.5
+           Use :func:`get_fallback_languages` instead.
         """
         choices = self.get_active_choices(language_code, site_id=site_id)
         if choices and len(choices) > 1:
+            # Still take the last, like previous code.
+            # With multiple fallback languages that means taking the base language.
+            # Hence, upgrade the code to use get_fallback_languages() instead.
             return choices[-1]
         else:
             return None

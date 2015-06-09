@@ -29,7 +29,7 @@ the project can access the language settings using::
 
     MYCMS_LANGUAGES.get_language()
     MYCMS_LANGUAGES.get_active_choices()
-    MYCMS_LANGUAGES.get_fallback_language()
+    MYCMS_LANGUAGES.get_fallback_languages()
     MYCMS_LANGUAGES.get_default_language()
     MYCMS_LANGUAGES.get_first_language()
 

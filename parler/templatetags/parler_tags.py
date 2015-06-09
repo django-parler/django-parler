@@ -150,7 +150,7 @@ def get_translated_url(context, lang_code, object=None):
 
     # Just reverse the current URL again in a new language, and see where we end up.
     # This doesn't handle translated slugs, but will resolve to the proper view name.
-    resolver_match = request.resolver_match  # Set by BaseHandler.get_response(), reading resolve(request.path_info)
+    resolver_match = _get_resolver_match(request)
     if resolver_match is None:
         # Can't resolve the page itself, the page is apparently a 404.
         # This can also happen for the homepage in an i18n_patterns situation.
@@ -187,3 +187,13 @@ def _cleanup_urlpattern_kwargs(kwargs):
     # However, for class values, an exception occurs because reverse() wants to force_text() them.
     # Hence, remove the kwargs to avoid internal server errors on some exotic views.
     return dict((k, v) for k, v in six.iteritems(kwargs) if not inspect.isclass(v))
+
+
+# request only provides `resolver_match` from 1.5 onwards, it's by BaseHandler.get_response()
+def _get_resolver_match(request):
+    try:
+        return request.resolver_match
+    except AttributeError:
+        # Django < 1.5
+        from django.core.urlresolvers import resolve
+        return resolve(request.path_info)
