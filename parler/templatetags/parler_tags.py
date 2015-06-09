@@ -1,5 +1,5 @@
 import inspect
-from django.core.urlresolvers import resolve, reverse, Resolver404
+from django.core.urlresolvers import reverse
 from django.template import Node, Library, TemplateSyntaxError
 from django.utils.translation import get_language
 from django.utils import six
@@ -87,15 +87,30 @@ def get_translated_url(context, lang_code, object=None):
 
     Note that using this tag is not thread-safe if the object is shared between threads.
     It temporary changes the current language of the view object.
+
+    The query string of the current page is preserved in the translated URL.
+    When the ``object`` variable is explicitly provided however, the query string will not be added.
+    In such situation, *django-parler* assumes that the object may point to a completely different page,
+    hence to query string is added.
     """
     view = context.get('view', None)
-    if object is None:
+    request = context['request']
+
+    if object is not None:
+        # Cannot reliable determine whether the current page is being translated,
+        # or the template code provides a custom object to translate.
+        # Hence, not passing the querystring of the current page
+        qs = ''
+    else:
         # Try a few common object variables, the SingleObjectMixin object,
         # The Django CMS "current_page" variable, or the "page" from django-fluent-pages and Mezzanine.
         # This makes this tag work with most CMSes out of the box.
         object = context.get('object', None) \
               or context.get('current_page', None) \
               or context.get('page', None)
+
+        # Assuming current page, preserve query string filters.
+        qs = request.META.get('QUERY_STRING', '')
 
     try:
         if view is not None:
@@ -105,7 +120,7 @@ def get_translated_url(context, lang_code, object=None):
             get_view_url = getattr(view, 'get_view_url', None)
             if get_view_url:
                 with smart_override(lang_code):
-                    return view.get_view_url()
+                    return _url_qs(view.get_view_url(), qs)
 
             # Now, the "best effort" part starts.
             # See if it's a DetailView that exposes the object.
@@ -123,11 +138,11 @@ def get_translated_url(context, lang_code, object=None):
                 # should use `switch_language(self)` internally before returning an URL.
                 # However, it doesn't hurt to help a bit here.
                 with switch_language(object, lang_code):
-                    return object.get_absolute_url()
+                    return _url_qs(object.get_absolute_url(), qs)
             else:
                 # Always switch the language before resolving, so i18n_patterns() are supported.
                 with smart_override(lang_code):
-                    return object.get_absolute_url()
+                    return _url_qs(object.get_absolute_url(), qs)
     except TranslationDoesNotExist:
         # Typically projects have a fallback language, so even unknown languages will return something.
         # This either means fallbacks are disabled, or the fallback language is not found!
@@ -135,17 +150,23 @@ def get_translated_url(context, lang_code, object=None):
 
     # Just reverse the current URL again in a new language, and see where we end up.
     # This doesn't handle translated slugs, but will resolve to the proper view name.
-    path = context['request'].path
-    try:
-        resolvermatch = resolve(path)
-    except Resolver404:
+    resolver_match = request.resolver_match  # Set by BaseHandler.get_response(), reading resolve(request.path_info)
+    if resolver_match is None:
         # Can't resolve the page itself, the page is apparently a 404.
         # This can also happen for the homepage in an i18n_patterns situation.
         return ''
 
     with smart_override(lang_code):
-        clean_kwargs = _cleanup_urlpattern_kwargs(resolvermatch.kwargs)
-        return reverse(resolvermatch.view_name, args=resolvermatch.args, kwargs=clean_kwargs)
+        clean_kwargs = _cleanup_urlpattern_kwargs(resolver_match.kwargs)
+        return _url_qs(reverse(resolver_match.view_name, args=resolver_match.args, kwargs=clean_kwargs, current_app=resolver_match.app_name), qs)
+
+
+def _url_qs(url, qs):
+    if qs and '?' not in url:
+        # Leaving original encoding of str/unicode as is.
+        return url + "?" + qs
+    else:
+        return url
 
 
 @register.filter

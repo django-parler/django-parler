@@ -66,8 +66,10 @@ pattern works for a polymorphic Django model:
 The only precaution one must take, is to override the default manager in each of the classes
 containing translatable fields. This is shown in the example above.
 
-.. note:: In django-parler 1.0 it's not possible yet to have translations on both the base and derived models.
-          This needs to be improved to support translations on multiple inherited models too.
+As of django-parler 1.2 it's possible to have translations on both the base and derived models.
+Make sure that the field name (in this case ``translations``) differs between both models,
+as that name is used as ``related_name`` for the translated fields model
+
 
 Combining managers
 ------------------

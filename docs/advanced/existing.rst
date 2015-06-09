@@ -26,3 +26,12 @@ And update the admin::
 
     admin.site.unregister(Site)
     admin.site.register(TranslatableSite, NewSiteAdmin)
+
+
+Overwriting existing untranslated fields
+----------------------------------------
+
+Note that it is not possible to add translations in the proxy class with the same
+name as fields in the parent model. This will not show up as an error yet, but it
+will fail when the objects are fetched from the database.
+Instead, opt for reading :doc:`migrating`.

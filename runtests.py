@@ -36,7 +36,11 @@ if not settings.configured:
             'article',
             'theme1',
         ),
-        MIDDLEWARE_CLASSES=default_settings.MIDDLEWARE_CLASSES + (
+        # we define MIDDLEWARE_CLASSES explicitly, the default were changed in django 1.7
+        MIDDLEWARE_CLASSES=(
+            'django.contrib.sessions.middleware.SessionMiddleware',
+            'django.contrib.auth.middleware.AuthenticationMiddleware',
+            'django.contrib.messages.middleware.MessageMiddleware',
             'django.middleware.locale.LocaleMiddleware',  # / will be redirected to /<locale>/
         ),
         ROOT_URLCONF = 'example.urls',

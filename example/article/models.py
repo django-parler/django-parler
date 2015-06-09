@@ -71,6 +71,9 @@ class Category(models.Model):
 
 
 class StackedCategory(Category):
+    """
+    Proxy model to demonstrate different admin settings.
+    """
 
     class Meta:
         verbose_name = "Stacked Category"
@@ -79,6 +82,9 @@ class StackedCategory(Category):
 
 
 class TabularCategory(Category):
+    """
+    Proxy model to demonstrate different admin settings.
+    """
 
     class Meta:
         verbose_name = "Tabular Category"

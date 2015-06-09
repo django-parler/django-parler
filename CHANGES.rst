@@ -1,10 +1,60 @@
 Changelog
 =========
 
-Changes in version 1.1 (in development)
----------------------------------------
+Changes in version 1.3 (2015-03-13)
+-----------------------------------
 
+* Added support for ``MyModel.objects.language(..).create(..)``.
+* Detect when translatable fields are assigned too early.
+* Fix adding ``choices=LANGUAGES`` to all Django 1.7 migrations.
+* Fix missing 404 check in delete-translation view.
+* Fix caching for models that have a string value as primary key.
+* Fix support for a primary-key value of ``0``.
+* Fix ``get_form_class()`` override check for ``TranslatableModelFormMixin`` for Python 3.
+* Fix calling manager methods on related objects in Django 1.4/1.5.
+* Improve ``{% get_translated_url %}``, using ``request.resolver_match`` value.
+* Fix preserving query-string in ``{% get_translated_url %}``, unless an object is explicitly passed.
+* Fix supporting removed model fields in ``get_cached_translation()``.
+
+
+Changes in version 1.2.1 (2014-10-31)
+-------------------------------------
+
+* Fixed fetching correct translations when using ``prefetch_related()``.
+
+
+Changes in version 1.2 (2014-10-30)
+-----------------------------------
+
+* Added support for translations on mutlple model inheritance levels.
+* Added ``TranslatableAdmin.get_translation_objects()`` API.
+* Added ``TranslatableModel.create_translation()`` API.
+* Added ``TranslatableModel.get_translation()`` API.
+* Added ``TranslatableModel.get_available_languages(include_unsaved=True)`` API.
+* **NOTE:** the ``TranslationDoesNotExist`` exception inherits from ``ObjectDoesNotExist`` now.
+  Check your exception handlers when upgrading.
+
+
+Changes in version 1.1.1 (2014-10-14)
+-------------------------------------
+
+* Fix accessing fields using ``safe_translation_getter(any_language=True)``
+* Fix "dictionary changed size during iteration" in ``save_translations()`` in Python 3.
+* Added ``default_permissions=()`` for translated models in Django 1.7.
+
+
+Changes in version 1.1 (2014-09-29)
+-----------------------------------
+
+* Added Django 1.7 compatibility.
+* Added ``SortedRelatedFieldListFilter`` for displaying translated models in the ``list_filter``.
+* Added ``parler.widgets`` with ``SortedSelect`` and friends.
+* Fix caching translations in Django 1.6.
 * Fix checking ``unique_together`` on the translated model.
+* Fix access to ``TranslatableModelForm._current_language`` in early ``__init__()`` code.
+* Fix ``PARLER_LANGUAGES['default']['fallback']`` being overwritten by ``PARLER_DEFAULT_LANGUAGE_CODE``.
+* Optimized prefetch usage, improves loading of translated models.
+* **BACKWARDS INCOMPATIBLE:** The arguments of ``get_cached_translated_field()`` have changed ordering, ``field_name`` comes before ``language_code`` now.
 
 
 Changes in version 1.0 (2014-07-07)
@@ -114,3 +164,4 @@ Changes in version 0.9 (beta)
 
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
+.. _django-rest-framework: https://github.com/tomchristie/django-rest-framework

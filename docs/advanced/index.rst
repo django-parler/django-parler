@@ -6,10 +6,12 @@ Advanced usage patterns
 
    fallback
    slugs
-   manual-models
+   migrating
    existing
    polymorphicmodel
    guardian
+   rest-framework
    multisite
    caching
+   manual-models
    custom-settings

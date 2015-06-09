@@ -16,3 +16,5 @@ API documentation
    parler.signals
    parler.utils
    parler.views
+   parler.widgets
+   parler.contrib.rest_framework

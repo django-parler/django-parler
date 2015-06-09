@@ -1,2 +1,3 @@
 # for readthedocs
 Django==1.6.1
+djangorestframework==2.4.4
