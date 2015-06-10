@@ -341,6 +341,13 @@ class TranslatableModel(models.Model):
             # NOTE this may also return newly auto created translations which are not saved yet.
             return self._translations_cache[meta.model][language_code] is not MISSING
         except KeyError:
+            # If there is a prefetch, will be using that.
+            # However, don't assume the prefetch contains all possible languages.
+            # With Django 1.8, there are custom Prefetch objects.
+            # TODO: improve this, detect whether this is the case.
+            if language_code in self._read_prefetched_translations(meta=meta):
+                return True
+
             # Try to fetch from the cache first.
             # If the cache returns the fallback, it means the original does not exist.
             object = get_cached_translation(self, language_code, related_name=related_name, use_fallback=True)
@@ -366,6 +373,7 @@ class TranslatableModel(models.Model):
 
         prefetch = self._get_prefetched_translations(meta=meta)
         if prefetch is not None:
+            # TODO: this will break when using custom Django 1.8 Prefetch objects?
             db_languages = sorted(obj.language_code for obj in prefetch)
         else:
             qs = self._get_translated_queryset(meta=meta)
@@ -569,6 +577,26 @@ class TranslatableModel(models.Model):
             return self._prefetched_objects_cache[related_name]
         except (AttributeError, KeyError):
             return None
+
+
+    def _read_prefetched_translations(self, meta=None):
+        # Load the prefetched translations into the local cache.
+        if meta is None:
+            meta = self._parler_meta.root
+
+        local_cache = self._translations_cache[meta.model]
+        prefetch = self._get_prefetched_translations(meta=meta)
+
+        languages_seen = []
+        if prefetch is not None:
+            for translation in prefetch:
+                lang = translation.language_code
+                languages_seen.append(lang)
+                if lang not in local_cache or local_cache[lang] is MISSING:
+                    local_cache[lang] = translation
+
+        return languages_seen
+
 
     def save(self, *args, **kwargs):
         super(TranslatableModel, self).save(*args, **kwargs)
