@@ -476,15 +476,19 @@ class TranslatableModel(models.Model):
             if not self._state.adding or self.pk is not None:
                 _cache_translation_needs_fallback(self, language_code, related_name=meta.rel_name)
 
-        if language_code not in lang_dict['fallbacks'] and use_fallback:
+        fallback_choices = lang_dict['fallbacks']
+        if use_fallback and fallback_choices:
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
-            for fallback_lang in lang_dict['fallbacks']:
+            for fallback_lang in fallback_choices:
+                if fallback_lang == language_code:  # Skip the current language, could also be fallback 1 of 2 choices
+                    continue
+
                 try:
                     return self._get_translated_model(fallback_lang, use_fallback=False, auto_create=auto_create, meta=meta)
                 except meta.model.DoesNotExist:
                     pass
-                    
+
             fallback_msg = " (tried fallbacks {0})".format(', '.join(lang_dict['fallbacks']))
 
         # None of the above, bail out!
