@@ -1,5 +1,7 @@
 from django import forms
+from django.forms.forms import BoundField
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
+from django.utils.functional import cached_property
 from django.utils.translation import get_language
 from django.utils import six
 from parler.models import TranslationDoesNotExist
@@ -31,6 +33,30 @@ class TranslatedField(object):
     def __init__(self, **kwargs):
         # The metaclass performs the magic replacement with the actual formfield.
         self.kwargs = kwargs
+
+
+
+class TranslatableBoundField(BoundField):
+    """
+    Decorating the regular BoundField to distinguish translatable fields in the admin.
+    """
+    #: A tagging attribute, making it easy for templates to identify these fields
+    is_translatable = True
+
+    def label_tag(self, contents=None, attrs=None, label_suffix=None):
+        if attrs is None:
+            attrs = {}
+
+        attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
+        return super(TranslatableBoundField, self).label_tag(contents=contents, attrs=attrs, label_suffix=label_suffix)
+
+    def as_widget(self, widget=None, attrs=None, only_initial=False):
+        if attrs is None:
+            attrs = {}
+
+        attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
+        return super(TranslatableBoundField, self).as_widget(widget=widget, attrs=attrs, only_initial=only_initial)
+
 
 
 
@@ -82,16 +108,28 @@ class TranslatableModelFormMixin(object):
         Save all translated fields.
         """
         # Assign translated fields to the model (using the TranslatedAttribute descriptor)
-        for field in self._get_translated_fields():
+        for field in self._translated_fields:
             try:
                 value = self.cleaned_data[field]
             except KeyError:  # Field has a ValidationError
                 continue
             setattr(self.instance, field, value)
 
-    def _get_translated_fields(self):
+    @cached_property
+    def _translated_fields(self):
         field_names = self._meta.model._parler_meta.get_all_fields()
         return [f_name for f_name in field_names if f_name in self.fields]
+
+    def __getitem__(self, name):
+        """
+        Return a :class:`TranslatableBoundField` for translated models.
+        This extends the default ``form[field]`` interface that produces the BoundField for HTML templates.
+        """
+        boundfield = super(BaseTranslatableModelForm, self).__getitem__(name)
+        if name in self._translated_fields:
+            # Oh the wonders of Python :)
+            boundfield.__class__ = TranslatableBoundField
+        return boundfield
 
 
 
@@ -114,7 +152,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
             form_model = form_new_meta.model if form_new_meta else form_meta.model
 
             # Detect all placeholders at this class level.
-            translated_fields = [
+            placeholder_fields = [
                 f_name for f_name, attr_value in six.iteritems(attrs) if isinstance(attr_value, TranslatedField)
             ]
 
@@ -133,9 +171,10 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
 
                     for f_name in translations_model.get_translated_fields():
                         # Add translated field if not already added, and respect exclude options.
-                        if f_name in translated_fields:
+                        if f_name in placeholder_fields:
                             # The TranslatedField placeholder can be replaced directly with actual field, so do that.
                             attrs[f_name] = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **attrs[f_name].kwargs)
+
                         # The next code holds the same logic as fields_for_model()
                         # The f.editable check happens in _get_model_form_field()
                         elif f_name not in form_base_fields \
