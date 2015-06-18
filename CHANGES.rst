@@ -10,6 +10,7 @@ Changes in git
 * Added warning when saving a model without language code set.
   As of Django 1.8, ``get_language()`` returns ``None`` if no language is activated.
 * Allow ``safe_translation_getter(default=..)`` to be a callable.
+* Fix caching support, the default timeout was wrongly imported.
 * Fix Django 1.4 support for using ``request.resolver_match``.
 * Fix admin delete translation view when using ``prefetch_related('translations')`` by default in the managers ``get_queryset()`` method.
 * Fix using prefetched translations in ``has_translation()`` too.
