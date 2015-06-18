@@ -5,7 +5,7 @@ Changes in git
 --------------
 
 * Added support for multiple fallback languages!
-* Added ``translatable-field`` CSS class to the ``<label>`` and ``<input>`` tags of translatable fields.
+* Added ``translatable-field`` CSS class to the ``<label>`` tags of translatable fields.
 * Added ``{{ field.is_translatable }}`` variable.
 * Added warning when saving a model without language code set.
   As of Django 1.8, ``get_language()`` returns ``None`` if no language is activated.

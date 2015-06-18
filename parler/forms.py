@@ -51,13 +51,8 @@ class TranslatableBoundField(BoundField):
         attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
         return super(TranslatableBoundField, self).label_tag(contents, attrs, *args, **kwargs)
 
-    def as_widget(self, widget=None, attrs=None, *args, **kwargs):
-        if attrs is None:
-            attrs = {}
-
-        attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
-        return super(TranslatableBoundField, self).as_widget(widget, attrs, *args, **kwargs)
-
+    # The as_widget() won't be overwritten to add a 'class' attr,
+    # because it will overwrite what AdminTextInputWidget and fields have as default.
 
 
 
