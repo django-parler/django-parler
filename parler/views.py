@@ -219,15 +219,15 @@ class LanguageChoiceMixin(object):
         """
         object = super(LanguageChoiceMixin, self).get_object(queryset)
         if isinstance(object, TranslatableModel):
-            object.set_current_language(self._language(object), initialize=True)
+            object.set_current_language(self.get_language(), initialize=True)
         return object
 
 
-    def _language(self, object=None):
+    def get_language(self):
         """
         Get the language parameter from the current request.
         """
-        return get_language_parameter(self.request, self.query_language_key, object=object, default=self.get_default_language(object=object))
+        return get_language_parameter(self.request, self.query_language_key, default=self.get_default_language(object=object))
 
 
     def get_default_language(self, object=None):
@@ -242,11 +242,12 @@ class LanguageChoiceMixin(object):
     def get_current_language(self):
         """
         Return the current language for the currently displayed object fields.
+        This reads ``self.object.get_current_language()`` and falls back to :func:`get_language`.
         """
         if self.object is not None:
             return self.object.get_current_language()
         else:
-            return self._language()
+            return self.get_language()
 
 
     def get_context_data(self, **kwargs):

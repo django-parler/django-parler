@@ -118,7 +118,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         """
         Get the language parameter from the current request.
         """
-        return get_language_parameter(request, self.query_language_key, object=obj)
+        return get_language_parameter(request, self.query_language_key)
 
 
     def get_form_language(self, request, obj=None):
