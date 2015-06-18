@@ -5,6 +5,8 @@ Changes in git
 --------------
 
 * Added support for multiple fallback languages!
+* Added ``translatable-field`` CSS class to the ``<label>`` and ``<input>`` tags of translatable fields.
+* Added ``{{ field.is_translatable }}`` variable.
 * Fix Django 1.4 support for using ``request.resolver_match``.
 * Fix admin delete translation view when using ``prefetch_related('translations')`` by default in the managers ``get_queryset()`` method.
 * Fix using prefetched translations in ``has_translation()`` too.
