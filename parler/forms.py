@@ -11,7 +11,7 @@ from parler.utils import compat
 __all__ = (
     'TranslatableModelForm',
     'TranslatedField',
-    'TranslatableModelFormMixin',
+    'BaseTranslatableModelForm',
     #'TranslatableModelFormMetaclass',
 )
 
@@ -262,3 +262,7 @@ class TranslatableBaseInlineFormSet(BaseInlineFormSet):
     def save_new(self, form, commit=True):
         obj = super(TranslatableBaseInlineFormSet, self).save_new(form, commit)
         return obj
+
+
+# Backwards compatibility
+TranslatableModelFormMixin = BaseTranslatableModelForm

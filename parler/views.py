@@ -268,10 +268,6 @@ class LanguageChoiceMixin(object):
         return get_language_tabs(self.request, current_language, available_languages)
 
 
-# Backwards compatibility
-TranslatableSingleObjectMixin = LanguageChoiceMixin
-
-
 class TranslatableModelFormMixin(LanguageChoiceMixin):
     """
     Mixin to add translation support to class based views.
@@ -351,3 +347,7 @@ def _get_view_model(self):
     else:
         # Try to get a queryset and extract the model class from that
         return self.get_queryset().model
+
+
+# Backwards compatibility
+TranslatableSingleObjectMixin = LanguageChoiceMixin
