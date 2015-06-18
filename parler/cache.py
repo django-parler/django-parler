@@ -14,7 +14,7 @@ if six.PY3:
     long = int
 
 try:
-    DEFAULT_TIMEOUT = cache.cache.default_timeout
+    DEFAULT_TIMEOUT = cache.default_timeout
 except AttributeError:
     DEFAULT_TIMEOUT = 0
 
