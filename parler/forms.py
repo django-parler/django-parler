@@ -1,4 +1,5 @@
 from django import forms
+import django
 from django.forms.forms import BoundField
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
 from django.utils.functional import cached_property
@@ -43,19 +44,19 @@ class TranslatableBoundField(BoundField):
     #: A tagging attribute, making it easy for templates to identify these fields
     is_translatable = True
 
-    def label_tag(self, contents=None, attrs=None, label_suffix=None):
+    def label_tag(self, contents=None, attrs=None, *args, **kwargs):  # extra args differ per Django version
         if attrs is None:
             attrs = {}
 
         attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
-        return super(TranslatableBoundField, self).label_tag(contents=contents, attrs=attrs, label_suffix=label_suffix)
+        return super(TranslatableBoundField, self).label_tag(contents, attrs, *args, **kwargs)
 
-    def as_widget(self, widget=None, attrs=None, only_initial=False):
+    def as_widget(self, widget=None, attrs=None, *args, **kwargs):
         if attrs is None:
             attrs = {}
 
         attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
-        return super(TranslatableBoundField, self).as_widget(widget=widget, attrs=attrs, only_initial=only_initial)
+        return super(TranslatableBoundField, self).as_widget(widget, attrs, *args, **kwargs)
 
 
 
@@ -233,10 +234,17 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     return formfield
 
 
-class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass, BaseTranslatableModelForm, forms.ModelForm)):
-    """
-    The model form to use for translated models.
-    """
+if django.VERSION < (1,5):
+    # Django 1.4 doesn't recognize the use of with_metaclass.
+    # This breaks the form initialization in modelform_factory()
+    class TranslatableModelForm(BaseTranslatableModelForm, forms.ModelForm):
+        __metaclass__ = TranslatableModelFormMetaclass
+else:
+    class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass, BaseTranslatableModelForm, forms.ModelForm)):
+        """
+        The model form to use for translated models.
+        """
+
     # six.with_metaclass does not handle more than 2 parent classes for django < 1.6
     # but we need all of them in django 1.7 to pass check admin.E016:
     #       "The value of 'form' must inherit from 'BaseModelForm'"
