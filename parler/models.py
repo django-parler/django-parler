@@ -842,6 +842,13 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         return self.__class__.master.field.rel.related_name
 
     def save_base(self, raw=False, using=None, **kwargs):
+        # As of Django 1.8, not calling translations.activate() or disabling the translation
+        # causes get_language() to explicitly return None instead of LANGUAGE_CODE.
+        # This helps developers find their
+        assert self.language_code is not None, ""\
+            "No language is set or detected for this TranslatableModel.\n" \
+            "Is the translations system initialized?"
+
         # Send the pre_save signal
         using = using or router.db_for_write(self.__class__, instance=self)
         record_exists = self.pk is not None  # Ignoring force_insert/force_update for now.
