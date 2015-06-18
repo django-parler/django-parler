@@ -844,7 +844,10 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
     def save_base(self, raw=False, using=None, **kwargs):
         # As of Django 1.8, not calling translations.activate() or disabling the translation
         # causes get_language() to explicitly return None instead of LANGUAGE_CODE.
-        # This helps developers find their
+        # This helps developers find solutions by bailing out properly.
+        #
+        # Either use translation.activate() first, or pass the language code explicitly via
+        # MyModel.objects.language('en').create(..)
         assert self.language_code is not None, ""\
             "No language is set or detected for this TranslatableModel.\n" \
             "Is the translations system initialized?"
