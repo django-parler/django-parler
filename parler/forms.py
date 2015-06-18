@@ -60,7 +60,7 @@ class TranslatableBoundField(BoundField):
 
 
 
-class TranslatableModelFormMixin(object):
+class BaseTranslatableModelForm(forms.BaseModelForm):
     """
     The base methods added to :class:`TranslatableModelForm` to fetch and store translated fields.
     """
@@ -69,7 +69,7 @@ class TranslatableModelFormMixin(object):
 
     def __init__(self, *args, **kwargs):
         current_language = kwargs.pop('_current_language', None)   # Used for TranslatableViewMixin
-        super(TranslatableModelFormMixin, self).__init__(*args, **kwargs)
+        super(BaseTranslatableModelForm, self).__init__(*args, **kwargs)
 
         # Load the initial values for the translated fields
         instance = kwargs.get('instance', None)
@@ -101,7 +101,7 @@ class TranslatableModelFormMixin(object):
         self.save_translated_fields()
 
         # Perform the regular clean checks, this also updates self.instance
-        super(TranslatableModelFormMixin, self)._post_clean()
+        super(BaseTranslatableModelForm, self)._post_clean()
 
     def save_translated_fields(self):
         """
@@ -233,7 +233,7 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     return formfield
 
 
-class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass, TranslatableModelFormMixin, forms.ModelForm)):
+class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass, BaseTranslatableModelForm, forms.ModelForm)):
     """
     The model form to use for translated models.
     """
@@ -241,6 +241,11 @@ class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass
     # but we need all of them in django 1.7 to pass check admin.E016:
     #       "The value of 'form' must inherit from 'BaseModelForm'"
     # so we use our copied version in parler.utils.compat
+    #
+    # Also, the class must inherit from ModelForm,
+    # or the ModelFormMetaclass will skip initialization.
+    # It only adds the _meta from anything that extends ModelForm.
+
 
 
 class TranslatableBaseInlineFormSet(BaseInlineFormSet):
