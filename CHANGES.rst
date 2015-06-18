@@ -7,6 +7,9 @@ Changes in git
 * Added support for multiple fallback languages!
 * Added ``translatable-field`` CSS class to the ``<label>`` and ``<input>`` tags of translatable fields.
 * Added ``{{ field.is_translatable }}`` variable.
+* Added warning when saving a model without language code set.
+  As of Django 1.8, ``get_language()`` returns ``None`` if no language is activated.
+* Allow ``safe_translation_getter(default=..)`` to be a callable.
 * Fix Django 1.4 support for using ``request.resolver_match``.
 * Fix admin delete translation view when using ``prefetch_related('translations')`` by default in the managers ``get_queryset()`` method.
 * Fix using prefetched translations in ``has_translation()`` too.

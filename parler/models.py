@@ -701,6 +701,8 @@ class TranslatableModel(models.Model):
         for "title" attributes for example, to make sure there is at least something being displayed.
         Also consider using ``field = TranslatedField(any_language=True)`` in the model itself,
         to make this behavior the default for the given field.
+
+        .. versionchanged 1.5:: The *default* parameter may also be a callable.
         """
         meta = self._parler_meta._get_extension_by_field(field)
 
@@ -722,9 +724,15 @@ class TranslatableModel(models.Model):
         if any_language:
             translation = self._get_any_translated_model(meta=meta)
             if translation is not None:
-                return getattr(translation, field, default)
+                try:
+                    return getattr(translation, field)
+                except KeyError:
+                    pass
 
-        return default
+        if callable(default):
+            return default()
+        else:
+            return default
 
 
 class TranslatedFieldsModelBase(ModelBase):
