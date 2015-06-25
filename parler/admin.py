@@ -38,6 +38,7 @@ See the :ref:`admin compatibility page <admin-compat>` for details.
 """
 from __future__ import unicode_literals
 import django
+from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
@@ -50,6 +51,7 @@ from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import lazy
+from django.utils.html import format_html
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils import six
@@ -75,7 +77,7 @@ __all__ = (
 )
 
 _language_media = Media(css={
-    'all': ('parler/admin/language_tabs.css',)
+    'all': ('parler/admin/parler_admin.css',)
 })
 _language_prepopulated_media = _language_media + Media(js=(
     'admin/js/urlify.js',
@@ -210,19 +212,61 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         The language column which can be included in the ``list_display``.
         """
-        languages = self.get_available_languages(object)
-        languages = [self.get_language_short_title(code) for code in languages]
-        return '<span class="available-languages">{0}</span>'.format(' '.join(languages))
-
+        return self._languages_column(object, span_classes='available-languages')  # span class for backwards compatibility
     language_column.allow_tags = True
     language_column.short_description = _("Languages")
+
+
+    def all_languages_column(self, object):
+        """
+        The language column which can be included in the ``list_display``.
+        It also shows untranslated languages
+        """
+        all_languages = [code for code,__ in settings.LANGUAGES]
+        return self._languages_column(object, all_languages, span_classes='all-languages')
+    all_languages_column.allow_tags = True
+    all_languages_column.short_description = _("Languages")
+
+
+    def _languages_column(self, object, all_languages=None, span_classes=''):
+        active_languages = self.get_available_languages(object)
+        if all_languages is None:
+            all_languages = active_languages
+
+        current_language = object.get_current_language()
+        buttons = []
+        opts = self.opts
+        for code in (all_languages or active_languages):
+            classes = ['lang-code']
+            if code in active_languages:
+                classes.append('active')
+            else:
+                classes.append('untranslated')
+            if code == current_language:
+                classes.append('current')
+
+            admin_url = reverse('admin:{0}_{1}_change'.format(opts.app_label, opts.model_name), args=(object.pk,), current_app=self.admin_site.name)
+            buttons.append(format_html('<a class="{classes}" href="{href}?language={language_code}">{title}</a>',
+                language_code=code,
+                classes=' '.join(classes),
+                href=admin_url,
+                title=self.get_language_short_title(code)
+           ))
+        return format_html('<span class="language-buttons {0}">{1}</span>'.format(
+            span_classes,
+            ' '.join(buttons)
+        ))
 
 
     def get_language_short_title(self, language_code):
         """
         Hook for allowing to change the title in the :func:`language_column` of the list_display.
         """
-        return language_code
+        # Show language codes in uppercase by default.
+        # This avoids a general text-transform CSS rule,
+        # that might conflict with showing longer titles for a language instead of the code.
+        # (e.g. show "Global" instead of "EN")
+        return language_code.upper()
 
 
     def get_available_languages(self, obj):
