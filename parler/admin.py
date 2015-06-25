@@ -51,7 +51,7 @@ from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import lazy
-from django.utils.html import format_html
+from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils import six
@@ -246,16 +246,16 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 classes.append('current')
 
             admin_url = reverse('admin:{0}_{1}_change'.format(opts.app_label, opts.model_name), args=(object.pk,), current_app=self.admin_site.name)
-            buttons.append(format_html('<a class="{classes}" href="{href}?language={language_code}">{title}</a>',
+            buttons.append('<a class="{classes}" href="{href}?language={language_code}">{title}</a>'.format(
                 language_code=code,
                 classes=' '.join(classes),
-                href=admin_url,
-                title=self.get_language_short_title(code)
+                href=escape(admin_url),
+                title=conditional_escape(self.get_language_short_title(code))
            ))
-        return format_html('<span class="language-buttons {0}">{1}</span>'.format(
+        return '<span class="language-buttons {0}">{1}</span>'.format(
             span_classes,
             ' '.join(buttons)
-        ))
+        )
 
 
     def get_language_short_title(self, language_code):
