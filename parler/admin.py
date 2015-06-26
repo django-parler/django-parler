@@ -312,7 +312,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return urlpatterns
         else:
             opts = self.model._meta
-            info = opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name
+            info = _get_model_meta(opts)
 
             return patterns('',
                 url(r'^(.+)/delete-translation/(.+)/$',
@@ -374,7 +374,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
         uri = iri_to_uri(request.path)
         opts = self.model._meta
-        info = (opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name)
+        info = _get_model_meta(opts)
 
         # Pass ?language=.. to next page.
         language = request.GET.get(self.query_language_key)
@@ -454,7 +454,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             ))
 
             if self.has_change_permission(request, None):
-                return HttpResponseRedirect(reverse('admin:{0}_{1}_change'.format(opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name), args=(object_id,), current_app=self.admin_site.name))
+                info = _get_model_meta(opts)
+                return HttpResponseRedirect(reverse('admin:{0}_{1}_change'.format(*info), args=(object_id,), current_app=self.admin_site.name))
             else:
                 return HttpResponseRedirect(reverse('admin:index', current_app=self.admin_site.name))
 
@@ -703,3 +704,11 @@ class SortedRelatedFieldListFilter(admin.RelatedFieldListFilter):
     def __init__(self, *args, **kwargs):
         super(SortedRelatedFieldListFilter, self).__init__(*args, **kwargs)
         self.lookup_choices = sorted(self.lookup_choices, key=lambda a: a[1].lower())
+
+
+if django.VERSION >= (1,7):
+    def _get_model_meta(opts):
+        return opts.app_label, opts.model_name
+else:
+    def _get_model_meta(opts):
+        return opts.app_label, opts.module_name
