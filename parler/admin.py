@@ -245,7 +245,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             if code == current_language:
                 classes.append('current')
 
-            admin_url = reverse('admin:{0}_{1}_change'.format(opts.app_label, opts.model_name), args=(object.pk,), current_app=self.admin_site.name)
+            info = _get_model_meta(opts)
+            admin_url = reverse('admin:{0}_{1}_change'.format(*info), args=(object.pk,), current_app=self.admin_site.name)
             buttons.append('<a class="{classes}" href="{href}?language={language_code}">{title}</a>'.format(
                 language_code=code,
                 classes=' '.join(classes),
