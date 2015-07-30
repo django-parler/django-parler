@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Changes in git
---------------
+Changes in version 1.5 (2015-06-30)
+-----------------------------------
 
 * Added support for multiple fallback languages!
 * Added ``translatable-field`` CSS class to the ``<label>`` tags of translatable fields.
