@@ -9,7 +9,7 @@ Features:
 
 * Nice admin integration.
 * Access translated attributes like regular attributes.
-* Automatic fallback to the default language.
+* Automatic fallback to the other default languages.
 * Separate table for translated fields, compatible with django-hvad_.
 * Plays nice with others, compatible with django-polymorphic_, django-mptt_ and such:
 
