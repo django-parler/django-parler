@@ -5,6 +5,7 @@ Changes in git
 --------------
 
 * Fix handling for non-nullable ``ForeignKey`` in forms and admin.
+* Fix creating translations which only have default values.
 
 
 Changes in version 1.5 (2015-06-30)
