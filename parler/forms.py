@@ -1,5 +1,6 @@
 from django import forms
 import django
+from django.core.exceptions import ObjectDoesNotExist
 from django.forms.forms import BoundField
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
 from django.utils.functional import cached_property
@@ -80,7 +81,12 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                     pass
                 else:
                     for field in meta.get_translated_fields():
-                        self.initial.setdefault(field, getattr(translation, field, None))
+                        try:
+                            self.initial.setdefault(field, getattr(translation, field))
+                        except ObjectDoesNotExist:
+                            # This occurs when a ForeignKey field is part of the translation,
+                            # but it's value is still not yet, and the field has null=False.
+                            pass
 
         # Typically already set by admin
         if self.language_code is None:
