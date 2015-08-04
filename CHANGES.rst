@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in git
+--------------
+
+* Fix handling for non-nullable ``ForeignKey`` in forms and admin.
+
+
 Changes in version 1.5 (2015-06-30)
 -----------------------------------
 
