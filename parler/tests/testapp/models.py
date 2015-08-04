@@ -118,9 +118,11 @@ class ProxyModel(ProxyBase):
 class DoubleModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
+
 class DoubleModelTranslations(TranslatedFieldsModel):
     master = models.ForeignKey(DoubleModel, related_name='base_translations')
     l1_title = models.CharField(max_length=200)
+
 
 class DoubleModelMoreTranslations(TranslatedFieldsModel):
     master = models.ForeignKey(DoubleModel, related_name='more_translations')
@@ -135,6 +137,14 @@ class RegularModel(models.Model):
 class CharModel(TranslatableModel):
     id = models.CharField(max_length=45, primary_key=True)
 
+
 class CharModelTranslation(TranslatedFieldsModel):
     master = models.ForeignKey(CharModel)
     tr_title = models.CharField(max_length=200)
+
+
+class ForeignKeyTranslationModel(TranslatableModel):
+    translations = TranslatedFields(
+        translated_foreign = models.ForeignKey('RegularModel'),
+    )
+    shared = models.CharField(max_length=200)
