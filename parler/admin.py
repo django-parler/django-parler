@@ -186,6 +186,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
     When using this class with a non-TranslatableModel,
     all operations effectively become a NO-OP.
     """
+    #: Whether the translations should be prefetched when displaying the 'language_column' in the list.
+    prefetch_language_column = True
 
     deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
 
@@ -278,6 +280,19 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return obj.get_available_languages()
         else:
             return self.model._parler_meta.root_model.objects.none()
+
+
+    def get_queryset(self, request):
+        qs = super(TranslatableAdmin, self).get_queryset(request)
+
+        if self.prefetch_language_column:
+            # When the available languages are shown in the listing, prefetch available languages.
+            # This avoids an N-query issue because each row needs the available languages.
+            list_display = self.get_list_display(request)
+            if 'language_column' in list_display or 'all_languages_column' in list_display:
+                qs = qs.prefetch_related(self.model._parler_meta.root_rel_name)
+
+        return qs
 
 
     def get_object(self, request, object_id, *args, **kwargs):
