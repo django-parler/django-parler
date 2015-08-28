@@ -42,7 +42,10 @@ from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
-from django.contrib.admin.util import get_deleted_objects, unquote
+try:
+    from django.contrib.admin.utils import get_deleted_objects, unquote
+except ImportError:
+    from django.contrib.admin.util import get_deleted_objects, unquote
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.db import router

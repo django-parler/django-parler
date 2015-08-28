@@ -121,7 +121,7 @@ class TranslatedFieldDescriptor(object):
         """
         Ensure that the admin ``list_display`` renders the correct verbose name for translated fields.
 
-        The :func:`~django.contrib.admin.util.label_for_field` function
+        The :func:`~django.contrib.admin.utils.label_for_field` function
         uses :func:`~django.db.models.Options.get_field_by_name` to find the find and ``verbose_name``.
         However, for translated fields, this option does not exist,
         hence it falls back to reading the attribute and trying ``short_description``.
