@@ -6,6 +6,7 @@ Changes in git
 
 * Fix handling for non-nullable ``ForeignKey`` in forms and admin.
 * Fix performance of the admin list when ``all_languages_column`` or ``language_column`` is added to ``list_display`` (N-query issue).
+* Fix support for other packages that replace the BoundField class in ``Form.__get_item__`` (namely django-slug-preview_).
 
 
 Changes in version 1.5 (2015-06-30)
@@ -201,4 +202,5 @@ Changes in version 0.9 (beta)
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
 .. _django-mptt: https://github.com/django-mptt/django-mptt
+.. _django-slug-preview: https://github.com/edoburu/django-slug-preview
 .. _django-rest-framework: https://github.com/tomchristie/django-rest-framework

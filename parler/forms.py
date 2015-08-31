@@ -37,26 +37,6 @@ class TranslatedField(object):
         self.kwargs = kwargs
 
 
-
-class TranslatableBoundField(BoundField):
-    """
-    Decorating the regular BoundField to distinguish translatable fields in the admin.
-    """
-    #: A tagging attribute, making it easy for templates to identify these fields
-    is_translatable = True
-
-    def label_tag(self, contents=None, attrs=None, *args, **kwargs):  # extra args differ per Django version
-        if attrs is None:
-            attrs = {}
-
-        attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
-        return super(TranslatableBoundField, self).label_tag(contents, attrs, *args, **kwargs)
-
-    # The as_widget() won't be overwritten to add a 'class' attr,
-    # because it will overwrite what AdminTextInputWidget and fields have as default.
-
-
-
 class BaseTranslatableModelForm(forms.BaseModelForm):
     """
     The base methods added to :class:`TranslatableModelForm` to fetch and store translated fields.
@@ -130,9 +110,43 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
         boundfield = super(BaseTranslatableModelForm, self).__getitem__(name)
         if name in self._translated_fields:
             # Oh the wonders of Python :)
-            boundfield.__class__ = TranslatableBoundField
+            boundfield.__class__ = _upgrade_boundfield_class(boundfield.__class__)
         return boundfield
 
+
+UPGRADED_CLASSES = {}
+def _upgrade_boundfield_class(cls):
+    if cls is BoundField:
+        return TranslatableBoundField
+
+    # When some other package also performs this same trick,
+    # combine both classes on the fly. Avoid having to do that each time.
+    # This is needed for django-slug-preview
+    try:
+        return UPGRADED_CLASSES[cls]
+    except KeyError:
+        # Create once
+        new_cls = type('Translatable{0}'.format(cls.__name__), (cls, TranslatableBoundField), {})
+        UPGRADED_CLASSES[cls] = new_cls
+        return new_cls
+
+
+class TranslatableBoundField(BoundField):
+    """
+    Decorating the regular BoundField to distinguish translatable fields in the admin.
+    """
+    #: A tagging attribute, making it easy for templates to identify these fields
+    is_translatable = True
+
+    def label_tag(self, contents=None, attrs=None, *args, **kwargs):  # extra args differ per Django version
+        if attrs is None:
+            attrs = {}
+
+        attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
+        return super(TranslatableBoundField, self).label_tag(contents, attrs, *args, **kwargs)
+
+    # The as_widget() won't be overwritten to add a 'class' attr,
+    # because it will overwrite what AdminTextInputWidget and fields have as default.
 
 
 class TranslatableModelFormMetaclass(ModelFormMetaclass):
