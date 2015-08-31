@@ -43,7 +43,7 @@ Say we have a base ``Category`` model that needs to be translatable:
         objects = CategoryManager()
 
         def __str__(self):
-            return force_text(self.code)
+            return self.safe_translation_getter('name', any_language=True)
 
 
 Combining managers
