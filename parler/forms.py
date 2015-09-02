@@ -116,7 +116,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
 
 UPGRADED_CLASSES = {}
 def _upgrade_boundfield_class(cls):
-    if cls is BoundField:
+    if cls is BoundField or cls is TranslatableBoundField:
         return TranslatableBoundField
 
     # When some other package also performs this same trick,
