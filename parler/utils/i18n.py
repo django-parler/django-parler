@@ -18,6 +18,9 @@ __all__ = (
 LANGUAGES_DICT = dict(settings.LANGUAGES)
 ALL_LANGUAGES_DICT = dict(ALL_LANGUAGES)
 
+# allow to override language names when  PARLER_SHOW_EXCLUDED_LANGUAGE_TABS is True:
+ALL_LANGUAGES_DICT.update(LANGUAGES_DICT)
+
 
 def normalize_language_code(code):
     """
@@ -33,7 +36,7 @@ def is_supported_django_language(language_code):
     """
     Return whether a language code is supported.
     """
-    language_code2 = language_code.split('-')[0]  # e.g. if fr-ca is not supported fallback to fr
+    language_code2 = language_code.split('-')[0] # e.g. if fr-ca is not supported fallback to fr
     return language_code in LANGUAGES_DICT or language_code2 in LANGUAGES_DICT
 
 
