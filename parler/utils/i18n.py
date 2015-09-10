@@ -2,6 +2,7 @@
 Utils for translations
 """
 from django.conf import settings
+from django.conf.global_settings import LANGUAGES as ALL_LANGUAGES
 from django.utils.translation import ugettext_lazy as _
 
 __all__ = (
@@ -15,6 +16,7 @@ __all__ = (
 
 
 LANGUAGES_DICT = dict(settings.LANGUAGES)
+ALL_LANGUAGES_DICT = dict(ALL_LANGUAGES)
 
 
 def normalize_language_code(code):
@@ -31,7 +33,7 @@ def is_supported_django_language(language_code):
     """
     Return whether a language code is supported.
     """
-    language_code2 = language_code.split('-')[0] # e.g. if fr-ca is not supported fallback to fr
+    language_code2 = language_code.split('-')[0]  # e.g. if fr-ca is not supported fallback to fr
     return language_code in LANGUAGES_DICT or language_code2 in LANGUAGES_DICT
 
 
@@ -39,15 +41,23 @@ def get_language_title(language_code):
     """
     Return the verbose_name for a language code.
     """
+    from parler import appsettings
     # Avoid weird lookup errors.
     if not language_code:
         raise KeyError("Missing language_code in get_language_title()")
 
+    if appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS:
+        # this allows to edit languages that are not enabled in current project but are already
+        # in database
+        languages = ALL_LANGUAGES_DICT
+    else:
+        languages = LANGUAGES_DICT
+
     try:
-        return _(LANGUAGES_DICT[language_code])
+        return _(languages[language_code])
     except KeyError:
-        language_code = language_code.split('-')[0] # e.g. if fr-ca is not supported fallback to fr
-        return _(LANGUAGES_DICT[language_code])
+        language_code = language_code.split('-')[0]  # e.g. if fr-ca is not supported fallback to fr
+        return _(languages[language_code])
 
 
 def get_language_settings(language_code, site_id=None):
