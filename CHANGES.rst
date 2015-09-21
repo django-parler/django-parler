@@ -4,9 +4,26 @@ Changelog
 Changes in git
 --------------
 
+* Fix handling for non-nullable ``ForeignKey`` in forms and admin.
+* Fix performance of the admin list when ``all_languages_column`` or ``language_column`` is added to ``list_display`` (N-query issue).
+* Fix support for other packages that replace the BoundField class in ``Form.__get_item__`` (namely django-slug-preview_).
+
+
+Changes in version 1.5 (2015-06-30)
+-----------------------------------
+
 * Added support for multiple fallback languages!
+* Added ``translatable-field`` CSS class to the ``<label>`` tags of translatable fields.
+* Added ``{{ field.is_translatable }}`` variable.
+* Added warning when saving a model without language code set.
+  As of Django 1.8, ``get_language()`` returns ``None`` if no language is activated.
+* Allow ``safe_translation_getter(default=..)`` to be a callable.
+* Added ``all_languages_column``, inspired by aldryn-translation-tools_.
+* Changed styling of ``language_column``, the items are now links to the language tabs.
+* Fix caching support, the default timeout was wrongly imported.
 * Fix Django 1.4 support for using ``request.resolver_match``.
 * Fix admin delete translation view when using ``prefetch_related('translations')`` by default in the managers ``get_queryset()`` method.
+* Fix using prefetched translations in ``has_translation()`` too.
 * Return to change view after deleting a translation.
 
 
@@ -181,7 +198,9 @@ Changes in version 0.9 (beta)
   Integrating django-hvad_ turned out to be very complex, hence this app was developped instead.
 
 
+.. _aldryn-translation-tools: https://github.com/aldryn/aldryn-translation-tools
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
 .. _django-mptt: https://github.com/django-mptt/django-mptt
+.. _django-slug-preview: https://github.com/edoburu/django-slug-preview
 .. _django-rest-framework: https://github.com/tomchristie/django-rest-framework

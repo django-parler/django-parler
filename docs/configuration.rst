@@ -33,7 +33,7 @@ This is used to determine the languages in the ORM and admin.
             {'code': 'nl',},
         ),
         'default': {
-            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+            'fallbacks': ['en'],          # defaults to PARLER_DEFAULT_LANGUAGE_CODE
             'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
         }
     }
@@ -46,8 +46,12 @@ The following entries are available:
 ``code``
     The language code for the entry.
 
-``fallback``
-    The fallback language for the entry
+``fallbacks``
+    The fallback languages for the entry
+
+    .. versionchanged:: 1.5
+       In the previous versions, this field was called ``fallback`` and pointed to a single language.
+       The old setting name is still supported, but it's recommended you upgrade your settings.
 
 ``hide_untranslated``
     Whether untranslated objects should be returned by :func:`~parler.managers.TranslatableManager.active_translations`.
@@ -89,7 +93,7 @@ setting, the dict can contain entries for every site ID. The special ``None`` ke
             {'code': 'en',},
         ),
         'default': {
-            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+            'fallbacks': ['en'],          # defaults to PARLER_DEFAULT_LANGUAGE_CODE
             'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
         }
     }

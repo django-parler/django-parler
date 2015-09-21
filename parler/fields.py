@@ -10,8 +10,6 @@ It's also useful for abstract models; add a :class:`TranslatedField` to
 indicate that the derived model is expected to provide that translatable field.
 """
 from __future__ import unicode_literals
-from django.core.exceptions import FieldError
-from django.db.models.fields import Field
 from django.forms.forms import pretty_name
 
 

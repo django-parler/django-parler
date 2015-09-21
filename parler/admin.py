@@ -38,6 +38,7 @@ See the :ref:`admin compatibility page <admin-compat>` for details.
 """
 from __future__ import unicode_literals
 import django
+from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
@@ -50,6 +51,7 @@ from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import lazy
+from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils import six
@@ -75,7 +77,7 @@ __all__ = (
 )
 
 _language_media = Media(css={
-    'all': ('parler/admin/language_tabs.css',)
+    'all': ('parler/admin/parler_admin.css',)
 })
 _language_prepopulated_media = _language_media + Media(js=(
     'admin/js/urlify.js',
@@ -118,7 +120,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         """
         Get the language parameter from the current request.
         """
-        return get_language_parameter(request, self.query_language_key, object=obj)
+        return get_language_parameter(request, self.query_language_key)
 
 
     def get_form_language(self, request, obj=None):
@@ -184,6 +186,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
     When using this class with a non-TranslatableModel,
     all operations effectively become a NO-OP.
     """
+    #: Whether the translations should be prefetched when displaying the 'language_column' in the list.
+    prefetch_language_column = True
 
     deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
 
@@ -210,19 +214,62 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         The language column which can be included in the ``list_display``.
         """
-        languages = self.get_available_languages(object)
-        languages = [self.get_language_short_title(code) for code in languages]
-        return '<span class="available-languages">{0}</span>'.format(' '.join(languages))
-
+        return self._languages_column(object, span_classes='available-languages')  # span class for backwards compatibility
     language_column.allow_tags = True
     language_column.short_description = _("Languages")
+
+
+    def all_languages_column(self, object):
+        """
+        The language column which can be included in the ``list_display``.
+        It also shows untranslated languages
+        """
+        all_languages = [code for code,__ in settings.LANGUAGES]
+        return self._languages_column(object, all_languages, span_classes='all-languages')
+    all_languages_column.allow_tags = True
+    all_languages_column.short_description = _("Languages")
+
+
+    def _languages_column(self, object, all_languages=None, span_classes=''):
+        active_languages = self.get_available_languages(object)
+        if all_languages is None:
+            all_languages = active_languages
+
+        current_language = object.get_current_language()
+        buttons = []
+        opts = self.opts
+        for code in (all_languages or active_languages):
+            classes = ['lang-code']
+            if code in active_languages:
+                classes.append('active')
+            else:
+                classes.append('untranslated')
+            if code == current_language:
+                classes.append('current')
+
+            info = _get_model_meta(opts)
+            admin_url = reverse('admin:{0}_{1}_change'.format(*info), args=(object.pk,), current_app=self.admin_site.name)
+            buttons.append('<a class="{classes}" href="{href}?language={language_code}">{title}</a>'.format(
+                language_code=code,
+                classes=' '.join(classes),
+                href=escape(admin_url),
+                title=conditional_escape(self.get_language_short_title(code))
+           ))
+        return '<span class="language-buttons {0}">{1}</span>'.format(
+            span_classes,
+            ' '.join(buttons)
+        )
 
 
     def get_language_short_title(self, language_code):
         """
         Hook for allowing to change the title in the :func:`language_column` of the list_display.
         """
-        return language_code
+        # Show language codes in uppercase by default.
+        # This avoids a general text-transform CSS rule,
+        # that might conflict with showing longer titles for a language instead of the code.
+        # (e.g. show "Global" instead of "EN")
+        return language_code.upper()
 
 
     def get_available_languages(self, obj):
@@ -233,6 +280,19 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return obj.get_available_languages()
         else:
             return self.model._parler_meta.root_model.objects.none()
+
+
+    def get_queryset(self, request):
+        qs = super(TranslatableAdmin, self).get_queryset(request)
+
+        if self.prefetch_language_column:
+            # When the available languages are shown in the listing, prefetch available languages.
+            # This avoids an N-query issue because each row needs the available languages.
+            list_display = self.get_list_display(request)
+            if 'language_column' in list_display or 'all_languages_column' in list_display:
+                qs = qs.prefetch_related(self.model._parler_meta.root_rel_name)
+
+        return qs
 
 
     def get_object(self, request, object_id, *args, **kwargs):
@@ -268,7 +328,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return urlpatterns
         else:
             opts = self.model._meta
-            info = opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name
+            info = _get_model_meta(opts)
 
             return patterns('',
                 url(r'^(.+)/delete-translation/(.+)/$',
@@ -330,7 +390,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
         uri = iri_to_uri(request.path)
         opts = self.model._meta
-        info = (opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name)
+        info = _get_model_meta(opts)
 
         # Pass ?language=.. to next page.
         language = request.GET.get(self.query_language_key)
@@ -410,7 +470,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             ))
 
             if self.has_change_permission(request, None):
-                return HttpResponseRedirect(reverse('admin:{0}_{1}_change'.format(opts.app_label, opts.model_name if django.VERSION >= (1, 7) else opts.module_name), args=(object_id,), current_app=self.admin_site.name))
+                info = _get_model_meta(opts)
+                return HttpResponseRedirect(reverse('admin:{0}_{1}_change'.format(*info), args=(object_id,), current_app=self.admin_site.name))
             else:
                 return HttpResponseRedirect(reverse('admin:index', current_app=self.admin_site.name))
 
@@ -659,3 +720,11 @@ class SortedRelatedFieldListFilter(admin.RelatedFieldListFilter):
     def __init__(self, *args, **kwargs):
         super(SortedRelatedFieldListFilter, self).__init__(*args, **kwargs)
         self.lookup_choices = sorted(self.lookup_choices, key=lambda a: a[1].lower())
+
+
+if django.VERSION >= (1,7):
+    def _get_model_meta(opts):
+        return opts.app_label, opts.model_name
+else:
+    def _get_model_meta(opts):
+        return opts.app_label, opts.module_name

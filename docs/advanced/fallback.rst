@@ -1,8 +1,8 @@
 Translations without fallback languages
 =======================================
 
-When a translation is missing, the fallback language is used.
-However, when an object has no fallback language, this still fails.
+When a translation is missing, the fallback languages are used.
+However, when an object has no fallback languages, this still fails.
 
 There are a few solutions to this problem:
 

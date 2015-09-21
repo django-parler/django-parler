@@ -71,7 +71,7 @@ class AppTestCase(TestCase):
         cls.user, _ = User.objects.get_or_create(is_superuser=True, is_staff=True, username="admin")
 
         # Be supportive for other project settings too.
-        cls.conf_fallbacks = appsettings.PARLER_LANGUAGES['default']['fallbacks'] or ['en']
+        cls.conf_fallbacks = list(appsettings.PARLER_LANGUAGES['default']['fallbacks'] or ['en'])
         cls.conf_fallback = cls.conf_fallbacks[0]
-        cls.other_lang1 = next(x for x, _ in settings.LANGUAGES if x != cls.conf_fallback)
-        cls.other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (cls.conf_fallback, cls.other_lang1))
+        cls.other_lang1 = next(x for x, _ in settings.LANGUAGES if x not in cls.conf_fallbacks)  # "af"
+        cls.other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in cls.conf_fallbacks + [cls.other_lang1])  # "ar"
