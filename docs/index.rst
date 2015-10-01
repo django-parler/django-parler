@@ -26,6 +26,7 @@ Getting started
    quickstart
    configuration
    templatetags
+   performance
 
 In depth topics
 ---------------
@@ -35,7 +36,6 @@ In depth topics
 
    advanced/index
    compatibility
-   performance
    background
 
 API documentation
