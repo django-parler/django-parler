@@ -38,7 +38,7 @@ pattern works for a polymorphic Django model:
 
 
 	@python_2_unicode_compatible
-	class Book(TranslatableModel, Product):
+	class Book(Product, TranslatableModel):
 	    # Solution 1: use a custom manager that combines both.
 	    objects = BookManager()
 	
