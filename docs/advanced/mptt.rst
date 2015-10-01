@@ -108,7 +108,7 @@ By merging the base classes, the admin interface supports translatable MPTT mode
 
     class CategoryAdmin(TranslatableAdmin, MPTTModelAdmin):
         form = CategoryAdminForm
-        
+
         def get_prepopulated_fields(self, request, obj=None):
             return {'slug': ('title',)}  # needed for translated fields
 
