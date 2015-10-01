@@ -58,8 +58,12 @@ so it needs to be redefined:
         import django
         from parler.managers import TranslatableManager, TranslatableQuerySet
         from mptt.managers import TreeManager
-        from mptt.querysets import TreeQuerySet  # new as of mptt 0.7
-
+        
+        from mptt import VERSION as MPTT_VERSION
+        if MPTT_VERSION[1]<7:
+            from mptt.querysets import MPTTQuerySet as TreeQuerySet
+        else:
+            from mptt.querysets import TreeQuerySet  # new as of mptt 0.7
 
         class CategoryQuerySet(TranslatableQuerySet, TreeQuerySet):
             pass
