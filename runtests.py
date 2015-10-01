@@ -19,6 +19,13 @@ if not settings.configured:
                 'NAME': ':memory:'
             }
         },
+        CACHES = {
+            # By explicit since many tests also need the caching support
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'unique-snowflake',
+            }
+        },
         TEMPLATE_LOADERS = (
             'django.template.loaders.app_directories.Loader',
             'django.template.loaders.filesystem.Loader',
