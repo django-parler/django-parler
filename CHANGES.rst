@@ -7,6 +7,8 @@ Changes in git
 * Fix handling for non-nullable ``ForeignKey`` in forms and admin.
 * Fix performance of the admin list when ``all_languages_column`` or ``language_column`` is added to ``list_display`` (N-query issue).
 * Fix support for other packages that replace the BoundField class in ``Form.__get_item__`` (namely django-slug-preview_).
+* Fix editing languages that exist in the database but are not enabled in project settings.
+* Fix DeprecationWarning for Django 1.8 in the admin.
 
 
 Changes in version 1.5 (2015-06-30)
