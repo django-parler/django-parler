@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Changes in git
---------------
+Changes in version 1.5.1 (2015-10-01)
+-------------------------------------
 
 * Fix handling for non-nullable ``ForeignKey`` in forms and admin.
 * Fix performance of the admin list when ``all_languages_column`` or ``language_column`` is added to ``list_display`` (N-query issue).
