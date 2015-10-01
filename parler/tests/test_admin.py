@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
-from django.contrib.admin.util import label_for_field
+try:
+    from django.contrib.admin.utils import label_for_field
+except ImportError:
+    from django.contrib.admin.util import label_for_field
 from .utils import AppTestCase
 from .testapp.models import SimpleModel, ConcreteModel, AbstractModel
 
