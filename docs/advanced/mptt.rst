@@ -30,7 +30,7 @@ Say we have a base ``Category`` model that needs to be translatable:
     
 
     @python_2_unicode_compatible
-    class Category(TranslatableModel, MPTTModel):
+    class Category(MPTTModel, TranslatableModel): # MPTTModel must be 1st
         # The shared base model. Either place translated fields here,
         # or place them at the subclasses (see note below).
         parent = models.ForeignKey('self', related_name='children')
@@ -58,10 +58,14 @@ so it needs to be redefined:
         import django
         from parler.managers import TranslatableManager, TranslatableQuerySet
         from mptt.managers import TreeManager
-        from mptt.querysets import TreeQuerySet  # new as of mptt 0.7
+        
+        from mptt import VERSION as MPTT_VERSION
+        if MPTT_VERSION[1]<7:
+            from mptt.querysets import MPTTQuerySet as TreeQuerySet
+        else:
+            from mptt.querysets import TreeQuerySet  # new as of mptt 0.7
 
-
-        class CategoryQuerySet(TranslatableQuerySet, MPTTQuerySet):
+        class CategoryQuerySet(TranslatableQuerySet, TreeQuerySet):
             pass
 
             # Optional: make sure the Django 1.7 way of creating managers works.
@@ -98,6 +102,7 @@ By merging the base classes, the admin interface supports translatable MPTT mode
     from django.contrib import admin
     from parler.admin import TranslatableAdmin, TranslatableModelForm
     from mptt.admin import MPTTModelAdmin
+    from mptt.forms import MPTTAdminForm
     from .models import Category
 
 
