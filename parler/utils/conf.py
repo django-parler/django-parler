@@ -107,6 +107,11 @@ class LanguagesSetting(dict):
             if lang_dict['code'] == language_code:
                 return lang_dict
 
+        # no language match, search for variant: fr-ca falls back to fr
+        for lang_dict in self.get(site_id, ()):
+            if lang_dict['code'].split('-')[0] == language_code.split('-')[0]:
+                return lang_dict
+
         return self['default']
 
 

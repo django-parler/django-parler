@@ -144,6 +144,21 @@ class ModelAttributeTests(AppTestCase):
             x = SimpleModel.objects.get(pk=x.pk)
             self.assertEqual(x.tr_title, 'TITLE_FALLBACK')
 
+    def test_fallback_variant(self):
+        """Test de-us falls back to de"""
+        x = SimpleModel()
+
+        x.set_current_language('en')
+        x.tr_title = "Hello"
+
+        x.set_current_language('de')
+        x.tr_title = "Hallo"
+        x.save()
+
+        with translation.override('de-ch'):
+            x = SimpleModel.objects.get(pk=x.pk)
+            self.assertEqual(x.tr_title, 'Hallo')
+
     def test_fallback_language_no_current(self):
         """
         Test whether the fallback language will be returned,
