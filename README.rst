@@ -11,10 +11,8 @@ django-parler
     :target: https://pypi.python.org/pypi/django-parler/
 .. image:: https://img.shields.io/pypi/l/django-parler.svg
     :target: https://pypi.python.org/pypi/django-parler/
-.. image:: https://coveralls.io/repos/edoburu/django-parler/badge.png?branch=master
-    :target: https://coveralls.io/r/edoburu/django-parler
-.. image::  https://travis-ci.org/edoburu/django-parler.png?branch=master
-    :target: http://travis-ci.org/edoburu/django-parler
+.. image:: https://coveralls.io/repos/edoburu/django-parler/badge.svg?branch=master
+    :target: https://coveralls.io/github/edoburu/django-parler?branch=master
 
 Simple Django model translations without nasty hacks.
 
