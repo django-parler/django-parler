@@ -25,7 +25,10 @@ class TranslatableQuerySet(QuerySet):
 
 
     def _clone(self, klass=None, setup=False, **kw):
-        c = super(TranslatableQuerySet, self)._clone(klass, setup, **kw)
+        if django.VERSION < (1, 9):
+            kw['klass'] = klass
+            kw['setup'] = setup
+        c = super(TranslatableQuerySet, self)._clone(**kw)
         c._language = self._language
         return c
 

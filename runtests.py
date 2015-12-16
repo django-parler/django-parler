@@ -30,9 +30,9 @@ if not settings.configured:
             'django.template.loaders.app_directories.Loader',
             'django.template.loaders.filesystem.Loader',
         ),
-        TEMPLATE_CONTEXT_PROCESSORS = default_settings.TEMPLATE_CONTEXT_PROCESSORS + (
+        TEMPLATE_CONTEXT_PROCESSORS = list(default_settings.TEMPLATE_CONTEXT_PROCESSORS) + [
             'django.core.context_processors.request',
-        ),
+        ],
         INSTALLED_APPS = (
             'django.contrib.auth',
             'django.contrib.contenttypes',

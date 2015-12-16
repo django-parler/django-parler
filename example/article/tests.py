@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 # from django.conf import settings
+import unittest
 import django
-from django.utils import encoding, translation, unittest
+from django.utils import encoding, translation
 from django.test import TestCase
 from django.contrib import auth
 from django.core.urlresolvers import reverse

@@ -60,7 +60,6 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
 from django.db import models, router
 from django.db.models.base import ModelBase
-from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext, ugettext_lazy as _
 from django.utils import six
@@ -77,6 +76,10 @@ try:
 except ImportError:
     from django.utils.datastructures import SortedDict as OrderedDict
 
+if django.VERSION >= (1,9):
+    from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+else:
+    from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
 __all__ = (
     'TranslatableModel',
@@ -779,7 +782,7 @@ def _validate_master(new_class):
     """
     Check whether the 'master' field on a TranslatedFieldsModel is correctly configured.
     """
-    if not new_class.master or not isinstance(new_class.master, ReverseSingleRelatedObjectDescriptor):
+    if not new_class.master or not isinstance(new_class.master, ForwardManyToOneDescriptor):
         raise ImproperlyConfigured("{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__))
 
     rel = new_class.master.field.rel

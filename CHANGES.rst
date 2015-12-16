@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Changes in version 1.6.0 (2015-12-08)
+-------------------------------------
+
+* Added Django 1.9 support
+* Dropped support for Python < 2.7 and Django < 1.5
+
+
 Changes in version 1.5.1 (2015-10-01)
 -------------------------------------
 
