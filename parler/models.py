@@ -487,7 +487,7 @@ class TranslatableModel(models.Model):
             if not self._state.adding or self.pk is not None:
                 _cache_translation_needs_fallback(self, language_code, related_name=meta.rel_name)
 
-        fallback_choices = lang_dict['fallbacks']
+        fallback_choices = [lang_dict['code']] + lang_dict['fallbacks']
         if use_fallback and fallback_choices:
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
