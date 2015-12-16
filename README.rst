@@ -1,3 +1,6 @@
+django-parler
+=============
+
 .. image:: https://badge.fury.io/py/django-parler.png
   :target: http://badge.fury.io/py/django-parler
   :alt: PyPI version
@@ -10,8 +13,6 @@
   :target: https://coveralls.io/r/edoburu/django-parler
   :alt: coverage
 
-django-parler
-=============
 
 Simple Django model translations without nasty hacks.
 
