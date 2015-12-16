@@ -92,10 +92,11 @@ class SortedSelectMixin(object):
         else:
             return sorted(choices, key=_choicesorter)
 
+
 def _choicesorter(choice):
     if not choice[0]:
         # Allow empty choice to be first
-        return False
+        return ""
     else:
         # Lowercase to have case insensitive sorting.
         # For country list, normalize the strings (e.g. Österreich / Oman)
