@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Changes in version 1.6.0 (2015-12-16)
+Changes in version 1.6a1 (2015-12-16)
 -------------------------------------
 
 * Added Django 1.9 support
