@@ -5,13 +5,18 @@ from django.core.management import call_command
 from django.contrib.sites.models import Site
 from django.test import TestCase
 from django.test.utils import override_settings
-from importlib import import_module
 import os
 from parler import appsettings
 
+try:
+    from importlib import import_module
+except ImportError:
+    from django.utils.importlib import import_module  # Python 2.6
+
+
 def clear_cache():
     """
-    Clear internal cache of apps loading 
+    Clear internal cache of apps loading
     """
     if django.VERSION >= (1.7):
         from django.db.models import loading

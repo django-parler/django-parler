@@ -10,6 +10,12 @@ from django.core.urlresolvers import reverse
 from .models import Article, Category
 from parler.appsettings import PARLER_LANGUAGES
 
+try:
+    from unittest import skipIf, expectedFailure
+except ImportError:
+    # python<2.7
+    from django.utils.unittest import skipIf, expectedFailure
+
 
 class TestMixin(object):
 
@@ -88,7 +94,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertEqual(200, resp.status_code)
         self.assertTemplateUsed(resp, 'admin/change_list.html')
 
-    @unittest.skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
+    @skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
     def test_admin_add(self):
         self.client.login(**self.credentials)
 
@@ -113,7 +119,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertEqual(200, resp.status_code)
         self.assertInContent('<h1>Add Article (Dutch)</h1>', resp)
 
-    @unittest.skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
+    @skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
     def test_admin_add_post(self):
         self.client.login(**self.credentials)
         resp = self.client.post(
@@ -129,7 +135,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertRedirects(resp, reverse('admin:article_article_changelist'))
         self.assertEqual(1, Article.objects.filter(translations__slug='my-article').count())
 
-    @unittest.skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
+    @skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
     def test_admin_change(self):
         self.client.login(**self.credentials)
 
@@ -215,7 +221,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertEqual(200, resp.status_code)
         self.assertTemplateUsed(resp, 'admin/parler/deletion_not_allowed.html')
 
-    @unittest.expectedFailure
+    @expectedFailure
     def test_admin_delete_translation_unavailable(self):
         """
         To be fixed : when trying to delete the last language when a translation
