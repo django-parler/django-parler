@@ -74,4 +74,4 @@ class UtilTestCase(TestCase):
 
         computed = get_parler_languages_from_django_cms(cms)
         for block, block_config in computed.items():
-            self.assertEqual(cmp(computed[block], parler[block]), 0)
+            self.assertEqual(computed[block], parler[block])

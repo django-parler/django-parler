@@ -199,7 +199,7 @@ def get_parler_languages_from_django_cms(cms_languages=None):
             int_types = int
 
         parler_languages = copy.deepcopy(cms_languages)
-        for site_id, site_config in parler_languages.items():
+        for site_id, site_config in cms_languages.items():
             if site_id and (
                     not isinstance(site_id, int_types) and
                     site_id != 'default'
