@@ -75,6 +75,7 @@ def get_language_tabs(request, current_language, available_languages, css_class=
 
 
 class TabsList(list):
+
     def __init__(self, seq=(), css_class=None):
         self.css_class = css_class
         self.current_is_translated = False

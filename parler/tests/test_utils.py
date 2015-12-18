@@ -8,6 +8,7 @@ from parler.utils import get_parler_languages_from_django_cms
 
 
 class UtilTestCase(TestCase):
+
     def test_get_parler_languages_from_django_cms(self):
         cms = {
             1: [

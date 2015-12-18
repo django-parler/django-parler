@@ -9,6 +9,7 @@ from parler.utils.context import switch_language
 class ManualModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
+
 class ManualModelTranslations(TranslatedFieldsModel):
     master = models.ForeignKey(ManualModel, related_name='translations')
     tr_title = models.CharField(max_length=200)
@@ -35,7 +36,6 @@ class AnyLanguageModel(TranslatableModel):
 
     def __unicode__(self):
         return self.tr_title
-
 
 
 class EmptyModel(TranslatableModel):
@@ -74,7 +74,6 @@ class ConcreteModel(AbstractModel):
     translations = TranslatedFields(
         tr_title = models.CharField("Translated Title", max_length=200)
     )
-
 
 
 class UniqueTogetherModel(TranslatableModel):

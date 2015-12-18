@@ -25,10 +25,12 @@ def clear_cache():
         from django.apps import apps
         apps.clear_cache()
 
+
 class override_parler_settings(override_settings):
     """
     Make sure the parler.appsettings is also updated with override_settings()
     """
+
     def __init__(self, **kwargs):
         super(override_parler_settings, self).__init__(**kwargs)
         self.old_values = {}
@@ -53,7 +55,6 @@ class AppTestCase(TestCase):
     install_apps = (
         'parler.tests.testapp',
     )
-
 
     @classmethod
     def setUpClass(cls):

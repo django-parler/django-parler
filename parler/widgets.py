@@ -35,6 +35,7 @@ __all__ = (
 
 
 class SortedChoiceIterator(object):
+
     def __init__(self, field):
         self.field = field
 
@@ -50,6 +51,7 @@ class SortedSelectMixin(object):
     """
     A mixin to have the choices sorted by (translated) title.
     """
+
     def __init__(self, attrs=None, choices=()):
         super(SortedSelectMixin, self).__init__(attrs, choices=())
         self._choices = choices   # super may set self.choices=()
@@ -109,11 +111,13 @@ class SortedSelect(SortedSelectMixin, forms.Select):
     """
     pass
 
+
 class SortedSelectMultiple(SortedSelectMixin, forms.SelectMultiple):
     """
     A multiple-select box which sorts it's options.
     """
     pass
+
 
 class SortedCheckboxSelectMultiple(SortedSelectMixin, forms.CheckboxSelectMultiple):
     """

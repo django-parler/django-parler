@@ -34,6 +34,7 @@ def with_metaclass(meta, *bases):
     class metaclass(meta):
         __call__ = type.__call__
         __init__ = type.__init__
+
         def __new__(cls, name, this_bases, d):
             if this_bases is None:
                 return type.__new__(cls, name, (), d)
@@ -43,6 +44,7 @@ def with_metaclass(meta, *bases):
 
 class HideChoicesCharField(models.CharField):
     # For Django 1.7, hide the 'choices' for a field.
+
     def deconstruct(self):
         name, path, args, kwargs = models.CharField.deconstruct(self)
 

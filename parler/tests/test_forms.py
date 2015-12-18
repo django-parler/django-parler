@@ -7,23 +7,26 @@ from .testapp.models import SimpleModel, UniqueTogetherModel, ForeignKeyTranslat
 
 
 class SimpleForm(TranslatableModelForm):
+
     class Meta:
         model = SimpleModel
-        if django.VERSION >= (1,6):
+        if django.VERSION >= (1, 6):
             fields = '__all__'
 
 
 class UniqueTogetherForm(TranslatableModelForm):
+
     class Meta:
         model = UniqueTogetherModel
-        if django.VERSION >= (1,6):
+        if django.VERSION >= (1, 6):
             fields = '__all__'
 
 
 class ForeignKeyTranslationModelForm(TranslatableModelForm):
+
     class Meta:
         model = ForeignKeyTranslationModel
-        if django.VERSION >= (1,6):
+        if django.VERSION >= (1, 6):
             fields = '__all__'
 
 
@@ -31,13 +34,13 @@ class FormTests(AppTestCase):
     """
     Test model construction
     """
+
     def test_form_fields(self):
         """
         Check if the form fields exist.
         """
         self.assertTrue('shared' in SimpleForm.base_fields)
         self.assertTrue('tr_title' in SimpleForm.base_fields)
-
 
     def test_form_save(self):
         """
@@ -61,7 +64,6 @@ class FormTests(AppTestCase):
             self.assertEqual(x.shared, 'TEST')
             self.assertEqual(x.tr_title, 'TRANS')
 
-
     def test_unique_together(self):
         UniqueTogetherModel(_current_language='en', slug='foo').save()
 
@@ -75,7 +77,6 @@ class FormTests(AppTestCase):
         form.language_code = 'en'
         self.assertFalse(form.is_valid())
         self.assertRaises(ValidationError, lambda: form.instance.validate_unique())
-
 
     def test_not_null_foreignkey_in_translation(self):
         """

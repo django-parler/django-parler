@@ -88,7 +88,6 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     return languages_list
 
 
-
 class LanguagesSetting(dict):
     """
     This is the actual object type of the :ref:`PARLER_LANGUAGES` setting.
@@ -117,7 +116,6 @@ class LanguagesSetting(dict):
 
         return self['default']
 
-
     def get_active_choices(self, language_code=None, site_id=None):
         """
         Find out which translations should be visible in the site.
@@ -133,7 +131,6 @@ class LanguagesSetting(dict):
         else:
             return [language_code]
 
-
     def get_fallback_languages(self, language_code=None, site_id=None):
         """
         Find out what the fallback language is for a given language choice.
@@ -142,7 +139,6 @@ class LanguagesSetting(dict):
         """
         choices = self.get_active_choices(language_code, site_id=site_id)
         return choices[1:]
-
 
     def get_fallback_language(self, language_code=None, site_id=None):
         """
@@ -160,13 +156,11 @@ class LanguagesSetting(dict):
         else:
             return None
 
-
     def get_default_language(self):
         """
         Return the default language.
         """
         return self['default']['code']
-
 
     def get_first_language(self, site_id=None):
         """

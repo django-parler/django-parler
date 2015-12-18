@@ -6,6 +6,8 @@ from .views import ArticleSlugView
 # To intru
 from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import views as auth_views
+
+
 class PasswordResetForm(auth_forms.PasswordResetForm):
     pass
 

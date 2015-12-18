@@ -50,7 +50,6 @@ class QueryCountTests(AppTestCase):
         with translation.override(language_code):
             self.assertNumQueries(num, test_qs)
 
-
     def test_uncached_queries(self):
         """
         Test that uncached queries work, albeit slowly.
@@ -58,14 +57,12 @@ class QueryCountTests(AppTestCase):
         with override_parler_settings(PARLER_ENABLE_CACHING=False):
             self.assertNumTranslatedQueries(1 + len(self.country_list), SimpleModel.objects.all())
 
-
     def test_prefetch_queries(self):
         """
         Test that .prefetch_related() works
         """
         with override_parler_settings(PARLER_ENABLE_CACHING=False):
             self.assertNumTranslatedQueries(2, SimpleModel.objects.prefetch_related('translations'))
-
 
     def test_model_cache_queries(self):
         """

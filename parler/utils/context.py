@@ -8,6 +8,7 @@ __all__ = (
     'switch_language',
 )
 
+
 class smart_override(object):
     """
     This is a smarter version of :func:`translation.override <django.utils.translation.override>`

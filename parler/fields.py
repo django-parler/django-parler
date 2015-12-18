@@ -42,6 +42,7 @@ class TranslatedField(object):
             title = models.CharField("Title", max_length=200)
             slug = models.SlugField("Slug")
     """
+
     def __init__(self, any_language=False):
         self.model = None
         self.name = None
@@ -69,6 +70,7 @@ class TranslatedFieldDescriptor(object):
 
     This attribute proxies all get/set calls to the translated model.
     """
+
     def __init__(self, field):
         """
         :type field: TranslatedField
@@ -141,6 +143,7 @@ class LanguageCodeDescriptor(object):
     """
     This is the property to access the ``language_code`` in the ``TranslatableModel``.
     """
+
     def __get__(self, instance, instance_type=None):
         if not instance:
             raise AttributeError("language_code must be accessed via instance")

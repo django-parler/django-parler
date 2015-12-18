@@ -32,6 +32,7 @@ class TranslatedField(object):
 
             description = TranslatedField(form_class=forms.CharField, widget=TinyMCE)
     """
+
     def __init__(self, **kwargs):
         # The metaclass performs the magic replacement with the actual formfield.
         self.kwargs = kwargs
@@ -42,7 +43,6 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
     The base methods added to :class:`TranslatableModelForm` to fetch and store translated fields.
     """
     language_code = None    # Set by TranslatableAdmin.get_form() on the constructed subclass.
-
 
     def __init__(self, *args, **kwargs):
         current_language = kwargs.pop('_current_language', None)   # Used for TranslatableViewMixin
@@ -115,6 +115,8 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
 
 
 UPGRADED_CLASSES = {}
+
+
 def _upgrade_boundfield_class(cls):
     if cls is BoundField:
         return TranslatableBoundField
@@ -220,7 +222,6 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
         return super(TranslatableModelFormMetaclass, mcs).__new__(mcs, name, bases, attrs)
 
 
-
 def _get_mro_attribute(bases, name, default=None):
     for base in bases:
         try:
@@ -228,7 +229,6 @@ def _get_mro_attribute(bases, name, default=None):
         except AttributeError:
             continue
     return default
-
 
 
 def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
@@ -251,7 +251,7 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     return formfield
 
 
-if django.VERSION < (1,5):
+if django.VERSION < (1, 5):
     # Django 1.4 doesn't recognize the use of with_metaclass.
     # This breaks the form initialization in modelform_factory()
     class TranslatableModelForm(BaseTranslatableModelForm, forms.ModelForm):
@@ -270,7 +270,6 @@ else:
     # Also, the class must inherit from ModelForm,
     # or the ModelFormMetaclass will skip initialization.
     # It only adds the _meta from anything that extends ModelForm.
-
 
 
 class TranslatableBaseInlineFormSet(BaseInlineFormSet):
