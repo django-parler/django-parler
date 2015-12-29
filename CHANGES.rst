@@ -1,13 +1,15 @@
 Changelog
 =========
 
-Changes in version 1.6b1 (2015-12-16)
--------------------------------------
+Changes in version 1.6 (2015-12-29)
+-----------------------------------
 
 * Added Django 1.9 support
 * Added support to generate ``PARLER_LANGUAGES`` from Django CMS' ``CMS_LANGUAGES``.
 * Improve language variant support, e.g. ``fr-ca`` can fallback to ``fr``, and ``de-ch`` can fallback to ``de``.
 * Dropped support for Django 1.4
+
+(also released as 1.6b1 on 2015-12-16)
 
 
 Changes in version 1.5.1 (2015-10-01)
