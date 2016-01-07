@@ -1,12 +1,15 @@
 """
 The configuration wrappers that are used for :ref:`PARLER_LANGUAGES`.
 """
+
+import copy
+import sys
+
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
 from django.utils.translation import get_language
 from parler.utils.i18n import is_supported_django_language
-import warnings
 
 
 def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', **extra_defaults):
@@ -85,7 +88,6 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     return languages_list
 
 
-
 class LanguagesSetting(dict):
     """
     This is the actual object type of the :ref:`PARLER_LANGUAGES` setting.
@@ -107,8 +109,12 @@ class LanguagesSetting(dict):
             if lang_dict['code'] == language_code:
                 return lang_dict
 
-        return self['default']
+        # no language match, search for variant: fr-ca falls back to fr
+        for lang_dict in self.get(site_id, ()):
+            if lang_dict['code'].split('-')[0] == language_code.split('-')[0]:
+                return lang_dict
 
+        return self['default']
 
     def get_active_choices(self, language_code=None, site_id=None):
         """
@@ -125,7 +131,6 @@ class LanguagesSetting(dict):
         else:
             return [language_code]
 
-
     def get_fallback_languages(self, language_code=None, site_id=None):
         """
         Find out what the fallback language is for a given language choice.
@@ -134,7 +139,6 @@ class LanguagesSetting(dict):
         """
         choices = self.get_active_choices(language_code, site_id=site_id)
         return choices[1:]
-
 
     def get_fallback_language(self, language_code=None, site_id=None):
         """
@@ -152,13 +156,11 @@ class LanguagesSetting(dict):
         else:
             return None
 
-
     def get_default_language(self):
         """
         Return the default language.
         """
         return self['default']['code']
-
 
     def get_first_language(self, site_id=None):
         """
@@ -174,3 +176,39 @@ class LanguagesSetting(dict):
             # No configuration, always fallback to default language.
             # This is essentially a non-multilingual configuration.
             return self['default']['code']
+
+
+def get_parler_languages_from_django_cms(cms_languages=None):
+    """
+    Converts django CMS' setting CMS_LANGUAGES into PARLER_LANGUAGES. Since
+    CMS_LANGUAGES is a strict superset of PARLER_LANGUAGES, we do a bit of
+    cleansing to remove irrelevant items.
+    """
+    valid_keys = ['code', 'fallbacks', 'hide_untranslated',
+                  'redirect_on_fallback']
+    if cms_languages:
+        if sys.version_info < (3, 0, 0):
+            int_types = (int, long)
+        else:
+            int_types = int
+
+        parler_languages = copy.deepcopy(cms_languages)
+        for site_id, site_config in cms_languages.items():
+            if site_id and (
+                    not isinstance(site_id, int_types) and
+                    site_id != 'default'
+            ):
+                del parler_languages[site_id]
+                continue
+
+            if site_id == 'default':
+                for key, value in site_config.items():
+                    if key not in valid_keys:
+                        del parler_languages['default'][key]
+            else:
+                for i, lang_config in enumerate(site_config):
+                    for key, value in lang_config.items():
+                        if key not in valid_keys:
+                            del parler_languages[site_id][i][key]
+        return parler_languages
+    return None

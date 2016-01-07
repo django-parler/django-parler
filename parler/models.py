@@ -60,7 +60,6 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
 from django.db import models, router
 from django.db.models.base import ModelBase
-from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext, ugettext_lazy as _
 from django.utils import six
@@ -77,6 +76,10 @@ try:
 except ImportError:
     from django.utils.datastructures import SortedDict as OrderedDict
 
+if django.VERSION >= (1, 9):
+    from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+else:
+    from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
 __all__ = (
     'TranslatableModel',
@@ -143,7 +146,7 @@ def create_translations_model(shared_model, related_name, meta, **fields):
 
     # Avoid creating permissions for the translated model, these are not used at all.
     # This also avoids creating lengthy permission names above 50 chars.
-    if django.VERSION >= (1,7):
+    if django.VERSION >= (1, 7):
         meta.setdefault('default_permissions', ())
 
     # Define attributes for translation table
@@ -195,6 +198,7 @@ class TranslatedFields(object):
        To fetch the attribute, you can also query the Parler metadata:
        MyModel._parler_meta.get_model_by_related_name('translations')
     """
+
     def __init__(self, meta=None, **fields):
         self.fields = fields
         self.meta = meta
@@ -252,7 +256,6 @@ class TranslatableModel(models.Model):
         if translated_kwargs:
             self._set_translated_fields(self._current_language, **translated_kwargs)
 
-
     def _set_translated_fields(self, language_code=None, **fields):
         """
         Assign fields to the translated models.
@@ -265,7 +268,6 @@ class TranslatableModel(models.Model):
 
             objects.append(translation)
         return objects
-
 
     def create_translation(self, language_code, **fields):
         """
@@ -285,14 +287,12 @@ class TranslatableModel(models.Model):
         for translation in self._set_translated_fields(language_code, **fields):
             self.save_translation(translation)
 
-
     def get_current_language(self):
         """
         Get the current language.
         """
         # not a property, so won't conflict with model fields.
         return self._current_language
-
 
     def set_current_language(self, language_code, initialize=False):
         """
@@ -304,7 +304,6 @@ class TranslatableModel(models.Model):
         if initialize:
             self._get_translated_model(use_fallback=False, auto_create=True)
 
-
     def get_fallback_language(self):
         """
         .. deprecated:: 1.5
@@ -312,7 +311,6 @@ class TranslatableModel(models.Model):
         """
         fallbacks = self.get_fallback_languages()
         return fallbacks[0] if fallbacks else None
-
 
     def get_fallback_languages(self):
         """
@@ -322,7 +320,6 @@ class TranslatableModel(models.Model):
         lang_dict = get_language_settings(self._current_language)
         fallbacks = [lang for lang in lang_dict['fallbacks'] if lang != self._current_language]
         return fallbacks or []
-
 
     def has_translation(self, language_code=None, related_name=None):
         """
@@ -341,6 +338,13 @@ class TranslatableModel(models.Model):
             # NOTE this may also return newly auto created translations which are not saved yet.
             return self._translations_cache[meta.model][language_code] is not MISSING
         except KeyError:
+            # If there is a prefetch, will be using that.
+            # However, don't assume the prefetch contains all possible languages.
+            # With Django 1.8, there are custom Prefetch objects.
+            # TODO: improve this, detect whether this is the case.
+            if language_code in self._read_prefetched_translations(meta=meta):
+                return True
+
             # Try to fetch from the cache first.
             # If the cache returns the fallback, it means the original does not exist.
             object = get_cached_translation(self, language_code, related_name=related_name, use_fallback=True)
@@ -355,7 +359,6 @@ class TranslatableModel(models.Model):
             else:
                 return True
 
-
     def get_available_languages(self, related_name=None, include_unsaved=False):
         """
         Return the language codes of all translated variations.
@@ -366,17 +369,17 @@ class TranslatableModel(models.Model):
 
         prefetch = self._get_prefetched_translations(meta=meta)
         if prefetch is not None:
+            # TODO: this will break when using custom Django 1.8 Prefetch objects?
             db_languages = sorted(obj.language_code for obj in prefetch)
         else:
             qs = self._get_translated_queryset(meta=meta)
             db_languages = qs.values_list('language_code', flat=True).order_by('language_code')
 
         if include_unsaved:
-            local_languages = (k for k,v in six.iteritems(self._translations_cache[meta.model]) if v is not MISSING)
+            local_languages = (k for k, v in six.iteritems(self._translations_cache[meta.model]) if v is not MISSING)
             return list(set(db_languages) | set(local_languages))
         else:
             return db_languages
-
 
     def get_translation(self, language_code, related_name=None):
         """
@@ -384,7 +387,6 @@ class TranslatableModel(models.Model):
         """
         meta = self._parler_meta._get_extension_by_related_name(related_name)
         return self._get_translated_model(language_code, meta=meta)
-
 
     def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False, meta=None):
         """
@@ -476,15 +478,19 @@ class TranslatableModel(models.Model):
             if not self._state.adding or self.pk is not None:
                 _cache_translation_needs_fallback(self, language_code, related_name=meta.rel_name)
 
-        if language_code not in lang_dict['fallbacks'] and use_fallback:
+        fallback_choices = [lang_dict['code']] + lang_dict['fallbacks']
+        if use_fallback and fallback_choices:
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
-            for fallback_lang in lang_dict['fallbacks']:
+            for fallback_lang in fallback_choices:
+                if fallback_lang == language_code:  # Skip the current language, could also be fallback 1 of 2 choices
+                    continue
+
                 try:
                     return self._get_translated_model(fallback_lang, use_fallback=False, auto_create=auto_create, meta=meta)
                 except meta.model.DoesNotExist:
                     pass
-                    
+
             fallback_msg = " (tried fallbacks {0})".format(', '.join(lang_dict['fallbacks']))
 
         # None of the above, bail out!
@@ -492,7 +498,6 @@ class TranslatableModel(models.Model):
             "{0} does not have a translation for the current language!\n"
             "{0} ID #{1}, language={2}{3}".format(self._meta.verbose_name, self.pk, language_code, fallback_msg or ''
         ))
-
 
     def _get_any_translated_model(self, meta=None):
         """
@@ -531,7 +536,6 @@ class TranslatableModel(models.Model):
             _cache_translation(translation)
             return translation
 
-
     def _get_translated_queryset(self, meta=None):
         """
         Return the queryset that points to the translated model.
@@ -542,14 +546,13 @@ class TranslatableModel(models.Model):
             meta = self._parler_meta.root
 
         accessor = getattr(self, meta.rel_name)
-        if django.VERSION >= (1,6):
+        if django.VERSION >= (1, 6):
             # Call latest version
             return accessor.get_queryset()
         else:
             # Must call RelatedManager.get_query_set() and avoid calling a custom get_queryset()
             # method for packages with Django 1.6/1.7 compatibility.
             return accessor.get_query_set()
-
 
     def _get_prefetched_translations(self, meta=None):
         """
@@ -566,6 +569,24 @@ class TranslatableModel(models.Model):
         except (AttributeError, KeyError):
             return None
 
+    def _read_prefetched_translations(self, meta=None):
+        # Load the prefetched translations into the local cache.
+        if meta is None:
+            meta = self._parler_meta.root
+
+        local_cache = self._translations_cache[meta.model]
+        prefetch = self._get_prefetched_translations(meta=meta)
+
+        languages_seen = []
+        if prefetch is not None:
+            for translation in prefetch:
+                lang = translation.language_code
+                languages_seen.append(lang)
+                if lang not in local_cache or local_cache[lang] is MISSING:
+                    local_cache[lang] = translation
+
+        return languages_seen
+
     def save(self, *args, **kwargs):
         super(TranslatableModel, self).save(*args, **kwargs)
 
@@ -575,11 +596,9 @@ class TranslatableModel(models.Model):
         kwargs.pop('update_fields', None)
         self.save_translations(*args, **kwargs)
 
-
     def delete(self, using=None):
         _delete_cached_translations(self)
         super(TranslatableModel, self).delete(using)
-
 
     def validate_unique(self, exclude=None):
         """
@@ -605,7 +624,6 @@ class TranslatableModel(models.Model):
         if errors:
             raise ValidationError(errors)
 
-
     def save_translations(self, *args, **kwargs):
         """
         The method to save all translations.
@@ -629,7 +647,6 @@ class TranslatableModel(models.Model):
                     continue
 
                 self.save_translation(translation, *args, **kwargs)
-
 
     def save_translation(self, translation, *args, **kwargs):
         """
@@ -658,7 +675,6 @@ class TranslatableModel(models.Model):
                 translation.master = self
             translation.save(*args, **kwargs)
 
-
     def safe_translation_getter(self, field, default=None, language_code=None, any_language=False):
         """
         Fetch a translated property, and return a default value
@@ -669,6 +685,8 @@ class TranslatableModel(models.Model):
         for "title" attributes for example, to make sure there is at least something being displayed.
         Also consider using ``field = TranslatedField(any_language=True)`` in the model itself,
         to make this behavior the default for the given field.
+
+        .. versionchanged 1.5:: The *default* parameter may also be a callable.
         """
         meta = self._parler_meta._get_extension_by_field(field)
 
@@ -690,9 +708,15 @@ class TranslatableModel(models.Model):
         if any_language:
             translation = self._get_any_translated_model(meta=meta)
             if translation is not None:
-                return getattr(translation, field, default)
+                try:
+                    return getattr(translation, field)
+                except KeyError:
+                    pass
 
-        return default
+        if callable(default):
+            return default()
+        else:
+            return default
 
 
 class TranslatedFieldsModelBase(ModelBase):
@@ -711,7 +735,7 @@ class TranslatedFieldsModelBase(ModelBase):
 
         # Workaround compatibility issue with six.with_metaclass() and custom Django model metaclasses:
         if not attrs and name == 'NewBase':
-            if django.VERSION < (1,5):
+            if django.VERSION < (1, 5):
                 # Let Django fully ignore the class which is inserted in between.
                 # Django 1.5 fixed this, see https://code.djangoproject.com/ticket/19688
                 attrs['__module__'] = 'django.utils.six'
@@ -739,7 +763,7 @@ def _validate_master(new_class):
     """
     Check whether the 'master' field on a TranslatedFieldsModel is correctly configured.
     """
-    if not new_class.master or not isinstance(new_class.master, ReverseSingleRelatedObjectDescriptor):
+    if not new_class.master or not isinstance(new_class.master, ForwardManyToOneDescriptor):
         raise ImproperlyConfigured("{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__))
 
     rel = new_class.master.field.rel
@@ -768,10 +792,9 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
     #: The mandatory Foreign key field to the shared model.
     master = None   # FK to shared model.
 
-
     class Meta:
         abstract = True
-        if django.VERSION >= (1,7):
+        if django.VERSION >= (1, 7):
             default_permissions = ()
 
     def __init__(self, *args, **kwargs):
@@ -810,6 +833,16 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         return self.__class__.master.field.rel.related_name
 
     def save_base(self, raw=False, using=None, **kwargs):
+        # As of Django 1.8, not calling translations.activate() or disabling the translation
+        # causes get_language() to explicitly return None instead of LANGUAGE_CODE.
+        # This helps developers find solutions by bailing out properly.
+        #
+        # Either use translation.activate() first, or pass the language code explicitly via
+        # MyModel.objects.language('en').create(..)
+        assert self.language_code is not None, ""\
+            "No language is set or detected for this TranslatableModel.\n" \
+            "Is the translations system initialized?"
+
         # Send the pre_save signal
         using = using or router.db_for_write(self.__class__, instance=self)
         record_exists = self.pk is not None  # Ignoring force_insert/force_update for now.
@@ -844,7 +877,7 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         if not self._meta.auto_created:
             signals.post_translation_delete.send(sender=self.shared_model, instance=self, using=using)
 
-    if django.VERSION >= (1,8):
+    if django.VERSION >= (1, 8):
         def _get_field_values(self):
             # Use the new Model._meta API.
             return [getattr(self, field.get_attname()) for field in self._meta.get_fields()]
@@ -852,7 +885,6 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         def _get_field_values(self):
             # Return all field values in a consistent (sorted) manner.
             return [getattr(self, field.get_attname()) for field, _ in self._meta.get_fields_with_model()]
-
 
     @classmethod
     def get_translated_fields(cls):
@@ -907,7 +939,6 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
                 if shared_field.field.model is not shared_model:
                     TranslatedField(any_language=shared_field.field.any_language).contribute_to_class(shared_model, name)
 
-
         # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
         cls.DoesNotExist = type(str('DoesNotExist'), (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
@@ -927,6 +958,7 @@ class ParlerMeta(object):
     """
     Meta data for a single inheritance level.
     """
+
     def __init__(self, shared_model, translations_model, related_name):
         # Store meta information of *this* level
         self.shared_model = shared_model
@@ -953,6 +985,7 @@ class ParlerOptions(object):
     """
     Meta data for the translatable models.
     """
+
     def __init__(self, base, shared_model, translations_model, related_name):
         if translations_model is None is not issubclass(translations_model, TranslatedFieldsModel):
             raise TypeError("Expected a TranslatedFieldsModel")

@@ -23,12 +23,13 @@ class TranslatableQuerySet(QuerySet):
         super(TranslatableQuerySet, self).__init__(*args, **kwargs)
         self._language = None
 
-
     def _clone(self, klass=None, setup=False, **kw):
-        c = super(TranslatableQuerySet, self)._clone(klass, setup, **kw)
+        if django.VERSION < (1, 9):
+            kw['klass'] = klass
+            kw['setup'] = setup
+        c = super(TranslatableQuerySet, self)._clone(**kw)
         c._language = self._language
         return c
-
 
     def create(self, **kwargs):
         # Pass language setting to the object, as people start assuming things
@@ -36,7 +37,6 @@ class TranslatableQuerySet(QuerySet):
         if self._language:
             kwargs['_current_language'] = self._language
         return super(TranslatableQuerySet, self).create(**kwargs)
-
 
     def language(self, language_code=None):
         """
@@ -47,7 +47,6 @@ class TranslatableQuerySet(QuerySet):
 
         self._language = language_code
         return self
-
 
     def translated(self, *language_codes, **translated_fields):
         """
@@ -85,7 +84,6 @@ class TranslatableQuerySet(QuerySet):
             filters[relname + '__language_code__in'] = language_codes
             return self.filter(**filters).distinct()
 
-
     def active_translations(self, language_code=None, **translated_fields):
         """
         Only return objects which are translated, or have a fallback that should be displayed.
@@ -99,7 +97,6 @@ class TranslatableQuerySet(QuerySet):
         # Alternative: (language,)          when hide_untranslated == True
         language_codes = get_active_language_choices(language_code)
         return self.translated(*language_codes, **translated_fields)
-
 
     def iterator(self):
         """
@@ -131,7 +128,7 @@ class TranslatableManager(models.Manager):
     # For Django 1.5
     # Leave for Django 1.6/1.7, so backwards compatibility can be fixed.
     # It will be removed in Django 1.8, so remove it here too to avoid false promises.
-    if django.VERSION < (1,8):
+    if django.VERSION < (1, 8):
         get_query_set = get_queryset
 
     # NOTE: Fetching the queryset is done by calling self.all() here on purpose.

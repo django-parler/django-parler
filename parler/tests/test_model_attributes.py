@@ -9,6 +9,7 @@ class ModelAttributeTests(AppTestCase):
     """
     Test model construction
     """
+
     def test_untranslated_get(self):
         """
         Test the metaclass of the model.
@@ -24,7 +25,6 @@ class ModelAttributeTests(AppTestCase):
         # Raising attribute error gives some additional benefits:
         self.assertEqual(getattr(SimpleModel(), 'tr_title', 'FOO'), 'FOO')
         self.assertFalse(hasattr(SimpleModel(), 'tr_title'))
-
 
     def test_default_language(self):
         """
@@ -48,7 +48,6 @@ class ModelAttributeTests(AppTestCase):
             x.set_current_language('ca-fr')
             self.assertEqual(x.tr_title, 'TRANS_CA')
 
-
     def test_init_args(self):
         """
         Test whether passing translated attributes to __init__() works.
@@ -60,12 +59,10 @@ class ModelAttributeTests(AppTestCase):
         self.assertEqual(y.get_current_language(), 'nl')
         self.assertEqual(y.tr_title, "TRANS_TITLE")
 
-
     def test_create_args(self):
         y = SimpleModel.objects.language('nl').create(tr_title='TRANS_TITLE')
         self.assertEqual(y.get_current_language(), 'nl')
         self.assertEqual(y.tr_title, "TRANS_TITLE")
-
 
     def test_save_multiple(self):
         """
@@ -105,7 +102,6 @@ class ModelAttributeTests(AppTestCase):
         self.assertNumQueries(0, x.save_translations())
         self.assertEqual(sorted(x.get_available_languages()), ['en', 'es', 'fr', 'nl'])
 
-
     def test_empty_model(self):
         """
         Test whether a translated model without any fields still works.
@@ -119,14 +115,12 @@ class ModelAttributeTests(AppTestCase):
 
         self.assertEqual(sorted(x.get_available_languages()), ['en', 'fr', 'nl'])
 
-
     def test_create_translation(self):
         x = SimpleModel.objects.create()
         x.create_translation('en', tr_title='TITLE_EN')
         x.create_translation('fr', tr_title='TITLE_FR')
 
         self.assertEqual(sorted(x.get_available_languages()), ['en', 'fr'])
-
 
     def test_fallback_language(self):
         """
@@ -143,6 +137,22 @@ class ModelAttributeTests(AppTestCase):
         with translation.override(self.other_lang2):
             x = SimpleModel.objects.get(pk=x.pk)
             self.assertEqual(x.tr_title, 'TITLE_FALLBACK')
+
+    def test_fallback_variant(self):
+        """Test de-us falls back to de"""
+        x = SimpleModel()
+
+        x.set_current_language('de')
+        x.tr_title = "Hallo-de"
+
+        x.set_current_language('en')
+        x.tr_title = "Hello-en"
+
+        x.save()
+
+        with translation.override('de-ch'):
+            x = SimpleModel.objects.get(pk=x.pk)
+            self.assertEqual(x.tr_title, 'Hallo-de')
 
     def test_fallback_language_no_current(self):
         """
@@ -174,7 +184,6 @@ class ModelAttributeTests(AppTestCase):
 
             self.assertNumQueries(0, lambda: x._get_any_translated_model())   # Can fetch from cache next time.
             self.assertEqual(x._get_any_translated_model().language_code, self.other_lang1)
-
 
     def test_any_fallback_function(self):
         x = SimpleModel()

@@ -10,6 +10,7 @@ register = Library()
 
 
 class ObjectLanguageNode(Node):
+
     def __init__(self, nodelist, object_var, language_var=None):
         self.nodelist = nodelist  # This name is special in the Node baseclass
         self.object_var = object_var

@@ -2,7 +2,10 @@
 Overview of all settings which can be customized.
 """
 from django.conf import settings
-from parler.utils import normalize_language_code
+from parler.utils import (
+    get_parler_languages_from_django_cms,
+    normalize_language_code,
+)
 from parler.utils.conf import add_default_language_settings
 
 
@@ -11,6 +14,11 @@ PARLER_DEFAULT_LANGUAGE_CODE = getattr(settings, 'PARLER_DEFAULT_LANGUAGE_CODE',
 PARLER_SHOW_EXCLUDED_LANGUAGE_TABS = getattr(settings, 'PARLER_SHOW_EXCLUDED_LANGUAGE_TABS', False)
 
 PARLER_LANGUAGES = getattr(settings, 'PARLER_LANGUAGES', {})
+
+if not PARLER_LANGUAGES:
+    if hasattr(settings, 'CMS_LANGUAGES'):
+        PARLER_LANGUAGES = get_parler_languages_from_django_cms(
+            getattr(settings, 'CMS_LANGUAGES'))
 
 PARLER_ENABLE_CACHING = getattr(settings, 'PARLER_ENABLE_CACHING', True)
 

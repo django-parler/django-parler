@@ -119,7 +119,7 @@ LOGGING = {
     }
 }
 
-if django.VERSION >= (1,7):
+if django.VERSION >= (1, 7):
     TEST_RUNNER = 'django.test.runner.DiscoverRunner'  # silence system checks
 
 PARLER_DEFAULT_LANGUAGE = 'en'

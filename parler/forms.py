@@ -1,5 +1,9 @@
 from django import forms
+import django
+from django.core.exceptions import ObjectDoesNotExist
+from django.forms.forms import BoundField
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
+from django.utils.functional import cached_property
 from django.utils.translation import get_language
 from django.utils import six
 from parler.models import TranslationDoesNotExist
@@ -9,7 +13,7 @@ from parler.utils import compat
 __all__ = (
     'TranslatableModelForm',
     'TranslatedField',
-    'TranslatableModelFormMixin',
+    'BaseTranslatableModelForm',
     #'TranslatableModelFormMetaclass',
 )
 
@@ -28,22 +32,21 @@ class TranslatedField(object):
 
             description = TranslatedField(form_class=forms.CharField, widget=TinyMCE)
     """
+
     def __init__(self, **kwargs):
         # The metaclass performs the magic replacement with the actual formfield.
         self.kwargs = kwargs
 
 
-
-class TranslatableModelFormMixin(object):
+class BaseTranslatableModelForm(forms.BaseModelForm):
     """
     The base methods added to :class:`TranslatableModelForm` to fetch and store translated fields.
     """
     language_code = None    # Set by TranslatableAdmin.get_form() on the constructed subclass.
 
-
     def __init__(self, *args, **kwargs):
         current_language = kwargs.pop('_current_language', None)   # Used for TranslatableViewMixin
-        super(TranslatableModelFormMixin, self).__init__(*args, **kwargs)
+        super(BaseTranslatableModelForm, self).__init__(*args, **kwargs)
 
         # Load the initial values for the translated fields
         instance = kwargs.get('instance', None)
@@ -58,7 +61,12 @@ class TranslatableModelFormMixin(object):
                     pass
                 else:
                     for field in meta.get_translated_fields():
-                        self.initial.setdefault(field, getattr(translation, field))
+                        try:
+                            self.initial.setdefault(field, getattr(translation, field))
+                        except ObjectDoesNotExist:
+                            # This occurs when a ForeignKey field is part of the translation,
+                            # but it's value is still not yet, and the field has null=False.
+                            pass
 
         # Typically already set by admin
         if self.language_code is None:
@@ -75,24 +83,74 @@ class TranslatableModelFormMixin(object):
         self.save_translated_fields()
 
         # Perform the regular clean checks, this also updates self.instance
-        super(TranslatableModelFormMixin, self)._post_clean()
+        super(BaseTranslatableModelForm, self)._post_clean()
 
     def save_translated_fields(self):
         """
         Save all translated fields.
         """
         # Assign translated fields to the model (using the TranslatedAttribute descriptor)
-        for field in self._get_translated_fields():
+        for field in self._translated_fields:
             try:
                 value = self.cleaned_data[field]
             except KeyError:  # Field has a ValidationError
                 continue
             setattr(self.instance, field, value)
 
-    def _get_translated_fields(self):
+    @cached_property
+    def _translated_fields(self):
         field_names = self._meta.model._parler_meta.get_all_fields()
         return [f_name for f_name in field_names if f_name in self.fields]
 
+    def __getitem__(self, name):
+        """
+        Return a :class:`TranslatableBoundField` for translated models.
+        This extends the default ``form[field]`` interface that produces the BoundField for HTML templates.
+        """
+        boundfield = super(BaseTranslatableModelForm, self).__getitem__(name)
+        if name in self._translated_fields:
+            # Oh the wonders of Python :)
+            boundfield.__class__ = _upgrade_boundfield_class(boundfield.__class__)
+        return boundfield
+
+
+UPGRADED_CLASSES = {}
+
+
+def _upgrade_boundfield_class(cls):
+    if cls is BoundField:
+        return TranslatableBoundField
+    elif issubclass(cls, TranslatableBoundField):
+        return cls
+
+    # When some other package also performs this same trick,
+    # combine both classes on the fly. Avoid having to do that each time.
+    # This is needed for django-slug-preview
+    try:
+        return UPGRADED_CLASSES[cls]
+    except KeyError:
+        # Create once
+        new_cls = type('Translatable{0}'.format(cls.__name__), (cls, TranslatableBoundField), {})
+        UPGRADED_CLASSES[cls] = new_cls
+        return new_cls
+
+
+class TranslatableBoundField(BoundField):
+    """
+    Decorating the regular BoundField to distinguish translatable fields in the admin.
+    """
+    #: A tagging attribute, making it easy for templates to identify these fields
+    is_translatable = True
+
+    def label_tag(self, contents=None, attrs=None, *args, **kwargs):  # extra args differ per Django version
+        if attrs is None:
+            attrs = {}
+
+        attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
+        return super(TranslatableBoundField, self).label_tag(contents, attrs, *args, **kwargs)
+
+    # The as_widget() won't be overwritten to add a 'class' attr,
+    # because it will overwrite what AdminTextInputWidget and fields have as default.
 
 
 class TranslatableModelFormMetaclass(ModelFormMetaclass):
@@ -114,7 +172,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
             form_model = form_new_meta.model if form_new_meta else form_meta.model
 
             # Detect all placeholders at this class level.
-            translated_fields = [
+            placeholder_fields = [
                 f_name for f_name, attr_value in six.iteritems(attrs) if isinstance(attr_value, TranslatedField)
             ]
 
@@ -133,9 +191,10 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
 
                     for f_name in translations_model.get_translated_fields():
                         # Add translated field if not already added, and respect exclude options.
-                        if f_name in translated_fields:
+                        if f_name in placeholder_fields:
                             # The TranslatedField placeholder can be replaced directly with actual field, so do that.
                             attrs[f_name] = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **attrs[f_name].kwargs)
+
                         # The next code holds the same logic as fields_for_model()
                         # The f.editable check happens in _get_model_form_field()
                         elif f_name not in form_base_fields \
@@ -163,7 +222,6 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
         return super(TranslatableModelFormMetaclass, mcs).__new__(mcs, name, bases, attrs)
 
 
-
 def _get_mro_attribute(bases, name, default=None):
     for base in bases:
         try:
@@ -171,7 +229,6 @@ def _get_mro_attribute(bases, name, default=None):
         except AttributeError:
             continue
     return default
-
 
 
 def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
@@ -194,14 +251,25 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     return formfield
 
 
-class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass, TranslatableModelFormMixin, forms.ModelForm)):
-    """
-    The model form to use for translated models.
-    """
+if django.VERSION < (1, 5):
+    # Django 1.4 doesn't recognize the use of with_metaclass.
+    # This breaks the form initialization in modelform_factory()
+    class TranslatableModelForm(BaseTranslatableModelForm, forms.ModelForm):
+        __metaclass__ = TranslatableModelFormMetaclass
+else:
+    class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass, BaseTranslatableModelForm, forms.ModelForm)):
+        """
+        The model form to use for translated models.
+        """
+
     # six.with_metaclass does not handle more than 2 parent classes for django < 1.6
     # but we need all of them in django 1.7 to pass check admin.E016:
     #       "The value of 'form' must inherit from 'BaseModelForm'"
     # so we use our copied version in parler.utils.compat
+    #
+    # Also, the class must inherit from ModelForm,
+    # or the ModelFormMetaclass will skip initialization.
+    # It only adds the _meta from anything that extends ModelForm.
 
 
 class TranslatableBaseInlineFormSet(BaseInlineFormSet):
@@ -218,3 +286,7 @@ class TranslatableBaseInlineFormSet(BaseInlineFormSet):
     def save_new(self, form, commit=True):
         obj = super(TranslatableBaseInlineFormSet, self).save_new(form, commit)
         return obj
+
+
+# Backwards compatibility
+TranslatableModelFormMixin = BaseTranslatableModelForm

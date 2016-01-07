@@ -1,0 +1,52 @@
+.parler-language-tabs span {
+    display: inline-block;
+    padding: 5px 15px;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    position: relative;
+    left: 0;
+    top: 1px;
+    font-weight: bold;
+}
+.parler-language-tabs span.current {
+    border-bottom: 1px solid #fff;
+}
+.parler-language-tabs span.empty {
+    opacity: 0.7;
+    font-weight: normal;
+}
+.parler-language-tabs a.deletelink {
+    right: -17px;
+    bottom: 4px;
+    position: relative;
+}
+
+
+.parler-inline-language-tabs + .inline-group {
+    margin-top: 0;
+}
+
+.language-buttons {
+    font-size: smaller;
+}
+
+.language-buttons a {
+    background-color: #eee;
+    border: 1px solid #eee;  /* much nicer visually then padding */
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+.language-buttons.all-languages a.active {
+    /* Only for all_languages_column, highlight the active buttons */
+    background-color: #447E9B;
+    border: 1px solid #447E9B;
+    color: #fff;
+}
+
+.language-buttons a.untranslated {
+    /* Un all_languages_column, lower emphasis of untranslated */
+    background-color: transparent;
+    border-color: transparent;
+    color: #999;
+}

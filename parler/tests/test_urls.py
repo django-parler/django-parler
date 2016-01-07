@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import django
 from django.core.urlresolvers import reverse, resolve
 from django.test import RequestFactory
 from django.utils import translation
@@ -125,5 +126,10 @@ class UrlTests(AppTestCase):
         # Try call on the default slug (which is resolvable), although there is a translated version.
         with translation.override(self.other_lang2):
             response = self.client.get('/{0}/article/default/'.format(self.other_lang2))
-            self.assertEqual(response.status_code, 301, "Unexpected response, got: {0}, expected 301".format(response.content))
-            self.assertEqual(response['Location'], 'http://testserver/{0}/article/lang2/'.format(self.other_lang2))
+            if django.VERSION >= (1, 9):
+                self.assertRedirects(response, '/{0}/article/lang2/'.format(self.other_lang2), status_code=301)
+            elif django.VERSION >= (1, 7):
+                self.assertRedirects(response, 'http://testserver/{0}/article/lang2/'.format(self.other_lang2), status_code=301)
+            else:
+                self.assertEqual(response.status_code, 301, "Unexpected response, got: {0}, expected 301".format(response.content))
+                self.assertEqual(response['Location'], 'http://testserver/{0}/article/lang2/'.format(self.other_lang2))

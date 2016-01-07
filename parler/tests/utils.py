@@ -3,18 +3,34 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.contrib.sites.models import Site
-from django.db.models import loading
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils.importlib import import_module
 import os
 from parler import appsettings
+
+try:
+    from importlib import import_module
+except ImportError:
+    from django.utils.importlib import import_module  # Python 2.6
+
+
+def clear_cache():
+    """
+    Clear internal cache of apps loading
+    """
+    if django.VERSION >= (1.7):
+        from django.db.models import loading
+        loading.cache.loaded = False
+    else:
+        from django.apps import apps
+        apps.clear_cache()
 
 
 class override_parler_settings(override_settings):
     """
     Make sure the parler.appsettings is also updated with override_settings()
     """
+
     def __init__(self, **kwargs):
         super(override_parler_settings, self).__init__(**kwargs)
         self.old_values = {}
@@ -40,7 +56,6 @@ class AppTestCase(TestCase):
         'parler.tests.testapp',
     )
 
-
     @classmethod
     def setUpClass(cls):
         super(AppTestCase, cls).setUpClass()
@@ -57,7 +72,7 @@ class AppTestCase(TestCase):
 
                     # Flush caches
                     testapp = import_module(appname)
-                    loading.cache.loaded = False
+                    clear_cache()
                     app_directories.app_template_dirs += (
                         os.path.join(os.path.dirname(testapp.__file__), 'templates'),
                     )
@@ -71,7 +86,7 @@ class AppTestCase(TestCase):
         cls.user, _ = User.objects.get_or_create(is_superuser=True, is_staff=True, username="admin")
 
         # Be supportive for other project settings too.
-        cls.conf_fallbacks = appsettings.PARLER_LANGUAGES['default']['fallbacks'] or ['en']
+        cls.conf_fallbacks = list(appsettings.PARLER_LANGUAGES['default']['fallbacks'] or ['en'])
         cls.conf_fallback = cls.conf_fallbacks[0]
-        cls.other_lang1 = next(x for x, _ in settings.LANGUAGES if x != cls.conf_fallback)
-        cls.other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in (cls.conf_fallback, cls.other_lang1))
+        cls.other_lang1 = next(x for x, _ in settings.LANGUAGES if x not in cls.conf_fallbacks)  # "af"
+        cls.other_lang2 = next(x for x, _ in settings.LANGUAGES if x not in cls.conf_fallbacks + [cls.other_lang1])  # "ar"

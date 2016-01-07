@@ -8,6 +8,7 @@ class ModelConstructionTests(AppTestCase):
     """
     Test model construction
     """
+
     def test_manual_model(self):
         """
         Test the metaclass of the model.
@@ -17,13 +18,11 @@ class ModelConstructionTests(AppTestCase):
         self.assertIs(ManualModel().translations.model, ManualModelTranslations)
         self.assertIs(ManualModel._parler_meta.root_model, ManualModelTranslations)
 
-
     def test_simple_model(self):
         """
         Test the simple model syntax.
         """
         self.assertIs(SimpleModel().translations.model, SimpleModel._parler_meta.root_model)
-
 
     def test_inherited_model(self):
         """
@@ -44,7 +43,6 @@ class ModelConstructionTests(AppTestCase):
         self.assertEqual(Level2._parler_meta.root_model.__name__, 'Level1Translation')
         self.assertEqual(Level2._parler_meta.root_rel_name, 'l1_translations')
         self.assertEqual(Level2._parler_meta.root, Level1._parler_meta.root)
-
 
     def test_proxy_model(self):
         """
@@ -67,7 +65,6 @@ class ModelConstructionTests(AppTestCase):
         self.assertEqual(ProxyModel._parler_meta.root_rel_name, 'base_translations')
         self.assertEqual(ProxyModel._parler_meta.root, ProxyBase._parler_meta.root)
 
-
     def test_double_translation_table(self):
         """
         Test how assigning two translation tables works.
@@ -76,7 +73,6 @@ class ModelConstructionTests(AppTestCase):
         self.assertEqual(len(DoubleModel._parler_meta), 2)
         self.assertEqual(DoubleModel._parler_meta[0].rel_name, "base_translations")
         self.assertEqual(DoubleModel._parler_meta[1].rel_name, "more_translations")
-
 
     def test_overlapping_proxy_model(self):
         """
@@ -90,7 +86,6 @@ class ModelConstructionTests(AppTestCase):
 
         # Refetch from db, should raise an error.
         self.assertRaises(RuntimeError, lambda: RegularModelProxy.objects.all()[0])
-
 
     def test_model_with_different_pks(self):
         """

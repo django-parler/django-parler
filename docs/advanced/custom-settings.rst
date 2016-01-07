@@ -21,7 +21,7 @@ This is rarely needed. Example::
         hide_untranslated=False,
         hide_untranslated_menu_items=False,
         code=MYCMS_DEFAULT_LANGUAGE_CODE,
-        fallback=MYCMS_DEFAULT_LANGUAGE_CODE
+        fallbacks=[MYCMS_DEFAULT_LANGUAGE_CODE]
     )
 
 Instead of using the functions from :mod:`parler.utils` (such as :func:`~parler.utils.get_active_language_choices`)

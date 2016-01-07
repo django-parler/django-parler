@@ -10,8 +10,6 @@ It's also useful for abstract models; add a :class:`TranslatedField` to
 indicate that the derived model is expected to provide that translatable field.
 """
 from __future__ import unicode_literals
-from django.core.exceptions import FieldError
-from django.db.models.fields import Field
 from django.forms.forms import pretty_name
 
 
@@ -44,6 +42,7 @@ class TranslatedField(object):
             title = models.CharField("Title", max_length=200)
             slug = models.SlugField("Slug")
     """
+
     def __init__(self, any_language=False):
         self.model = None
         self.name = None
@@ -71,6 +70,7 @@ class TranslatedFieldDescriptor(object):
 
     This attribute proxies all get/set calls to the translated model.
     """
+
     def __init__(self, field):
         """
         :type field: TranslatedField
@@ -123,7 +123,7 @@ class TranslatedFieldDescriptor(object):
         """
         Ensure that the admin ``list_display`` renders the correct verbose name for translated fields.
 
-        The :func:`~django.contrib.admin.util.label_for_field` function
+        The :func:`~django.contrib.admin.utils.label_for_field` function
         uses :func:`~django.db.models.Options.get_field_by_name` to find the find and ``verbose_name``.
         However, for translated fields, this option does not exist,
         hence it falls back to reading the attribute and trying ``short_description``.
@@ -143,6 +143,7 @@ class LanguageCodeDescriptor(object):
     """
     This is the property to access the ``language_code`` in the ``TranslatableModel``.
     """
+
     def __get__(self, instance, instance_type=None):
         if not instance:
             raise AttributeError("language_code must be accessed via instance")

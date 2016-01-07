@@ -11,6 +11,10 @@ from .i18n import (
     is_multilingual_project,
 )
 
+from .conf import (
+    get_parler_languages_from_django_cms,
+)
+
 __all__ = (
     'normalize_language_code',
     'is_supported_django_language',

@@ -19,13 +19,20 @@ if not settings.configured:
                 'NAME': ':memory:'
             }
         },
+        CACHES = {
+            # By explicit since many tests also need the caching support
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'unique-snowflake',
+            }
+        },
         TEMPLATE_LOADERS = (
             'django.template.loaders.app_directories.Loader',
             'django.template.loaders.filesystem.Loader',
         ),
-        TEMPLATE_CONTEXT_PROCESSORS = default_settings.TEMPLATE_CONTEXT_PROCESSORS + (
+        TEMPLATE_CONTEXT_PROCESSORS = list(default_settings.TEMPLATE_CONTEXT_PROCESSORS) + [
             'django.core.context_processors.request',
-        ),
+        ],
         INSTALLED_APPS = (
             'django.contrib.auth',
             'django.contrib.contenttypes',
@@ -45,7 +52,7 @@ if not settings.configured:
             'django.middleware.locale.LocaleMiddleware',  # / will be redirected to /<locale>/
         ),
         ROOT_URLCONF = 'example.urls',
-        TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner' if django.VERSION < (1,6) else 'django.test.runner.DiscoverRunner',
+        TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner' if django.VERSION < (1, 6) else 'django.test.runner.DiscoverRunner',
 
         SITE_ID = 4,
         LANGUAGE_CODE = 'en',

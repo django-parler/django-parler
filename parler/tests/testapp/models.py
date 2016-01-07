@@ -9,6 +9,7 @@ from parler.utils.context import switch_language
 class ManualModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
+
 class ManualModelTranslations(TranslatedFieldsModel):
     master = models.ForeignKey(ManualModel, related_name='translations')
     tr_title = models.CharField(max_length=200)
@@ -35,7 +36,6 @@ class AnyLanguageModel(TranslatableModel):
 
     def __unicode__(self):
         return self.tr_title
-
 
 
 class EmptyModel(TranslatableModel):
@@ -74,7 +74,6 @@ class ConcreteModel(AbstractModel):
     translations = TranslatedFields(
         tr_title = models.CharField("Translated Title", max_length=200)
     )
-
 
 
 class UniqueTogetherModel(TranslatableModel):
@@ -118,9 +117,11 @@ class ProxyModel(ProxyBase):
 class DoubleModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
+
 class DoubleModelTranslations(TranslatedFieldsModel):
     master = models.ForeignKey(DoubleModel, related_name='base_translations')
     l1_title = models.CharField(max_length=200)
+
 
 class DoubleModelMoreTranslations(TranslatedFieldsModel):
     master = models.ForeignKey(DoubleModel, related_name='more_translations')
@@ -135,6 +136,14 @@ class RegularModel(models.Model):
 class CharModel(TranslatableModel):
     id = models.CharField(max_length=45, primary_key=True)
 
+
 class CharModelTranslation(TranslatedFieldsModel):
     master = models.ForeignKey(CharModel)
     tr_title = models.CharField(max_length=200)
+
+
+class ForeignKeyTranslationModel(TranslatableModel):
+    translations = TranslatedFields(
+        translated_foreign = models.ForeignKey('RegularModel'),
+    )
+    shared = models.CharField(max_length=200)

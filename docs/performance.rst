@@ -44,4 +44,12 @@ all translations can be fetched in a single query:
 Note that the prefetch reads the information of all languages,
 not just the currently active language.
 
+When you display translated objects in a form, e.g. a select list, you can prefetch the queryset too:
+
+.. code-block:: python
+
+    class MyModelAdminForm(TranslatableModelForm):
+        def __init__(self, *args, **kwargs):
+            super(MyModelAdminForm, self).__init__(*args, **kwargs)
+            self.fields['some_field'].queryset = self.fields['some_field'].queryset.prefetch_related('translations')
 

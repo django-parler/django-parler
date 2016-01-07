@@ -5,6 +5,7 @@ These functions are used internally by django-parler to fetch model data.
 Since all calls to the translation table are routed through our model descriptor fields,
 cache access and expiry is rather simple to implement.
 """
+import django
 from django.core.cache import cache
 from django.utils import six
 from parler import appsettings
@@ -13,18 +14,21 @@ from parler.utils import get_language_settings
 if six.PY3:
     long = int
 
-try:
-    DEFAULT_TIMEOUT = cache.cache.default_timeout
-except AttributeError:
+if django.VERSION >= (1, 6):
+    DEFAULT_TIMEOUT = cache.default_timeout
+else:
     DEFAULT_TIMEOUT = 0
 
 
 class IsMissing(object):
     # Allow _get_any_translated_model() to evaluate this as False.
+
     def __nonzero__(self):
         return False   # Python 2
+
     def __bool__(self):
         return False   # Python 3
+
     def __repr__(self):
         return "<IsMissing>"
 
@@ -123,8 +127,14 @@ def _get_cached_values(instance, translated_model, language_code, use_fallback=F
         # Allow to return the fallback language instead.
         if use_fallback:
             lang_dict = get_language_settings(language_code)
-            if lang_dict['fallback'] != language_code:
-                return _get_cached_values(instance, translated_model, lang_dict['fallback'], use_fallback=False)
+            # iterate over list of fallback languages, which should be already
+            # in proper order
+            for fallback_lang in lang_dict['fallbacks']:
+                if fallback_lang != language_code:
+                    return _get_cached_values(
+                        instance, translated_model, fallback_lang,
+                        use_fallback=False
+                    )
         return None
 
     values['master'] = instance
@@ -151,7 +161,6 @@ def _cache_translation(translation, timeout=DEFAULT_TIMEOUT):
 
     key = get_translation_cache_key(translation.__class__, translation.master_id, translation.language_code)
     cache.set(key, values, timeout=timeout)
-
 
 
 def _cache_translation_needs_fallback(instance, language_code, related_name, timeout=DEFAULT_TIMEOUT):

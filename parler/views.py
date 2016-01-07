@@ -70,7 +70,6 @@ class ViewUrlMixin(object):
     #: should correspond with the view name in the URLConf.
     view_url_name = None
 
-
     def get_view_url(self):
         """
         This method is used by the ``get_translated_url`` template tag.
@@ -90,8 +89,7 @@ class ViewUrlMixin(object):
 
         return reverse(self.view_url_name, args=self.args, kwargs=self.kwargs)
 
-
-    if django.VERSION < (1,5):
+    if django.VERSION < (1, 5):
         # The `get_translated_url` tag relies on the fact that the template can access the view again.
         # This was not possible until Django 1.5, so provide the `ContextMixin` logic for earlier Django versions.
 
@@ -119,6 +117,7 @@ class TranslatableSlugMixin(object):
             model = Article
             template_name = 'article/details.html'
     """
+
     def get_translated_filters(self, slug):
         """
         Allow passing other filters for translated fields.
@@ -199,10 +198,10 @@ class FallbackLanguageResolved(Exception):
     An object was resolved in the fallback language, while it could be in the normal language.
     This exception is used internally to control code flow.
     """
+
     def __init__(self, object, correct_language):
         self.object = object
         self.correct_language = correct_language
-
 
 
 class LanguageChoiceMixin(object):
@@ -212,23 +211,20 @@ class LanguageChoiceMixin(object):
     """
     query_language_key = 'language'
 
-
     def get_object(self, queryset=None):
         """
         Assign the language for the retrieved object.
         """
         object = super(LanguageChoiceMixin, self).get_object(queryset)
         if isinstance(object, TranslatableModel):
-            object.set_current_language(self._language(object), initialize=True)
+            object.set_current_language(self.get_language(), initialize=True)
         return object
 
-
-    def _language(self, object=None):
+    def get_language(self):
         """
         Get the language parameter from the current request.
         """
-        return get_language_parameter(self.request, self.query_language_key, object=object, default=self.get_default_language(object=object))
-
+        return get_language_parameter(self.request, self.query_language_key, default=self.get_default_language(object=object))
 
     def get_default_language(self, object=None):
         """
@@ -238,22 +234,20 @@ class LanguageChoiceMixin(object):
         # Some users may want to override this, to return get_language()
         return None
 
-
     def get_current_language(self):
         """
         Return the current language for the currently displayed object fields.
+        This reads ``self.object.get_current_language()`` and falls back to :func:`get_language`.
         """
         if self.object is not None:
             return self.object.get_current_language()
         else:
-            return self._language()
-
+            return self.get_language()
 
     def get_context_data(self, **kwargs):
         context = super(LanguageChoiceMixin, self).get_context_data(**kwargs)
         context['language_tabs'] = self.get_language_tabs()
         return context
-
 
     def get_language_tabs(self):
         """
@@ -266,10 +260,6 @@ class LanguageChoiceMixin(object):
             available_languages = []
 
         return get_language_tabs(self.request, current_language, available_languages)
-
-
-# Backwards compatibility
-TranslatableSingleObjectMixin = LanguageChoiceMixin
 
 
 class TranslatableModelFormMixin(LanguageChoiceMixin):
@@ -303,7 +293,6 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
                 model = _get_view_model(self)
                 return modelform_factory(model, form=TranslatableModelForm)
 
-
     def get_form_kwargs(self):
         """
         Pass the current language to the form.
@@ -313,7 +302,6 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
         # If that would be done here, the original globally defined form class would be updated.
         kwargs['_current_language'] = self.get_form_language()
         return kwargs
-
 
     # Backwards compatibility
     # Make sure overriding get_current_language() affects get_form_language() too.
@@ -340,7 +328,6 @@ class TranslatableUpdateView(TranslatableModelFormMixin, generic.UpdateView):
     pass
 
 
-
 def _get_view_model(self):
     if self.model is not None:
         # If a model has been explicitly provided, use it
@@ -351,3 +338,7 @@ def _get_view_model(self):
     else:
         # Try to get a queryset and extract the model class from that
         return self.get_queryset().model
+
+
+# Backwards compatibility
+TranslatableSingleObjectMixin = LanguageChoiceMixin

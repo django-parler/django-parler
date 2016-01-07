@@ -1,17 +1,18 @@
-.. image:: https://badge.fury.io/py/django-parler.png
-  :target: http://badge.fury.io/py/django-parler
-  :alt: PyPI version
-
-.. image::  https://travis-ci.org/edoburu/django-parler.png?branch=master
-  :target: http://travis-ci.org/edoburu/django-parler
-  :alt: build-status
-
-.. image:: https://coveralls.io/repos/edoburu/django-parler/badge.png?branch=master
-  :target: https://coveralls.io/r/edoburu/django-parler
-  :alt: coverage
-
 django-parler
 =============
+
+.. image:: https://travis-ci.org/edoburu/django-parler.svg?branch=master
+    :target: http://travis-ci.org/edoburu/django-parler
+.. image:: https://img.shields.io/pypi/v/django-parler.svg
+    :target: https://pypi.python.org/pypi/django-parler/
+.. image:: https://img.shields.io/pypi/dm/django-parler.svg
+    :target: https://pypi.python.org/pypi/django-parler/
+.. image:: https://img.shields.io/badge/wheel-yes-green.svg
+    :target: https://pypi.python.org/pypi/django-parler/
+.. image:: https://img.shields.io/pypi/l/django-parler.svg
+    :target: https://pypi.python.org/pypi/django-parler/
+.. image:: https://coveralls.io/repos/edoburu/django-parler/badge.svg?branch=master
+    :target: https://coveralls.io/github/edoburu/django-parler?branch=master
 
 Simple Django model translations without nasty hacks.
 

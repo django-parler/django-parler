@@ -1,6 +1,6 @@
 from django.db import models
 from parler.models import TranslatableModel, TranslatedFields
-from parler.tests import RegularModel
+from parler.tests.testapp.models import RegularModel
 
 
 class RegularModelProxy(TranslatableModel, RegularModel):

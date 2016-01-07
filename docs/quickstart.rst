@@ -60,14 +60,14 @@ To query translated fields, use the :func:`~parler.managers.TranslatableManager.
 
     MyObject.objects.translated(title='cheese omelet')
 
-To access objects in both the current and possibly the fallback language, use::
+To access objects in both the current and the configured fallback languages, use::
 
     MyObject.objects.active_translations(title='cheese omelet')
 
 This returns objects in the languages which are considered "active", which are:
 
 * The current language
-* The fallback language when ``hide_untranslated=False`` in the :ref:`PARLER_LANGUAGES` setting.
+* The fallback languages when ``hide_untranslated=False`` in the :ref:`PARLER_LANGUAGES` setting.
 
 .. note::
 
@@ -109,7 +109,7 @@ And a function to query just a specific field::
 Configuration
 -------------
 
-By default, the fallback language is the same as ``LANGUAGE_CODE``.
+By default, the fallback languages are the same as: ``[LANGUAGE_CODE]``.
 The fallback language can be changed in the settings::
 
     PARLER_DEFAULT_LANGUAGE_CODE = 'en'
@@ -125,7 +125,7 @@ Optionally, the admin tabs can be configured too::
             {'code': 'nl',},
         ),
         'default': {
-            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+            'fallbacks': ['en'],          # defaults to PARLER_DEFAULT_LANGUAGE_CODE
             'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
         }
     }

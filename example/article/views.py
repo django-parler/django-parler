@@ -6,6 +6,7 @@ from parler.views import TranslatableSlugMixin
 
 class BaseArticleMixin(object):
     # Only show published articles.
+
     def get_queryset(self):
         return super(BaseArticleMixin, self).get_queryset().filter(published=True)
 
