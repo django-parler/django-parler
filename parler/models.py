@@ -82,6 +82,7 @@ else:
     from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
 __all__ = (
+    'TranslatableModelMixin',
     'TranslatableModel',
     'TranslatedFields',
     'TranslatedFieldsModel',
@@ -210,23 +211,17 @@ class TranslatedFields(object):
         create_translations_model(cls, name, self.meta, **self.fields)
 
 
-class TranslatableModel(models.Model):
+class TranslatableModelMixin(object):
     """
-    Base model class to handle translations.
+    Base model mixin class to handle translations.
 
     All translatable fields will appear on this model, proxying the calls to the :class:`TranslatedFieldsModel`.
     """
-    class Meta:
-        abstract = True
-
     #: Access to the metadata of the translatable model
     _parler_meta = None
 
     #: Access to the language code
     language_code = LanguageCodeDescriptor()
-
-    # change the default manager to the translation manager
-    objects = TranslatableManager()
 
     def __init__(self, *args, **kwargs):
         # Still allow to pass the translated fields (e.g. title=...) to this function.
@@ -247,7 +242,7 @@ class TranslatableModel(models.Model):
         self._current_language = None
 
         # Run original Django model __init__
-        super(TranslatableModel, self).__init__(*args, **kwargs)
+        super(TranslatableModelMixin, self).__init__(*args, **kwargs)
 
         # Assign translated args manually.
         self._translations_cache = defaultdict(dict)
@@ -588,7 +583,7 @@ class TranslatableModel(models.Model):
         return languages_seen
 
     def save(self, *args, **kwargs):
-        super(TranslatableModel, self).save(*args, **kwargs)
+        super(TranslatableModelMixin, self).save(*args, **kwargs)
 
         # Makes no sense to add these for translated model
         # Even worse: mptt 0.7 injects this parameter when it avoids updating the lft/rgt fields,
@@ -598,7 +593,7 @@ class TranslatableModel(models.Model):
 
     def delete(self, using=None):
         _delete_cached_translations(self)
-        super(TranslatableModel, self).delete(using)
+        super(TranslatableModelMixin, self).delete(using)
 
     def validate_unique(self, exclude=None):
         """
@@ -607,7 +602,7 @@ class TranslatableModel(models.Model):
         # This is called from ModelForm._post_clean() or Model.full_clean()
         errors = {}
         try:
-            super(TranslatableModel, self).validate_unique(exclude=exclude)
+            super(TranslatableModelMixin, self).validate_unique(exclude=exclude)
         except ValidationError as e:
             errors = e.message_dict  # Django 1.5 + 1.6 compatible
 
@@ -717,6 +712,19 @@ class TranslatableModel(models.Model):
             return default()
         else:
             return default
+
+
+class TranslatableModel(TranslatableModelMixin, models.Model):
+    """
+    Base model class to handle translations.
+
+    All translatable fields will appear on this model, proxying the calls to the :class:`TranslatedFieldsModel`.
+    """
+    class Meta:
+        abstract = True
+
+    # change the default manager to the translation manager
+    objects = TranslatableManager()
 
 
 class TranslatedFieldsModelBase(ModelBase):
@@ -840,7 +848,7 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         # Either use translation.activate() first, or pass the language code explicitly via
         # MyModel.objects.language('en').create(..)
         assert self.language_code is not None, ""\
-            "No language is set or detected for this TranslatableModel.\n" \
+            "No language is set or detected for this TranslatableModelMixin.\n" \
             "Is the translations system initialized?"
 
         # Send the pre_save signal
