@@ -108,7 +108,7 @@ class TranslatableQuerySet(QuerySet):
         base_iterator = super(TranslatableQuerySet, self).iterator()
         for obj in base_iterator:
             # Apply the language setting.
-            if self._language:
+            if self._language and isinstance(obj, models.Model):
                 obj.set_current_language(self._language)
 
             yield obj
