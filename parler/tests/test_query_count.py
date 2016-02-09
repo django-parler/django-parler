@@ -1,3 +1,5 @@
+import datetime as dt
+
 from django.core.cache import cache
 from django.utils import translation
 from django.utils.timezone import now
@@ -64,14 +66,18 @@ class QueryCountTests(AppTestCase):
 
     def test_iteration_with_non_qs_methods(self):
         """
-        Test QuerySet methods that do not return QuerySets.
+        Test QuerySet methods that do not return QuerySets of models.
         """
-        obj = DateTimeModel.objects.first()
-        self.assertIn(obj,
-                      DateTimeModel.objects.language(self.conf_fallback).all())
-        self.assertIn(obj.datetime.date(),
-                      DateTimeModel.objects.language(self.conf_fallback).dates(
-                          'datetime', 'day'))
+        # We have at least one object created in setUpClass.
+        obj = DateTimeModel.objects.all()[0]
+        self.assertEqual(
+            obj,
+            DateTimeModel.objects.language(self.conf_fallback).all()[0])
+        # Test iteration through QuerySet of non-model objects.
+        self.assertIsInstance(
+            DateTimeModel.objects.language(self.conf_fallback).dates(
+                'datetime', 'day')[0],
+            dt.date)
 
     def test_prefetch_queries(self):
         """
