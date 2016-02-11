@@ -316,12 +316,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             opts = self.model._meta
             info = _get_model_meta(opts)
 
-            return patterns('',
+            return [
                 url(r'^(.+)/delete-translation/(.+)/$',
                     self.admin_site.admin_view(self.delete_translation),
                     name='{0}_{1}_delete_translation'.format(*info)
-                ),
-            ) + urlpatterns
+                    ),
+            ] + urlpatterns
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         """

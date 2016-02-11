@@ -1,6 +1,6 @@
 from __future__ import print_function
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.contrib.sites.models import Site
 from django.test import TestCase
@@ -13,14 +13,23 @@ try:
 except ImportError:
     from django.utils.importlib import import_module  # Python 2.6
 
+try:
+    User = get_user_model()
+except ImportError:  # django < 1.5
+    from django.contrib.auth.models import User
+
 
 def clear_cache():
     """
     Clear internal cache of apps loading
     """
+    import django
     if django.VERSION >= (1.7):
-        from django.db.models import loading
-        loading.cache.loaded = False
+        try:
+            from django.db.models import loading
+            loading.cache.loaded = False
+        except ImportError:  # Django >= 1.9
+            pass
     else:
         from django.apps import apps
         apps.clear_cache()
