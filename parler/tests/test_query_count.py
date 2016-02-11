@@ -1,9 +1,12 @@
+import datetime as dt
+
 from django.core.cache import cache
 from django.utils import translation
+from django.utils.timezone import now
 from parler import appsettings
 
 from .utils import AppTestCase, override_parler_settings
-from .testapp.models import SimpleModel
+from .testapp.models import SimpleModel, DateTimeModel
 
 
 class QueryCountTests(AppTestCase):
@@ -31,6 +34,10 @@ class QueryCountTests(AppTestCase):
         for country in cls.country_list:
             SimpleModel.objects.create(_current_language=cls.conf_fallback, tr_title=country)
 
+
+        DateTimeModel.objects.create(_current_language=cls.conf_fallback,
+                                     tr_title=country, datetime=now())
+
     #def setUp(self):
     #    cache.clear()
 
@@ -56,6 +63,21 @@ class QueryCountTests(AppTestCase):
         """
         with override_parler_settings(PARLER_ENABLE_CACHING=False):
             self.assertNumTranslatedQueries(1 + len(self.country_list), SimpleModel.objects.all())
+
+    def test_iteration_with_non_qs_methods(self):
+        """
+        Test QuerySet methods that do not return QuerySets of models.
+        """
+        # We have at least one object created in setUpClass.
+        obj = DateTimeModel.objects.all()[0]
+        self.assertEqual(
+            obj,
+            DateTimeModel.objects.language(self.conf_fallback).all()[0])
+        # Test iteration through QuerySet of non-model objects.
+        self.assertIsInstance(
+            DateTimeModel.objects.language(self.conf_fallback).dates(
+                'datetime', 'day')[0],
+            dt.date)
 
     def test_prefetch_queries(self):
         """

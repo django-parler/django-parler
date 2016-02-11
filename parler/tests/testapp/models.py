@@ -26,6 +26,18 @@ class SimpleModel(TranslatableModel):
         return self.tr_title
 
 
+class DateTimeModel(TranslatableModel):
+    shared = models.CharField(max_length=200, default='')
+    datetime = models.DateTimeField()
+
+    translations = TranslatedFields(
+        tr_title=models.CharField("Translated Title", max_length=200)
+    )
+
+    def __unicode__(self):
+        return self.tr_title
+
+
 class AnyLanguageModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
     tr_title = TranslatedField(any_language=True)
