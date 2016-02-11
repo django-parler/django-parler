@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Changes in version 1.6.1 (2016-02-11)
+-------------------------------------
+
+* Fix queryset ``.dates()`` iteration in newer Django versions.
+* Fixed Django 1.10 deprecation warnings in the admin.
+* Avoided absolute URLs in language tabs.
+
+
 Changes in version 1.6 (2015-12-29)
 -----------------------------------
 
