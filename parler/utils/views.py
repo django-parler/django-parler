@@ -36,14 +36,12 @@ def get_language_tabs(request, current_language, available_languages, css_class=
     get = request.GET.copy()  # QueryDict object
     tab_languages = []
 
-    base_url = '{0}://{1}{2}'.format(request.is_secure() and 'https' or 'http', request.get_host(), request.path)
-
     site_id = getattr(settings, 'SITE_ID', None)
     for lang_dict in appsettings.PARLER_LANGUAGES.get(site_id, ()):
         code = lang_dict['code']
         title = get_language_title(code)
         get['language'] = code
-        url = '{0}?{1}'.format(base_url, get.urlencode())
+        url = '?{0}'.format(get.urlencode())
 
         if code == current_language:
             status = 'current'
@@ -60,7 +58,7 @@ def get_language_tabs(request, current_language, available_languages, css_class=
         for code in available_languages:
             if code not in tab_languages:
                 get['language'] = code
-                url = '{0}?{1}'.format(base_url, get.urlencode())
+                url = '?{0}'.format(get.urlencode())
 
                 if code == current_language:
                     status = 'current'
