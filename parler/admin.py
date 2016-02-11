@@ -39,7 +39,7 @@ See the :ref:`admin compatibility page <admin-compat>` for details.
 from __future__ import unicode_literals
 import django
 from django.conf import settings
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
 try:
