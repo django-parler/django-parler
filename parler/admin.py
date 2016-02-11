@@ -343,7 +343,13 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             # Otherwise AdminModel.render_change_form will clean the URL
             # and remove the "language" when coming from a filtered object
             # list causing the wrong translation to be changed.
-            form_url = add_preserved_filters({'preserved_filters': urlencode({'language': lang_code}), 'opts': self.model._meta}, form_url)
+
+            params = request.GET.dict()
+            params['language'] = lang_code
+            form_url = add_preserved_filters({
+                'preserved_filters': urlencode(params),
+                'opts': self.model._meta
+            }, form_url)
 
         # django-fluent-pages uses the same technique
         if 'default_change_form_template' not in context:
