@@ -61,7 +61,7 @@ from django.utils import six
 from parler import appsettings
 from parler.forms import TranslatableModelForm, TranslatableBaseInlineFormSet
 from parler.managers import TranslatableQuerySet
-from parler.models import TranslatableModel
+from parler.models import TranslatableModelMixin
 from parler.utils.compat import transaction_atomic, add_preserved_filters
 from parler.utils.i18n import get_language_title, is_multilingual_project
 from parler.utils.views import get_language_parameter, get_language_tabs
@@ -114,7 +114,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
 
     def _has_translatable_model(self):
         # Allow fallback to regular models when needed.
-        return issubclass(self.model, TranslatableModel)
+        return issubclass(self.model, TranslatableModelMixin)
 
     def _language(self, request, obj=None):
         """
@@ -542,7 +542,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             inline_instances = self.get_inline_instances(request, obj=obj)
 
         for inline in inline_instances:
-            if issubclass(inline.model, TranslatableModel):
+            if issubclass(inline.model, TranslatableModelMixin):
                 # leverage inlineformset_factory() to find the ForeignKey.
                 # This also resolves the fk_name if it's set.
                 fk = inline.get_formset(request, obj).fk
@@ -594,7 +594,7 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
 
     def _has_translatable_parent_model(self):
         # Allow fallback to regular models when needed.
-        return issubclass(self.parent_model, TranslatableModel)
+        return issubclass(self.parent_model, TranslatableModelMixin)
 
     def get_queryset_language(self, request):
         if not is_multilingual_project():
