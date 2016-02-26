@@ -66,7 +66,7 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
         defaults['code'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
     if 'fallbacks' not in defaults:
         from parler import appsettings
-        defaults['fallbacks'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+        defaults['fallbacks'] = [appsettings.PARLER_DEFAULT_LANGUAGE_CODE]
 
     if not is_supported_django_language(defaults['code']):
         raise ImproperlyConfigured("The value for {0}['defaults']['code'] ('{1}') does not exist in LANGUAGES".format(var_name, defaults['code']))
