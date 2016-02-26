@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Changes in git
+-------------
+
+* Fix tuple/list issues with ``fallbacks`` option.
+* Added ``TranslatableModelMixin`` to handle complex model inheritance issues.
+* Fixed preserving GET args in admin change form view.
+
+
 Changes in version 1.6.1 (2016-02-11)
 -------------------------------------
 
