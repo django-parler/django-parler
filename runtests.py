@@ -10,6 +10,40 @@ if not settings.configured:
 
     sys.path.insert(0, path.join(module_root, 'example'))
 
+    if django.VERSION >= (1, 8):
+        template_settings = dict(
+            TEMPLATES = [
+                {
+                    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                    'DIRS': (),
+                    'OPTIONS': {
+                        'loaders': (
+                            'django.template.loaders.filesystem.Loader',
+                            'django.template.loaders.app_directories.Loader',
+                        ),
+                        'context_processors': (
+                            'django.template.context_processors.debug',
+                            'django.template.context_processors.i18n',
+                            'django.template.context_processors.media',
+                            'django.template.context_processors.request',
+                            'django.template.context_processors.static',
+                            'django.contrib.auth.context_processors.auth',
+                        ),
+                    },
+                },
+            ]
+        )
+    else:
+        template_settings = dict(
+            TEMPLATE_LOADERS = (
+                'django.template.loaders.app_directories.Loader',
+                'django.template.loaders.filesystem.Loader',
+            ),
+            TEMPLATE_CONTEXT_PROCESSORS = list(default_settings.TEMPLATE_CONTEXT_PROCESSORS) + [
+                'django.core.context_processors.request',
+            ],
+        )
+
     settings.configure(
         DEBUG = False,  # will be False anyway by DjangoTestRunner.
         TEMPLATE_DEBUG = True,
@@ -26,13 +60,6 @@ if not settings.configured:
                 'LOCATION': 'unique-snowflake',
             }
         },
-        TEMPLATE_LOADERS = (
-            'django.template.loaders.app_directories.Loader',
-            'django.template.loaders.filesystem.Loader',
-        ),
-        TEMPLATE_CONTEXT_PROCESSORS = list(default_settings.TEMPLATE_CONTEXT_PROCESSORS) + [
-            'django.core.context_processors.request',
-        ],
         INSTALLED_APPS = (
             'django.contrib.auth',
             'django.contrib.contenttypes',
@@ -66,6 +93,7 @@ if not settings.configured:
                 'fallbacks': ['en'],
             },
         },
+        **template_settings
     )
 
 

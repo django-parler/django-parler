@@ -10,6 +10,8 @@ It's also useful for abstract models; add a :class:`TranslatedField` to
 indicate that the derived model is expected to provide that translatable field.
 """
 from __future__ import unicode_literals
+
+import django
 from django.forms.forms import pretty_name
 
 
@@ -136,7 +138,12 @@ class TranslatedFieldDescriptor(object):
             # Fallback to what the admin label_for_field() would have done otherwise.
             return pretty_name(self.field.name)
 
-        return translations_model._meta.get_field_by_name(self.field.name)[0].verbose_name
+        if django.VERSION >= (1, 8):
+            field = translations_model._meta.get_field(self.field.name)
+        else:
+            field = translations_model._meta.get_field_by_name(self.field.name)[0]
+
+        return field.verbose_name
 
 
 class LanguageCodeDescriptor(object):
