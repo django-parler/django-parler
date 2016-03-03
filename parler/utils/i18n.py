@@ -43,6 +43,8 @@ def is_supported_django_language(language_code):
 def get_language_title(language_code):
     """
     Return the verbose_name for a language code.
+
+    Fallback to language_code if language is not found in settings.
     """
     from parler import appsettings
     # Avoid weird lookup errors.
@@ -60,7 +62,11 @@ def get_language_title(language_code):
         return _(languages[language_code])
     except KeyError:
         language_code = language_code.split('-')[0]  # e.g. if fr-ca is not supported fallback to fr
-        return _(languages[language_code])
+        language_title = languages.get(language_code, None)
+        if language_title is not None:
+            return _(language_title)
+        else:
+            return language_code
 
 
 def get_language_settings(language_code, site_id=None):

@@ -230,3 +230,24 @@ class ModelAttributeTests(AppTestCase):
             SimpleModel.objects.get(pk=x.pk)
         except TranslationDoesNotExist:
             self.fail("zero pk is not supported!")
+
+    def test_translatedfieldsmodel_str(self):
+        """Test converting TranslatedFieldsModel to string"""
+        missing_language_code = 'xx'
+        obj = SimpleModel.objects.create(tr_title='Something')
+
+        # Adjust translation object to use language_code that is not
+        # configured. It is easier because various Django version behave
+        # differently if we try to use not configured language.
+        translation = obj.translations.get()
+        translation.language_code = missing_language_code
+        translation.save()
+        # Try to get str() of the TranslatedFieldsModel instance.
+        try:
+            translation_as_str = str(obj.translations.get())
+        except KeyError:
+            self.fail("Converting translation to string raises KeyError")
+
+        # Check that we get language code as a fallback, when language is
+        # not configured.
+        self.assertEqual(translation_as_str, missing_language_code)

@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from django.test import TestCase
 
 from parler.utils import get_parler_languages_from_django_cms
+from parler.utils.i18n import get_language_title
 
 
 class UtilTestCase(TestCase):
@@ -76,3 +77,18 @@ class UtilTestCase(TestCase):
         computed = get_parler_languages_from_django_cms(cms)
         for block, block_config in computed.items():
             self.assertEqual(computed[block], parler[block])
+
+    def test_get_language_title(self):
+        """Test get_language_title utility function"""
+        language_code = 'en'
+        self.assertEqual(get_language_title(language_code), 'English')
+
+        # Test the case where requested language is not in settings.
+        # We can not override settings, since languages in get_language_title()
+        # are initialised during import. So, we use fictional language code.
+        language_code = 'xx'
+        try:
+            self.assertEqual(get_language_title(language_code), language_code)
+        except KeyError:
+            self.fail(
+                "get_language_title() raises KeyError for missing language")
