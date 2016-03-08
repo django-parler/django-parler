@@ -24,8 +24,9 @@ matrix:
   - python: "3.3"
     env: DJANGO="django>=1.9.0,<1.10.0"
 
+before_install:
+  - pip install codecov
 install:
-  - travis_retry pip install -q coveralls  # installs coverage
   - travis_retry pip install $DJANGO
   - pip install -e .
 
@@ -33,7 +34,7 @@ script:
   - coverage run --source=example/article,parler runtests.py
 
 after_success:
-  - coveralls --verbose
+  - codecov
 
 branches:
   only:
