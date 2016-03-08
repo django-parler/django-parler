@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 from parler.fields import TranslatedField
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
 from parler.utils.context import switch_language
@@ -15,6 +16,7 @@ class ManualModelTranslations(TranslatedFieldsModel):
     tr_title = models.CharField(max_length=200)
 
 
+@python_2_unicode_compatible
 class SimpleModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
@@ -22,10 +24,11 @@ class SimpleModel(TranslatableModel):
         tr_title = models.CharField("Translated Title", max_length=200)
     )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.tr_title
 
 
+@python_2_unicode_compatible
 class DateTimeModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
     datetime = models.DateTimeField()
@@ -34,10 +37,11 @@ class DateTimeModel(TranslatableModel):
         tr_title=models.CharField("Translated Title", max_length=200)
     )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.tr_title
 
 
+@python_2_unicode_compatible
 class AnyLanguageModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
     tr_title = TranslatedField(any_language=True)
@@ -46,10 +50,11 @@ class AnyLanguageModel(TranslatableModel):
         tr_title = models.CharField(max_length=200)
     )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.tr_title
 
 
+@python_2_unicode_compatible
 class EmptyModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
@@ -57,16 +62,17 @@ class EmptyModel(TranslatableModel):
     # This is useful when the model is a parent object for inlines. The parent model defines the language tabs.
     translations = TranslatedFields()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.shared
 
 
+@python_2_unicode_compatible
 class ArticleSlugModel(TranslatableModel):
     translations = TranslatedFields(
         slug = models.SlugField()
     )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.slug
 
     def get_absolute_url(self):

@@ -6,9 +6,11 @@ The default is to use the :class:`TranslatedFields` class in the model, like:
 .. code-block:: python
 
     from django.db import models
+    from django.utils.encoding import python_2_unicode_compatible
     from parler.models import TranslatableModel, TranslatedFields
 
 
+    @python_2_unicode_compatible
     class MyModel(TranslatableModel):
         translations = TranslatedFields(
             title = models.CharField(_("Title"), max_length=200)
@@ -17,7 +19,7 @@ The default is to use the :class:`TranslatedFields` class in the model, like:
         class Meta:
             verbose_name = _("MyModel")
 
-        def __unicode__(self):
+        def __str__(self):
             return self.title
 
 
@@ -26,6 +28,7 @@ It's also possible to create the translated fields model manually:
 .. code-block:: python
 
     from django.db import models
+    from django.utils.encoding import python_2_unicode_compatible
     from parler.models import TranslatableModel, TranslatedFieldsModel
     from parler.fields import TranslatedField
 
@@ -36,7 +39,7 @@ It's also possible to create the translated fields model manually:
         class Meta:
             verbose_name = _("MyModel")
 
-        def __unicode__(self):
+        def __str__(self):
             return self.title
 
 
@@ -60,6 +63,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
 from django.db import models, router
 from django.db.models.base import ModelBase
+from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import lazy
 from django.utils.translation import get_language, ugettext, ugettext_lazy as _
 from django.utils import six
@@ -791,6 +795,7 @@ def _validate_master(new_class):
     return shared_model
 
 
+@python_2_unicode_compatible
 class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, models.Model)):
     """
     Base class for the model that holds the translated fields.
@@ -951,7 +956,7 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
         cls.DoesNotExist = type(str('DoesNotExist'), (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
 
-    def __unicode__(self):
+    def __str__(self):
         # use format to avoid weird error in django 1.4
         # TypeError: coercing to Unicode: need string or buffer, __proxy__ found
         return "{0}".format(get_language_title(self.language_code))
