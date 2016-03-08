@@ -1,11 +1,13 @@
 Changelog
 =========
 
-Changes in git
--------------
+Changes in 1.6.2 (2016-03-08)
+-----------------------------
 
-* Fix tuple/list issues with ``fallbacks`` option.
 * Added ``TranslatableModelMixin`` to handle complex model inheritance issues.
+* Fixed tuple/list issues with ``fallbacks`` option.
+* Fixed Python 2 `__str__()`` output for ``TranslatedFieldsModel``.
+* Fixed output for ``get_language_title()`` when language is not configured.
 * Fixed preserving GET args in admin change form view.
 
 
