@@ -408,7 +408,6 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
         # Get object and translation
         shared_obj = self.get_object(request, unquote(object_id))
-        print(object_id)
         if shared_obj is None:
             raise Http404
 
