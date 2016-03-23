@@ -102,6 +102,11 @@ class LanguagesSetting(dict):
         to support modules which create their own variation of the ``PARLER_LANGUAGES`` setting.
         For an example, see :func:`~parler.appsettings.add_default_language_settings`.
         """
+        if language_code is None:
+            # This happens when using parler in management commands.
+            # Use translation.activate('en') if you need to have a default locale active.
+            raise ValueError("language_code can't be null")
+
         if site_id is None:
             site_id = getattr(settings, 'SITE_ID', None)
 
