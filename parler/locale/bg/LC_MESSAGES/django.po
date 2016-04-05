@@ -1,0 +1,71 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: django-parler\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-04-05 16:08+0300\n"
+"PO-Revision-Date: 2016-04-05 16:15+0200\n"
+"Last-Translator: Venelin Stoykov <venelin@magicsolutions.bg>\n"
+"Language-Team: BG <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 1.5.4\n"
+"Language: bg\n"
+
+#: admin.py:213 admin.py:223
+msgid "Languages"
+msgstr "Езици"
+
+#: admin.py:451
+#, python-brace-format
+msgid "{0} translation of {1}"
+msgstr "{0} превод на {1}"
+
+#: admin.py:455
+#, python-format
+msgid "The %(name)s \"%(obj)s\" was deleted successfully."
+msgstr "%(name)s \"%(obj)s\" е изтрит успешно."
+
+#: admin.py:465 models.py:118
+#, python-brace-format
+msgid "{0} Translation"
+msgstr "{0} Превод"
+
+#: admin.py:467
+#, python-format
+msgid "Cannot delete %(name)s"
+msgstr "Не може да изтрие %(name)s"
+
+#: admin.py:469
+msgid "Are you sure?"
+msgstr "Сигурни ли сте?"
+
+#: models.py:803
+msgid "Language"
+msgstr "Език"
+
+#: templates/admin/parler/deletion_not_allowed.html:5
+#, python-format
+msgid ""
+"Deletion of the %(language_name)s translation of %(object_name)s "
+"'%(escaped_object)s' is not allowed, because it is the last available "
+"translation of this instance."
+msgstr ""
+"Не е възможно да бъде изтрит %(language_name)s превода на %(object_name)s "
+"'%(escaped_object)s', защото това е последният останал превод."
+
+#: templates/admin/parler/language_tabs.html:15
+#: templates/admin/parler/language_tabs.html:17
+msgid "Delete Translation"
+msgstr "Изтрий Превод"
+
+#: views.py:177
+#, python-format
+msgid "No %(verbose_name)s found matching the query"
+msgstr "Не са намерени %(verbose_name)s отговарящи на търсенето"
