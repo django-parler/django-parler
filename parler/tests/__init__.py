@@ -8,3 +8,4 @@ if django.VERSION < (1, 6):
     from .test_forms import *
     from .test_urls import *
     from .test_query_count import *
+    from .test_model_relations import *

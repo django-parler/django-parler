@@ -893,7 +893,7 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
     if django.VERSION >= (1, 8):
         def _get_field_values(self):
             # Use the new Model._meta API.
-            return [getattr(self, field.get_attname()) for field in self._meta.get_fields()]
+            return [getattr(self, field.get_attname()) for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
     else:
         def _get_field_values(self):
             # Return all field values in a consistent (sorted) manner.

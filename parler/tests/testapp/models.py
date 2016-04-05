@@ -165,3 +165,19 @@ class ForeignKeyTranslationModel(TranslatableModel):
         translated_foreign = models.ForeignKey('RegularModel'),
     )
     shared = models.CharField(max_length=200)
+
+
+class TranslationRelated(TranslatableModel):
+    shared = models.CharField(max_length=200)
+    translation_relations = TranslatedField()
+
+
+class TranslationRelatedTranslation(TranslatedFieldsModel):
+    master = models.ForeignKey(TranslationRelated, related_name='translations')
+    title = models.CharField(max_length=200)
+    m2m_regular = models.ManyToManyField(RegularModel)
+
+
+class TranslationRelatedRelation(models.Model):
+    translation = models.ForeignKey(TranslationRelatedTranslation, related_name='translation_relations')
+    name = models.CharField(max_length=200)
