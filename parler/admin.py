@@ -316,12 +316,20 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             opts = self.model._meta
             info = _get_model_meta(opts)
 
-            return [
-                url(r'^(.+)/delete-translation/(.+)/$',
+            if django.VERSION < (1, 9):
+                delete_path = url(
+                    r'^(.+)/delete-translation/(.+)/$',
                     self.admin_site.admin_view(self.delete_translation),
                     name='{0}_{1}_delete_translation'.format(*info)
-                    ),
-            ] + urlpatterns
+                )
+            else:
+                delete_path = url(
+                    r'^(.+)/change/delete-translation/(.+)/$',
+                    self.admin_site.admin_view(self.delete_translation),
+                    name='{0}_{1}_delete_translation'.format(*info)
+                )
+
+            return [delete_path] + urlpatterns
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         """
