@@ -105,7 +105,10 @@ class LanguagesSetting(dict):
         if language_code is None:
             # This happens when using parler in management commands.
             # Use translation.activate('en') if you need to have a default locale active.
-            raise ValueError("language_code can't be null")
+            if get_language() is None:
+                raise ValueError("language_code can't be null, use translation.activate(..) when accessing translated models outside the request/response loop.")
+            else:
+                raise ValueError("language_code can't be null")
 
         if site_id is None:
             site_id = getattr(settings, 'SITE_ID', None)
