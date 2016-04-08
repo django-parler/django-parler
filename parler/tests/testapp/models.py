@@ -32,11 +32,7 @@ class CleanCharField(models.CharField):
 
     def clean(self, value, model_instance):
         super(CleanCharField, self).clean(value, model_instance)
-        if value == 'TEST':
-            return 'TRANS_clean'
-        if value == 'TRANS':
-            return 'TEST_clean'
-        return value
+        return value + "_cleanchar"
 
 
 @python_2_unicode_compatible
@@ -48,7 +44,7 @@ class CleanFieldModel(TranslatableModel):
         return self.tr_title
 
     def clean(self):
-        self.shared = self.shared.replace('_clean', '')
+        self.shared += "_cleanshared"
 
 
 class CleanFieldModelTranslation(TranslatedFieldsModel):
@@ -61,7 +57,7 @@ class CleanFieldModelTranslation(TranslatedFieldsModel):
         unique_together = ('language_code', 'master')
 
     def clean(self):
-        self.tr_title = self.tr_title.replace('_clean', '')
+        self.tr_title += "_cleantrans"
 
 
 @python_2_unicode_compatible

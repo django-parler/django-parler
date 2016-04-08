@@ -54,12 +54,12 @@ class FormTests(AppTestCase):
         """
         with translation.override('fr'):
             # Initialize form in other language.
-            x = SimpleForm(data={'shared': 'TEST', 'tr_title': 'TRANS'})
+            x = SimpleForm(data={'shared': 'SHARED', 'tr_title': 'TRANS'})
             x.language_code = 'nl'
             self.assertFalse(x.errors)
 
             # Data should come out
-            self.assertEqual(x.cleaned_data['shared'], 'TEST')
+            self.assertEqual(x.cleaned_data['shared'], 'SHARED')
             self.assertEqual(x.cleaned_data['tr_title'], 'TRANS')
 
             # Data should be saved
@@ -67,7 +67,7 @@ class FormTests(AppTestCase):
             self.assertEqual(instance.get_current_language(), 'nl')
 
             x = SimpleModel.objects.language('nl').get(pk=instance.pk)
-            self.assertEqual(x.shared, 'TEST')
+            self.assertEqual(x.shared, 'SHARED')
             self.assertEqual(x.tr_title, 'TRANS')
 
     def test_form_save_clean(self):
@@ -89,8 +89,8 @@ class FormTests(AppTestCase):
             self.assertEqual(instance.get_current_language(), 'nl')
 
             x = CleanFieldModel.objects.language('nl').get(pk=instance.pk)
-            self.assertEqual(x.shared, 'TEST')
-            self.assertEqual(x.tr_title, 'TRANS')
+            self.assertEqual(x.shared, 'TRANS_cleanchar_cleanshared')
+            self.assertEqual(x.tr_title, 'TEST_cleanchar_cleantrans')
 
     def test_unique_together(self):
         UniqueTogetherModel(_current_language='en', slug='foo').save()
