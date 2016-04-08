@@ -891,10 +891,20 @@ class TranslatedFieldsModel(compat.with_metaclass(TranslatedFieldsModelBase, mod
             signals.post_translation_delete.send(sender=self.shared_model, instance=self, using=using)
 
     if django.VERSION >= (1, 8):
+
+        def _get_field_names(self):
+            # Use the new Model._meta API.
+            return [field.get_attname() for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
+
         def _get_field_values(self):
             # Use the new Model._meta API.
             return [getattr(self, field.get_attname()) for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
     else:
+
+        def _get_field_names(self):
+            # Return all field names in a consistent (sorted) manner.
+            return [field.get_attname() for field, _ in self._meta.get_fields_with_model()]
+
         def _get_field_values(self):
             # Return all field values in a consistent (sorted) manner.
             return [getattr(self, field.get_attname()) for field, _ in self._meta.get_fields_with_model()]

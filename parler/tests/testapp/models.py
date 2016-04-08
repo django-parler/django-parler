@@ -28,6 +28,42 @@ class SimpleModel(TranslatableModel):
         return self.tr_title
 
 
+class CleanCharField(models.CharField):
+
+    def clean(self, value, model_instance):
+        super(CleanCharField, self).clean(value, model_instance)
+        if value == 'TEST':
+            return 'TRANS_clean'
+        if value == 'TRANS':
+            return 'TEST_clean'
+        return value
+
+
+@python_2_unicode_compatible
+class CleanFieldModel(TranslatableModel):
+    shared = CleanCharField(max_length=200, default='')
+    tr_title = TranslatedField()
+
+    def __str__(self):
+        return self.tr_title
+
+    def clean(self):
+        self.shared = self.shared.replace('_clean', '')
+
+
+class CleanFieldModelTranslation(TranslatedFieldsModel):
+    master = models.ForeignKey(
+        CleanFieldModel, related_name='translations', null=True,
+        default=1, on_delete=models.CASCADE)
+    tr_title = CleanCharField("Translated Title", max_length=200)
+
+    class Meta:
+        unique_together = ('language_code', 'master')
+
+    def clean(self):
+        self.tr_title = self.tr_title.replace('_clean', '')
+
+
 @python_2_unicode_compatible
 class DateTimeModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')

@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import translation
 from parler.forms import TranslatableModelForm
 from .utils import AppTestCase
-from .testapp.models import SimpleModel, UniqueTogetherModel, ForeignKeyTranslationModel, RegularModel
+from .testapp.models import SimpleModel, UniqueTogetherModel, ForeignKeyTranslationModel, RegularModel, CleanFieldModel
 
 
 class SimpleForm(TranslatableModelForm):
@@ -13,6 +13,12 @@ class SimpleForm(TranslatableModelForm):
         if django.VERSION >= (1, 6):
             fields = '__all__'
 
+class CleanFieldForm(TranslatableModelForm):
+
+    class Meta:
+        model = CleanFieldModel
+        if django.VERSION >= (1, 6):
+            fields = '__all__'
 
 class UniqueTogetherForm(TranslatableModelForm):
 
@@ -61,6 +67,28 @@ class FormTests(AppTestCase):
             self.assertEqual(instance.get_current_language(), 'nl')
 
             x = SimpleModel.objects.language('nl').get(pk=instance.pk)
+            self.assertEqual(x.shared, 'TEST')
+            self.assertEqual(x.tr_title, 'TRANS')
+
+    def test_form_save_clean(self):
+        """
+        Check if the form receives and stores data.
+        """
+        with translation.override('fr'):
+            # Initialize form in other language.
+            x = CleanFieldForm(data={'shared': 'TRANS', 'tr_title': 'TEST'})
+            x.language_code = 'nl'
+            self.assertFalse(x.errors)
+
+            # Data should come out
+            self.assertEqual(x.cleaned_data['shared'], 'TRANS')
+            self.assertEqual(x.cleaned_data['tr_title'], 'TEST')
+
+            # Data should be saved
+            instance = x.save()
+            self.assertEqual(instance.get_current_language(), 'nl')
+
+            x = CleanFieldModel.objects.language('nl').get(pk=instance.pk)
             self.assertEqual(x.shared, 'TEST')
             self.assertEqual(x.tr_title, 'TRANS')
 
