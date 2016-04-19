@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
+from parler.templatetags.parler_tags import _url_qs
 from parler.utils import get_parler_languages_from_django_cms
 from parler.utils.i18n import get_language_title
 
@@ -92,3 +93,11 @@ class UtilTestCase(TestCase):
         except KeyError:
             self.fail(
                 "get_language_title() raises KeyError for missing language")
+
+    def test_url_qs(self):
+        matches = [
+            ('http://www.example.com/search/', 'q=è453è5p4j5uih758')
+        ]
+        for match in matches:
+            merged = _url_qs(match[0], match[1])
+            self.assertTrue(merged)
