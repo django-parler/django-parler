@@ -1,6 +1,7 @@
 import inspect
 from django.core.urlresolvers import reverse
 from django.template import Node, Library, TemplateSyntaxError
+from django.utils.encoding import force_text
 from django.utils.translation import get_language
 from django.utils import six
 from parler.models import TranslatableModel, TranslationDoesNotExist
@@ -164,10 +165,9 @@ def get_translated_url(context, lang_code, object=None):
 
 def _url_qs(url, qs):
     if qs and '?' not in url:
-        # Leaving original encoding of str/unicode as is.
-        return url + "?" + qs
+        return force_text('{0}?{1}').format(url, qs)
     else:
-        return url
+        return force_text(url)
 
 
 @register.filter
