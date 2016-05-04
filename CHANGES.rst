@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Changes in 1.6.3 (2016-05-05)
+-----------------------------
+
+* **Security notice:** Fixed calling ``clean()`` on the translations model.
+* Fixed error with M2M relations to the translated model.
+* Fixed ``UnicodeError`` in ``parler_tags``
+* Show warning when translations are not initialized (when using management commands).
+
+
 Changes in 1.6.2 (2016-03-08)
 -----------------------------
 
