@@ -3,7 +3,7 @@ Utils for translations
 """
 from django.conf import settings
 from django.conf.global_settings import LANGUAGES as ALL_LANGUAGES
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, get_language
 
 __all__ = (
     'normalize_language_code',
@@ -49,7 +49,7 @@ def get_language_title(language_code):
     from parler import appsettings
     # Avoid weird lookup errors.
     if not language_code:
-        raise KeyError("Missing language_code in get_language_title()")
+        raise ValueError("Missing language_code in get_language_title()")
 
     if appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS:
         # this allows to edit languages that are not enabled in current project but are already
@@ -98,3 +98,13 @@ def is_multilingual_project(site_id=None):
     if site_id is None:
         site_id = getattr(settings, 'SITE_ID', None)
     return appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS or site_id in appsettings.PARLER_LANGUAGES
+
+
+def get_null_language_error():
+    # Internal util to get the language error
+    if get_language() is None:
+        # This happens when using parler in management commands.
+        # Use translation.activate('en') if you need to have a default locale active.
+        return "language_code can't be null, use translation.activate(..) when accessing translated models outside the request/response loop."
+    else:
+        return "language_code can't be null"

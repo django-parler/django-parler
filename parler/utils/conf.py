@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
 from django.utils.translation import get_language
-from parler.utils.i18n import is_supported_django_language
+from parler.utils.i18n import is_supported_django_language, get_null_language_error
 
 
 def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', **extra_defaults):
@@ -103,12 +103,7 @@ class LanguagesSetting(dict):
         For an example, see :func:`~parler.appsettings.add_default_language_settings`.
         """
         if language_code is None:
-            # This happens when using parler in management commands.
-            # Use translation.activate('en') if you need to have a default locale active.
-            if get_language() is None:
-                raise ValueError("language_code can't be null, use translation.activate(..) when accessing translated models outside the request/response loop.")
-            else:
-                raise ValueError("language_code can't be null")
+            raise ValueError(get_null_language_error())
 
         if site_id is None:
             site_id = getattr(settings, 'SITE_ID', None)
