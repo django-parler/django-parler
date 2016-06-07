@@ -196,7 +196,7 @@ class TranslatedFields(object):
 
     When the class is initialized, the attribute will point
     to a :class:`~django.db.models.fields.related.ForeignRelatedObjectsDescriptor` object.
-    Hence, accessing ``MyModel.translations.related.model`` returns the original model
+    Hence, accessing ``MyModel.translations.related.related_model`` returns the original model
     via the :class:`django.db.models.related.RelatedObject` class.
 
     ..
