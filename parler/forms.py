@@ -76,6 +76,36 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
             else:
                 self.language_code = current_language or get_language()
 
+    def _get_translation_validation_exclusions(self, translation):
+        exclude = ['master']
+
+        # This is the same logic as Django's _get_validation_exclusions(),
+        # only using the translation model instead of the master instance.
+        for field_name in translation.get_translated_fields():
+            if field_name not in self.fields:
+                # Exclude fields that aren't on the form.
+                exclude.append(field_name)
+            elif self._meta.fields and field_name not in self._meta.fields:
+                # Field might be added manually at the form,
+                # but wasn't part of the ModelForm's meta.
+                exclude.append(field_name)
+            elif self._meta.exclude and field_name in self._meta.exclude:
+                # Same for exclude.
+                exclude.append(field_name)
+            elif field_name in self._errors.keys():
+                # No need to validate fields that already failed.
+                exclude.append(field_name)
+            else:
+                # Exclude fields that are not required in the form, while the model requires them.
+                # See _get_validation_exclusions() for the detailed bits of this logic.
+                form_field = self.fields[field_name]
+                model_field = translation._meta.get_field(field_name)
+                field_value = self.cleaned_data.get(field_name)
+                if not model_field.blank and not form_field.required and field_value in form_field.empty_values:
+                    exclude.append(field_name)
+
+        return exclude
+
     def _post_clean(self):
         # Copy the translated fields into the model
         # Make sure the language code is set as early as possible (so it's active during most clean() methods)
@@ -103,11 +133,9 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
         translations = self.instance._set_translated_fields(**fields)
 
         # Perform full clean on models
-        non_translated_fields = ['id', 'master_id', 'language_code']
-        base_exclude = self._get_validation_exclusions()
+        non_translated_fields = set(('id', 'master_id', 'language_code'))
         for translation in translations:
-            exclude = base_exclude + ['master']
-            self._clean_translation_model(translation, exclude)
+            self._post_clean_translation(translation)
 
             # Assign translated fields to the model (using the TranslatedAttribute descriptor)
             for field in translation._get_field_names():
@@ -117,7 +145,8 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
 
     if django.VERSION >= (1, 6):
 
-        def _clean_translation_model(self, translation, exclude):
+        def _post_clean_translation(self, translation):
+            exclude = self._get_translation_validation_exclusions(translation)
             try:
                 translation.full_clean(
                     exclude=exclude, validate_unique=False)
@@ -132,7 +161,8 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                     self._update_errors(e)
     else:
 
-        def _clean_translation_model(self, translation, exclude):
+        def _post_clean_translation(self, translation):
+            exclude = self._get_translation_validation_exclusions(translation)
             # Clean the model instance's fields.
             try:
                 translation.clean_fields(exclude=exclude)

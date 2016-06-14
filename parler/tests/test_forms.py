@@ -13,12 +13,14 @@ class SimpleForm(TranslatableModelForm):
         if django.VERSION >= (1, 6):
             fields = '__all__'
 
+
 class CleanFieldForm(TranslatableModelForm):
 
     class Meta:
         model = CleanFieldModel
         if django.VERSION >= (1, 6):
             fields = '__all__'
+
 
 class UniqueTogetherForm(TranslatableModelForm):
 
@@ -91,6 +93,23 @@ class FormTests(AppTestCase):
             x = CleanFieldModel.objects.language('nl').get(pk=instance.pk)
             self.assertEqual(x.shared, 'TRANS_cleanchar_cleanshared')
             self.assertEqual(x.tr_title, 'TEST_cleanchar_cleantrans')
+
+    def test_form_save_clean_exclude(self):
+        """
+        Check that non-form fields are properly excluded.
+        """
+        class CleanPartialFieldForm(TranslatableModelForm):
+            class Meta:
+                model = CleanFieldModel
+                fields = ('shared',)
+                exclude = ('tr_title',)
+
+        self.assertEqual(list(CleanPartialFieldForm.base_fields.keys()), ['shared'])
+
+        with translation.override('fr'):
+            x = CleanPartialFieldForm(data={'shared': 'TRANS'})
+            x.language_code = 'nl'
+            self.assertFalse(x.errors)
 
     def test_unique_together(self):
         UniqueTogetherModel(_current_language='en', slug='foo').save()
