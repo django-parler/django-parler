@@ -53,7 +53,7 @@ from django.forms import Media
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
-from django.utils.functional import lazy
+from django.utils.functional import lazy, cached_property
 from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, get_language
@@ -361,7 +361,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
         # django-fluent-pages uses the same technique
         if 'default_change_form_template' not in context:
-            context['default_change_form_template'] = self.get_change_form_base_template()
+            context['default_change_form_template'] = self.default_change_form_template
 
         #context['base_template'] = self.get_change_form_base_template()
         return super(TranslatableAdmin, self).render_change_form(request, context, add, change, form_url, obj)
@@ -574,20 +574,18 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
                     yield inline, qs
 
-    def get_change_form_base_template(self):
+    @cached_property
+    def default_change_form_template(self):
         """
         Determine what the actual `change_form_template` should be.
         """
         opts = self.model._meta
         app_label = opts.app_label
-        return _lazy_select_template_name((
+        return select_template_name((
             "admin/{0}/{1}/change_form.html".format(app_label, opts.object_name.lower()),
             "admin/{0}/change_form.html".format(app_label),
             "admin/change_form.html"
         ))
-
-
-_lazy_select_template_name = lazy(select_template_name, six.text_type)
 
 
 class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):

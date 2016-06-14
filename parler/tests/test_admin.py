@@ -1,4 +1,9 @@
 from __future__ import unicode_literals
+
+from django.contrib.admin import AdminSite
+
+from parler.admin import TranslatableAdmin
+
 try:
     from django.contrib.admin.utils import label_for_field
 except ImportError:
@@ -23,3 +28,12 @@ class AdminTests(AppTestCase):
 
         # See that the TranslatedFieldDescriptor of the abstract model handles the fallback properly.
         self.assertEqual(label_for_field('tr_title', AbstractModel), "Tr title")
+
+    def test_default_change_form_template(self):
+        site = AdminSite()
+        site.register(SimpleModel, TranslatableAdmin)
+        admin = site._registry[SimpleModel]
+        self.assertEqual(admin.default_change_form_template, "admin/change_form.html")
+
+        # Avoid str + __proxy__ errors
+        self.assertEqual("default/" + admin.default_change_form_template, "default/admin/change_form.html")
