@@ -1,0 +1,19 @@
+.parler-language-tabs {
+  border-bottom: 2px solid #79AEC8;
+}
+
+.parler-language-tabs span.available,
+.parler-language-tabs span.current,
+.parler-language-tabs span.empty {
+  border-radius: 6px 6px 0 0;
+}
+
+.parler-language-tabs span.available {
+  border-color: #C4DCE8;
+}
+
+.parler-language-tabs span.current {
+  background-color: #79AEC8;
+  border-color: #79AEC8;
+  color: #fff;
+}

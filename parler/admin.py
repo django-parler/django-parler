@@ -79,9 +79,18 @@ __all__ = (
     'SortedRelatedFieldListFilter',
 )
 
-_language_media = Media(css={
-    'all': ('parler/admin/parler_admin.css',)
-})
+if django.VERSION >= (1, 9) or 'flat' in settings.INSTALLED_APPS:
+    _language_media = Media(css={
+        'all': (
+            'parler/admin/parler_admin.css',
+            'parler/admin/parler_admin_flat.css',
+        )
+    })
+else:
+    _language_media = Media(css={
+        'all': ('parler/admin/parler_admin.css',)
+    })
+
 _language_prepopulated_media = _language_media + Media(js=(
     'admin/js/urlify.js',
     'admin/js/prepopulate.min.js'
