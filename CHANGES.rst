@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Changes in 1.6.4 (2016-06-14)
+-----------------------------
+
+* Fix calling ``clean()`` on fields that are not part of the form.
+* Fix tab appearance for Django 1.9 and flat theme.
+
+
 Changes in 1.6.3 (2016-05-05)
 -----------------------------
 
