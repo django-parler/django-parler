@@ -100,26 +100,26 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
             fields[field] = value
 
         # Set the field values on their relevant models
-        translation_models = self.instance._set_translated_fields(**fields)
+        translations = self.instance._set_translated_fields(**fields)
 
         # Perform full clean on models
         non_translated_fields = ['id', 'master_id', 'language_code']
         base_exclude = self._get_validation_exclusions()
-        for translation_model in translation_models:
+        for translation in translations:
             exclude = base_exclude + ['master']
-            self._clean_translation_model(translation_model, exclude)
+            self._clean_translation_model(translation, exclude)
 
             # Assign translated fields to the model (using the TranslatedAttribute descriptor)
-            for field in translation_model._get_field_names():
+            for field in translation._get_field_names():
                 if field in non_translated_fields:
                     continue
-                setattr(self.instance, field, getattr(translation_model, field))
+                setattr(self.instance, field, getattr(translation, field))
 
     if django.VERSION >= (1, 6):
 
-        def _clean_translation_model(self, translation_model, exclude):
+        def _clean_translation_model(self, translation, exclude):
             try:
-                translation_model.full_clean(
+                translation.full_clean(
                     exclude=exclude, validate_unique=False)
             except ValidationError as e:
                 self._update_errors(e)
@@ -127,21 +127,21 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
             # Validate uniqueness if needed.
             if self._validate_unique:
                 try:
-                    translation_model.validate_unique()
+                    translation.validate_unique()
                 except ValidationError as e:
                     self._update_errors(e)
     else:
 
-        def _clean_translation_model(self, translation_model, exclude):
+        def _clean_translation_model(self, translation, exclude):
             # Clean the model instance's fields.
             try:
-                translation_model.clean_fields(exclude=exclude)
+                translation.clean_fields(exclude=exclude)
             except ValidationError as e:
                 self._update_errors(e.message_dict)
 
             # Call the model instance's clean method.
             try:
-                translation_model.clean()
+                translation.clean()
             except ValidationError as e:
                 self._update_errors({NON_FIELD_ERRORS: e.messages})
 
