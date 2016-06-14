@@ -9,8 +9,9 @@ Changes in 1.6.4 (2016-06-14)
 * Fix issues with ``__proxy__`` field for template names
 * Fix attempting to save invalid ``None`` language when Django translations are not yet initialized.
 
-**Note:** django-parler_ models now mandate that language code set; either by calling
+**Note:** django-parler models now mandate that a language code is selected; either by calling
 ``model.set_current_language()``, ``Model.objects.language()`` or activating a gettext environment.
+The latter always happens in a standard web request, but needs to happen explicitly in management commands.
 This avoids hard to debug situations where unwanted model changes happen on implicitly selected languages.
 
 
