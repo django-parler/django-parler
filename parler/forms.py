@@ -178,7 +178,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
             # Validate uniqueness if needed.
             if self._validate_unique:
                 try:
-                    translation_model.validate_unique()
+                    translation.validate_unique()
                 except ValidationError as e:
                     self._update_errors(e.message_dict)
 
