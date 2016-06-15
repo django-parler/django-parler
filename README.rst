@@ -200,4 +200,4 @@ Pull requests are welcome too. :-)
 .. _django-mptt: https://github.com/django-mptt/django-mptt
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-polymorphic: https://github.com/chrisglass/django_polymorphic
-.. _documentation: http://django-parler.readthedocs.org/
+.. _documentation: https://django-parler.readthedocs.io/
