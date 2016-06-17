@@ -68,4 +68,4 @@ Indices and tables
 
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
 .. _django-mptt: https://github.com/django-mptt/django-mptt
-.. _django-polymorphic: https://github.com/chrisglass/django_polymorphic
+.. _django-polymorphic: https://github.com/django-polymorphic/django-polymorphic

@@ -199,5 +199,5 @@ Pull requests are welcome too. :-)
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
 .. _django-mptt: https://github.com/django-mptt/django-mptt
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
-.. _django-polymorphic: https://github.com/chrisglass/django_polymorphic
+.. _django-polymorphic: https://github.com/django-polymorphic/django-polymorphic
 .. _documentation: https://django-parler.readthedocs.io/

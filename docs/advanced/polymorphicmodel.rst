@@ -8,10 +8,6 @@ have to make sure the model managers of both classes are combined too.
 This can be done by either overwriting :ref:`default_manager <custom-managers-and-inheritance>`
 or by extending the :class:`~django.db.models.Manager` and :class:`~django.db.models.query.QuerySet` class.
 
-.. note:: You need at least
-          `django-polymorphic <https://github.com/chrisglass/django_polymorphic>`_ >= 0.5.6
-          in order to get this working.
-
 
 Combining ``TranslatableModel`` with ``PolymorphicModel``
 ---------------------------------------------------------
@@ -127,4 +123,4 @@ This admin interface adds translatable fields to a polymorphic model:
 	
 	admin.site.register(BaseProduct, BaseProductAdmin)
 
-.. _django-polymorphic: https://github.com/chrisglass/django_polymorphic
+.. _django-polymorphic: https://github.com/django-polymorphic/django-polymorphic

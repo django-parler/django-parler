@@ -106,4 +106,4 @@ watch Dexter's Laboratory episode "The Big Cheese". ;-)
 .. _django-mptt: https://github.com/django-mptt/django-mptt
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-modeltranslation: https://github.com/deschler/django-modeltranslation
-.. _django-polymorphic: https://github.com/chrisglass/django_polymorphic
+.. _django-polymorphic: https://github.com/django-polymorphic/django-polymorphic
