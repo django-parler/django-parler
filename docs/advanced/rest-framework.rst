@@ -46,4 +46,4 @@ The following code is used in the serializer:
             fields = ('code', 'translations')
 
 
-.. _django-parler-rest: https://github.com/edoburu/django-parler-rest
+.. _django-parler-rest: https://github.com/django-parler/django-parler-rest
