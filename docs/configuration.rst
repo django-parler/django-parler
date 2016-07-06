@@ -12,7 +12,7 @@ This language is used when a translation for the currently selected language doe
 
 By default, it's the same as :django:setting:`LANGUAGE_CODE`.
 
-This value is used as input for ``PARLER_LANUAGES['default']['fallback']``.
+This value is used as input for ``PARLER_LANGUAGES['default']['fallback']``.
 
 
 .. _PARLER_LANGUAGES:
