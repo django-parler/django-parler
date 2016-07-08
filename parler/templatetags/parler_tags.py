@@ -165,7 +165,7 @@ def get_translated_url(context, lang_code, object=None):
 
 def _url_qs(url, qs):
     if qs and '?' not in url:
-        return force_text('{0}?{1}').format(url, qs)
+        return u'{0}?{1}'.format(force_text(url), force_text(qs))
     else:
         return force_text(url)
 

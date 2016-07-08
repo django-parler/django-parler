@@ -96,7 +96,8 @@ class UtilTestCase(TestCase):
 
     def test_url_qs(self):
         matches = [
-            ('http://www.example.com/search/', 'q=è453è5p4j5uih758')
+            ('http://www.example.com/search/', 'q=è453è5p4j5uih758'),
+            (u'http://www.example.com/search/', b'next=/fr/propriété/'),
         ]
         for match in matches:
             merged = _url_qs(match[0], match[1])
