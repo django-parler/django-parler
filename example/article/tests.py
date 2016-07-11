@@ -4,9 +4,9 @@ from __future__ import unicode_literals
 import unittest
 import django
 from django.utils import encoding, translation
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.contrib import auth
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, get_urlconf
 from .models import Article, Category
 from parler.appsettings import PARLER_LANGUAGES
 
@@ -15,6 +15,15 @@ try:
 except ImportError:
     # python<2.7
     from django.utils.unittest import skipIf, expectedFailure
+
+try:
+    from django.test.utils import override_settings  # Django 1.7+
+except ImportError:
+    def override_settings(ROOT_URLCONF=None):
+        assert get_urlconf() == ROOT_URLCONF
+        def dummy_dec(func):
+            return func
+        return dummy_dec
 
 
 class TestMixin(object):

@@ -1,11 +1,20 @@
 from __future__ import unicode_literals
 import django
-from django.core.urlresolvers import reverse, resolve
-from django.test import RequestFactory, override_settings
+from django.core.urlresolvers import reverse, resolve, get_urlconf
+from django.test import RequestFactory
 from django.utils import translation
 from parler.templatetags.parler_tags import get_translated_url
 from .utils import AppTestCase
 from .testapp.models import ArticleSlugModel
+
+try:
+    from django.test.utils import override_settings  # Django 1.7+
+except ImportError:
+    def override_settings(ROOT_URLCONF=None):
+        assert get_urlconf() == ROOT_URLCONF
+        def dummy_dec(func):
+            return func
+        return dummy_dec
 
 
 class UrlTests(AppTestCase):
