@@ -1,6 +1,24 @@
 Changelog
 =========
 
+Changes in 1.6.5 (2016-07-11)
+-----------------------------
+
+* Fix ``get_translated_url()`` when Django uses bytestrings for ``QUERY_STRING``.
+* Raise ``ValidError`` when a ``TranslatableForm`` is initialized with a language code
+  that is not available in ``LANGUAGES``.
+
+**Backwards compatibility note:** An ``ValueError`` is now raised when forms are initialized
+with an invalid languae code. If your project relied on invalid language settings, make sure
+that ``LANGAUGE_CODE`` and ``LANGUAGES`` are properly configured.
+
+Rationale: Since the security fix in v1.6.3 (to call the ``clean()`` method of translated fields),
+invalid language codes are no longer accepted. The choice was either to passively warn and exclude
+the language from validation checks, or to raise an error beforehand that the form is used
+to initialize bad data. It's considered more important to avoid polluted database contents
+then preserving compatibility, hence this check remains as strict.
+
+
 Changes in 1.6.4 (2016-06-14)
 -----------------------------
 

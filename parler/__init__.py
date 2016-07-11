@@ -1,5 +1,5 @@
 # following PEP 440
-__version__ = "1.6.4"
+__version__ = "1.6.5"
 
 __all__ = (
     'is_multilingual_project',
