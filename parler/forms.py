@@ -1,5 +1,6 @@
 from django import forms
 import django
+from django.conf import settings
 from django.core.exceptions import NON_FIELD_ERRORS, ObjectDoesNotExist, ValidationError
 from django.forms.forms import BoundField
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
@@ -72,12 +73,20 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
         if self.language_code is None:
             if instance:
                 self.language_code = instance.get_current_language()
-                return
             else:
                 self.language_code = current_language or get_language()
 
+        if self.language_code not in dict(settings.LANGUAGES):
+            # Instead of raising a ValidationError
+            raise ValueError(
+                "Translatable forms can't be initialized for the language '{0}', "
+                "that option does not exist in the 'LANGUAGES' setting.".format(self.language_code)
+            )
+
     def _get_translation_validation_exclusions(self, translation):
         exclude = ['master']
+        if 'language_code' not in self.fields:
+            exclude.append('language_code')
 
         # This is the same logic as Django's _get_validation_exclusions(),
         # only using the translation model instead of the master instance.
