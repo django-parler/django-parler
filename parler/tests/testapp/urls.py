@@ -1,3 +1,4 @@
+import django
 from django.conf.urls import url
 from django.conf.urls.i18n import i18n_patterns
 from django.core.urlresolvers import reverse_lazy
@@ -12,7 +13,7 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
     pass
 
 
-urlpatterns = i18n_patterns('',
+urls = [
     url(r'article/(?P<slug>[^\/]+)/$', ArticleSlugView.as_view(), name='article-slug-test-view'),
 
     # An URL with view-kwargs
@@ -24,4 +25,10 @@ urlpatterns = i18n_patterns('',
         name='view-kwargs-test-view'
     ),
     url(r'^password-reset/done/$', auth_views.password_reset_done, name='password-reset-done'),
-)
+]
+
+if django.VERSION >= (1, 8):
+    # New style without prefix
+    urlpatterns = i18n_patterns(*urls)
+else:
+    urlpatterns = i18n_patterns('', *urls)

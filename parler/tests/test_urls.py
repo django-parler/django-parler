@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import django
 from django.core.urlresolvers import reverse, resolve
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 from django.utils import translation
 from parler.templatetags.parler_tags import get_translated_url
 from .utils import AppTestCase
@@ -12,7 +12,8 @@ class UrlTests(AppTestCase):
     """
     Test model construction
     """
-    urls = 'parler.tests.testapp.urls'
+    if django.VERSION < (1, 8):
+        urls = 'parler.tests.testapp.urls'
 
     @classmethod
     def setUpClass(cls):
@@ -33,6 +34,7 @@ class UrlTests(AppTestCase):
         self.assertEqual(self.article.safe_translation_getter('slug', language_code=self.other_lang1), 'lang1')
         self.assertEqual(self.article.safe_translation_getter('slug', language_code=self.other_lang2), 'lang2')
 
+    @override_settings(ROOT_URLCONF='parler.tests.testapp.urls')
     def test_get_absolute_url(self):
         """
         Test whether the absolute URL values are correct.
@@ -47,6 +49,7 @@ class UrlTests(AppTestCase):
         self.article.set_current_language(self.other_lang2)
         self.assertEqual(self.article.get_absolute_url(), '/{0}/article/lang2/'.format(self.other_lang2))
 
+    @override_settings(ROOT_URLCONF='parler.tests.testapp.urls')
     def test_get_translated_url(self):
         """
         Test whether get_translated_url works properly in templates.
@@ -64,6 +67,7 @@ class UrlTests(AppTestCase):
             self.assertEqual(get_translated_url(context, lang_code=self.other_lang2), '/{0}/article/lang2/'.format(self.other_lang2))
             self.assertEqual(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/article/default/'.format(self.conf_fallback))
 
+    @override_settings(ROOT_URLCONF='parler.tests.testapp.urls')
     def test_get_translated_url_view_kwargs(self):
         """
         Test that get_translated_url can handle view kwargs.
@@ -82,6 +86,7 @@ class UrlTests(AppTestCase):
             self.assertEqual(get_translated_url(context, lang_code=self.other_lang2), '/{0}/tests/kwargs-view/'.format(self.other_lang2))
             self.assertEqual(get_translated_url(context, lang_code=self.conf_fallback), '/{0}/tests/kwargs-view/'.format(self.conf_fallback))
 
+    @override_settings(ROOT_URLCONF='parler.tests.testapp.urls')
     def test_get_translated_url_query_string(self):
         """
         Test that the querystring is copied to the translated URL.
@@ -106,6 +111,7 @@ class UrlTests(AppTestCase):
             # Hence the querystring will not be copied in this case.
             self.assertEqual(get_translated_url(context, lang_code=self.other_lang2, object=self.article), '/{0}/article/lang2/'.format(self.other_lang2))
 
+    @override_settings(ROOT_URLCONF='parler.tests.testapp.urls')
     def test_translatable_slug_mixin(self):
         """
         Test whether translated slugs are properly resolved.
@@ -119,6 +125,7 @@ class UrlTests(AppTestCase):
             response = self.client.get('/{0}/article/lang2/'.format(self.other_lang2))
             self.assertContains(response, 'view: lang2')
 
+    @override_settings(ROOT_URLCONF='parler.tests.testapp.urls')
     def test_translatable_slug_mixin_redirect(self):
         """
         Test whether calling a translated URL by their fallback causes a redirect.

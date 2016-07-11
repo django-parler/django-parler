@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import unittest
 import django
 from django.utils import encoding, translation
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib import auth
 from django.core.urlresolvers import reverse
 from .models import Article, Category
@@ -48,8 +48,10 @@ class TestMixin(object):
 
 
 class ArticleTestCase(TestMixin, TestCase):
-    urls = 'example.urls'
+    if django.VERSION < (1, 8):
+        urls = 'example.urls'
 
+    @override_settings(ROOT_URLCONF='example.urls')
     def test_home(self):
         resp = self.client.get('/', follow=True)
         self.assertRedirects(resp, '/en/')
@@ -62,6 +64,7 @@ class ArticleTestCase(TestMixin, TestCase):
         resp = self.client.get(reverse('article-list'))  # == /en/
         self.assertInContent("/en/cheese-omelet", resp)
 
+    @override_settings(ROOT_URLCONF='example.urls')
     def test_view_article(self):
         resp = self.client.get(reverse('article-details', kwargs={'slug': 'cheese-omelet'}))
         self.assertEqual(404, resp.status_code)
