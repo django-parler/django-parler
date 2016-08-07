@@ -222,7 +222,8 @@ class TranslatableModelMixin(object):
     All translatable fields will appear on this model, proxying the calls to the :class:`TranslatedFieldsModel`.
     """
     #: Access to the metadata of the translatable model
-    _parler_meta = None
+    #: :type: ParlerOptions
+    _parler_meta = None  # type: ParlerOptions
 
     #: Access to the language code
     language_code = LanguageCodeDescriptor()
