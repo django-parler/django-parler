@@ -5,10 +5,6 @@ django-parler
     :target: http://travis-ci.org/django-parler/django-parler
 .. image:: https://img.shields.io/pypi/v/django-parler.svg
     :target: https://pypi.python.org/pypi/django-parler/
-.. image:: https://img.shields.io/pypi/dm/django-parler.svg
-    :target: https://pypi.python.org/pypi/django-parler/
-.. image:: https://img.shields.io/badge/wheel-yes-green.svg
-    :target: https://pypi.python.org/pypi/django-parler/
 .. image:: https://img.shields.io/pypi/l/django-parler.svg
     :target: https://pypi.python.org/pypi/django-parler/
 .. image:: https://img.shields.io/codecov/c/github/django-parler/django-parler/master.svg
