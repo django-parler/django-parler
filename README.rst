@@ -33,11 +33,15 @@ A brief overview
 Installing django-parler
 ------------------------
 
-The package can be installed using::
+The package can be installed using:
+
+.. code-block:: bash
 
     pip install django-parler
 
-Add the following settings::
+Add the following settings:
+
+.. code-block:: python
 
     INSTALLED_APPS += (
         'parler',
@@ -46,7 +50,9 @@ Add the following settings::
 Creating models
 ---------------
 
-Using the ``TranslatedFields`` wrapper, model fields can be marked as translatable::
+Using the ``TranslatedFields`` wrapper, model fields can be marked as translatable:
+
+.. code-block:: python
 
     from django.db import models
     from parler.models import TranslatableModel, TranslatedFields
@@ -62,7 +68,9 @@ Using the ``TranslatedFields`` wrapper, model fields can be marked as translatab
 Accessing fields
 ----------------
 
-Translatable fields can be used like regular fields::
+Translatable fields can be used like regular fields:
+
+.. code-block:: python
 
     >>> object = MyModel.objects.all()[0]
     >>> object.get_current_language()
@@ -79,11 +87,15 @@ Internally, django-parler stores the translated fields in a separate model, with
 Filtering translations
 ----------------------
 
-To query translated fields, use the ``.translated()`` method::
+To query translated fields, use the ``.translated()`` method:
+
+.. code-block:: python
 
     MyObject.objects.translated(title='cheese omelet')
 
-To access objects in both the current and possibly the fallback language, use::
+To access objects in both the current and possibly the fallback language, use:
+
+.. code-block:: python
 
     MyObject.objects.active_translations(title='cheese omelet')
 
@@ -96,7 +108,9 @@ This returns objects in the languages which are considered "active", which are:
 Changing the language
 ---------------------
 
-The queryset can be instructed to return objects in a specific language::
+The queryset can be instructed to return objects in a specific language:
+
+.. code-block:: python
 
     >>> objects = MyModel.objects.language('fr').all()
     >>> objects[0].title
@@ -107,14 +121,18 @@ By default, the current Django language is used.
 
 Use ``object.get_current_language()`` and ``object.set_current_language()``
 to change the language on individual objects.
-There is a context manager to do this temporary::
+There is a context manager to do this temporary:
+
+.. code-block:: python
 
     from parler.utils.context import switch_language
 
     with switch_language(model, 'fr'):
         print model.title
 
-And a function to query just a specific field::
+And a function to query just a specific field:
+
+.. code-block:: python
 
     model.safe_translation_getter('title', language_code='fr')
 
@@ -123,12 +141,16 @@ Configuration
 -------------
 
 By default, the fallback language is the same as ``LANGUAGE_CODE``.
-The fallback language can be changed in the settings::
+The fallback language can be changed in the settings:
+
+.. code-block:: python
 
     PARLER_DEFAULT_LANGUAGE_CODE = 'en'
 
 
-Optionally, the admin tabs can be configured too::
+Optionally, the admin tabs can be configured too:
+
+.. code-block:: python
 
     PARLER_LANGUAGES = {
         None: (
