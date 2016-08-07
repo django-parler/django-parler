@@ -1,6 +1,3 @@
-django-parler
-=============
-
 .. image:: https://img.shields.io/travis/django-parler/django-parler/master.svg?branch=master
     :target: http://travis-ci.org/django-parler/django-parler
 .. image:: https://img.shields.io/pypi/v/django-parler.svg
@@ -9,6 +6,9 @@ django-parler
     :target: https://pypi.python.org/pypi/django-parler/
 .. image:: https://img.shields.io/codecov/c/github/django-parler/django-parler/master.svg
     :target: https://codecov.io/github/django-parler/django-parler?branch=master
+
+django-parler
+=============
 
 Simple Django model translations without nasty hacks.
 
