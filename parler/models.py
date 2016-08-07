@@ -290,6 +290,48 @@ class TranslatableModelMixin(object):
         for translation in self._set_translated_fields(language_code, **fields):
             self.save_translation(translation)
 
+    def delete_translation(self, language_code, related_name=None):
+        """
+        Delete a translation from a model.
+
+        :param language_code: The language to remove.
+        :param related_name: If given, only the model matching that related_name is removed.
+        """
+        if language_code is None:
+            raise ValueError(get_null_language_error())
+
+        if related_name is None:
+            metas = self._parler_meta
+        else:
+            metas = [self._parler_meta[related_name]]
+
+        num_deleted = 0
+        for meta in metas:
+            try:
+                translation = self._get_translated_model(language_code, meta=meta)
+            except meta.model.DoesNotExist:
+                continue
+
+            # By using the regular model delete, the cache is properly cleared
+            # (via _delete_cached_translation) and signals are emitted.
+            translation.delete()
+            num_deleted += 1
+
+            # Clear other local caches
+            try:
+                del self._translations_cache[meta.model][language_code]
+            except KeyError:
+                pass
+            try:
+                del self._prefetched_objects_cache[meta.rel_name]
+            except (AttributeError, KeyError):
+                pass
+
+        if not num_deleted:
+            raise ValueError("Translation does not exist: {0}".format(language_code))
+
+        return num_deleted
+
     def get_current_language(self):
         """
         Get the current language.

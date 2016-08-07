@@ -122,6 +122,18 @@ class ModelAttributeTests(AppTestCase):
 
         self.assertEqual(sorted(x.get_available_languages()), ['en', 'fr'])
 
+    def test_delete_translation(self):
+        x = SimpleModel.objects.create(pk=1000)
+        x.create_translation('en', tr_title='TITLE_EN')
+        x.create_translation('fr', tr_title='TITLE_FR')
+
+        self.assertEqual(sorted(x.get_available_languages()), ['en', 'fr'])
+
+        num_deleted = x.delete_translation('fr')
+        self.assertEqual(num_deleted, 1)
+
+        self.assertEqual(sorted(x.get_available_languages()), ['en'])
+
     def test_fallback_language(self):
         """
         Test whether the fallback language will be returned.

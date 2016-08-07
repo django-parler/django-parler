@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in git
+--------------
+
+* Added ``delete_translation()`` API.
+
+
 Changes in 1.6.5 (2016-07-11)
 -----------------------------
 
