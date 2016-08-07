@@ -47,6 +47,52 @@ Add the following settings:
         'parler',
     )
 
+Optionally, the admin tabs can be configured too:
+
+.. code-block:: python
+
+    PARLER_LANGUAGES = {
+        None: (
+            {'code': 'en',},
+            {'code': 'en-us',},
+            {'code': 'it',},
+            {'code': 'nl',},
+        ),
+        'default': {
+            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+            'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
+        }
+    }
+
+Replace ``None`` with the ``SITE_ID`` when you run a multi-site project with the sites framework.
+Each ``SITE_ID`` can be added as additional entry in the dictionary.
+
+Make sure your project is configured for multiple languages.
+It might be useful to limit the ``LANGUAGES`` seting. For example:
+
+.. code-block:: python
+
+    from django.utils.translation import ugettext_lazy as _
+
+    LANGUAGE_CODE = 'en'
+
+    LANGUAGES = (
+        ('en', _("English")),
+        ('en-us', _("US English")),
+        ('it', _('Italian')),
+        ('nl', _('Dutch')),
+        ('fr', _('French')),
+        ('es', _('Spanish')),
+    )
+
+By default, the fallback language is the same as ``LANGUAGE_CODE``.
+The fallback language can be changed in the settings:
+
+.. code-block:: python
+
+    PARLER_DEFAULT_LANGUAGE_CODE = 'en'
+
+
 Creating models
 ---------------
 
@@ -135,38 +181,6 @@ And a function to query just a specific field:
 .. code-block:: python
 
     model.safe_translation_getter('title', language_code='fr')
-
-
-Configuration
--------------
-
-By default, the fallback language is the same as ``LANGUAGE_CODE``.
-The fallback language can be changed in the settings:
-
-.. code-block:: python
-
-    PARLER_DEFAULT_LANGUAGE_CODE = 'en'
-
-
-Optionally, the admin tabs can be configured too:
-
-.. code-block:: python
-
-    PARLER_LANGUAGES = {
-        None: (
-            {'code': 'en',},
-            {'code': 'en-us',},
-            {'code': 'it',},
-            {'code': 'nl',},
-        ),
-        'default': {
-            'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
-            'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
-        }
-    }
-
-Replace ``None`` with the ``SITE_ID`` when you run a multi-site project with the sites framework.
-Each ``SITE_ID`` can be added as additional entry in the dictionary.
 
 
 Advanced Features
