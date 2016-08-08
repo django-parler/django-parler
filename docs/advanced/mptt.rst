@@ -27,14 +27,14 @@ Say we have a base ``Category`` model that needs to be translatable:
     from parler.managers import TranslatableManager
     from mptt.models import MPTTModel
     from .managers import CategoryManager
-    
+
 
     @python_2_unicode_compatible
     class Category(MPTTModel, TranslatableModel):
         # The shared base model. Either place translated fields here,
         # or place them at the subclasses (see note below).
         parent = models.ForeignKey('self', related_name='children')
-        
+
         translations = TranslatedFields(
             name=models.CharField(blank=False, default='', max_length=128),
             slug=models.SlugField(blank=False, default='', max_length=128)
@@ -50,7 +50,7 @@ Combining managers
 ------------------
 
 The managers can be combined by inheriting them.
-Unfortunately, django-mptt_ 0.7 overrides the ``get_querset()`` method,
+Unfortunately, django-mptt_ 0.7 overrides the ``get_queryset()`` method,
 so it needs to be redefined:
 
 .. code-block:: python
@@ -61,7 +61,7 @@ so it needs to be redefined:
         from mptt.querysets import TreeQuerySet  # new as of mptt 0.7
 
 
-        class CategoryQuerySet(TranslatableQuerySet, MPTTQuerySet):
+        class CategoryQuerySet(TranslatableQuerySet, TreeQuerySet):
             pass
 
             # Optional: make sure the Django 1.7 way of creating managers works.
