@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from django.utils import translation
 from parler.models import TranslationDoesNotExist
 from .utils import AppTestCase
-from .testapp.models import SimpleModel, AnyLanguageModel, EmptyModel
+from .testapp.models import SimpleModel, AnyLanguageModel, EmptyModel, NotRequiredModel
 
 
 class ModelAttributeTests(AppTestCase):
@@ -96,11 +96,11 @@ class ModelAttributeTests(AppTestCase):
 
         self.assertNumQueries(2, x.save_translations())
 
-        # Any unmodified language is not saved.
+        # Even unmodified language is automatically saved.
         x.set_current_language('it', initialize=True)
         self.assertTrue(x.has_translation('it'))  # does return true for this object.
-        self.assertNumQueries(0, x.save_translations())
-        self.assertEqual(sorted(x.get_available_languages()), ['en', 'es', 'fr', 'nl'])
+        self.assertNumQueries(1, lambda: x.save_translations())
+        self.assertEqual(sorted(x.get_available_languages()), ['en', 'es', 'fr', 'it', 'nl'])
 
     def test_empty_model(self):
         """
@@ -213,6 +213,29 @@ class ModelAttributeTests(AppTestCase):
             self.assertNumQueries(0, lambda: x._get_any_translated_model())   # Can fetch from cache next time.
             self.assertEqual(x._get_any_translated_model().language_code, self.other_lang1)
 
+
+    def test_create_without_translation(self):
+        """
+        Test whether master object is created without translation, in case that no translation attribute is set
+        """
+        x = NotRequiredModel()
+
+        self.assertNumQueries(1, lambda: x.save())  # only master object created
+        self.assertEqual(sorted(x.get_available_languages()), [])
+
+
+    def test_create_with_default_attributes(self):
+        """
+        Test whether translation model is created even attribute has default value
+        """
+
+        x = NotRequiredModel()
+        x.tr_title = 'DEFAULT_TRANS_TITLE'
+
+        self.assertNumQueries(2, lambda: x.save())  # master and translation object created
+        self.assertEqual(sorted(x.get_available_languages()), [self.conf_fallback])
+
+
     def test_save_ignore_fallback_marker(self):
         """
         Test whether the ``save_translations()`` method skips fallback languages
@@ -225,6 +248,7 @@ class ModelAttributeTests(AppTestCase):
         x.safe_translation_getter('tr_title', any_language=True)
         # Now save. This should not raise errors
         x.save()
+
 
     def test_model_with_zero_pk(self):
         """
