@@ -202,6 +202,21 @@ class TranslatedFields(object):
     ..
        To fetch the attribute, you can also query the Parler metadata:
        MyModel._parler_meta.get_model_by_related_name('translations')
+
+    :param meta: A dictionary of `Meta` options, passed to the :class:`TranslatedFieldsModel`
+        instance.
+
+        Example:
+
+        .. code-block:: python
+
+            class MyModel(TranslatableModel):
+                translations = TranslatedFields(
+                    title = models.CharField("Title", max_length=200),
+                    slug = models.SlugField("Slug"),
+                    meta = {'unique_together': [('language_code', 'slug')]},
+                )
+
     """
 
     def __init__(self, meta=None, **fields):
