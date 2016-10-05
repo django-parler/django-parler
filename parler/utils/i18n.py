@@ -3,7 +3,8 @@ Utils for translations
 """
 from django.conf import settings
 from django.conf.global_settings import LANGUAGES as ALL_LANGUAGES
-from django.utils.translation import ugettext_lazy as _, get_language
+from django.utils.translation import ugettext_lazy as _, get_language as dj_get_language
+
 
 __all__ = (
     'normalize_language_code',
@@ -108,3 +109,17 @@ def get_null_language_error():
         return "language_code can't be null, use translation.activate(..) when accessing translated models outside the request/response loop."
     else:
         return "language_code can't be null"
+
+
+def get_language():
+    """
+    Wrapper around Django's `get_language` utility.
+    For Django >= 1.8, `get_language` returns None in case no translation is activate.
+    Here we patch this behavior e.g. for back-end functionality requiring access to translated fields
+    """
+    from parler.appsettings import PARLER_DEFAULT_LANGUAGE_CODE, PARLER_DEFAULT_ACTIVATE
+    language = dj_get_language()
+    if language is None and PARLER_DEFAULT_ACTIVATE:
+        return PARLER_DEFAULT_LANGUAGE_CODE
+    else:
+        return language

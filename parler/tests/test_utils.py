@@ -2,11 +2,14 @@
 
 from __future__ import unicode_literals
 
+import django
 from django.test import TestCase
+from django.utils.translation import override
 
 from parler.templatetags.parler_tags import _url_qs
+from parler.tests.utils import override_parler_settings
 from parler.utils import get_parler_languages_from_django_cms
-from parler.utils.i18n import get_language_title
+from parler.utils.i18n import get_language, get_language_title
 
 
 class UtilTestCase(TestCase):
@@ -93,6 +96,23 @@ class UtilTestCase(TestCase):
         except KeyError:
             self.fail(
                 "get_language_title() raises KeyError for missing language")
+
+    @override_parler_settings(PARLER_DEFAULT_ACTIVATE=False)
+    def test_get_language_no_fallback(self):
+        """Test get_language patch function, no fallback"""
+
+        with override(None):
+            if django.VERSION >= (1, 8):
+                self.assertEquals(get_language(), None)
+
+    @override_parler_settings(PARLER_DEFAULT_ACTIVATE=True)
+    def test_get_language_with_fallback(self):
+        """Test get_language patch function, with fallback"""
+        from parler import appsettings
+
+        with override(None):
+            if django.VERSION >= (1, 8):
+                self.assertEquals(get_language(), appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
 
     def test_url_qs(self):
         matches = [
