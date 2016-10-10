@@ -117,9 +117,9 @@ def get_language():
     For Django >= 1.8, `get_language` returns None in case no translation is activate.
     Here we patch this behavior e.g. for back-end functionality requiring access to translated fields
     """
-    from parler.appsettings import PARLER_DEFAULT_LANGUAGE_CODE, PARLER_DEFAULT_ACTIVATE
+    from parler import appsettings
     language = dj_get_language()
-    if language is None and PARLER_DEFAULT_ACTIVATE:
-        return PARLER_DEFAULT_LANGUAGE_CODE
+    if language is None and appsettings.PARLER_DEFAULT_ACTIVATE:
+        return appsettings.PARLER_DEFAULT_LANGUAGE_CODE
     else:
         return language
