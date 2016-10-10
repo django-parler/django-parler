@@ -30,3 +30,6 @@ PARLER_LANGUAGES['default'].setdefault('fallbacks', [PARLER_DEFAULT_LANGUAGE_COD
 # Cleanup settings
 PARLER_DEFAULT_LANGUAGE_CODE = normalize_language_code(PARLER_DEFAULT_LANGUAGE_CODE)
 PARLER_LANGUAGES = add_default_language_settings(PARLER_LANGUAGES)
+
+# Activate translations by default. Flag to compensate for Django >= 1.8 default `get_language` behavior
+PARLER_DEFAULT_ACTIVATE = getattr(settings, 'PARLER_DEFAULT_ACTIVATE', False)

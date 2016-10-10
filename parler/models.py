@@ -65,14 +65,15 @@ from django.db import models, router
 from django.db.models.base import ModelBase
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import lazy
-from django.utils.translation import get_language, ugettext, ugettext_lazy as _
+from django.utils.translation import ugettext, ugettext_lazy as _
 from django.utils import six
 from parler import signals
 from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
 from parler.utils import compat
-from parler.utils.i18n import normalize_language_code, get_language_settings, get_language_title, get_null_language_error
+from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
+                               get_null_language_error)
 import sys
 
 try:
