@@ -1,5 +1,11 @@
-from django.core.cache import cache
+import unittest
+
+from django.db import models
 from django.db.models import Manager
+from django.utils import six
+from parler.models import TranslatableModel
+from parler.models import TranslatedFields
+
 from .utils import AppTestCase
 from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel, DoubleModel, RegularModel, CharModel
 
@@ -93,3 +99,28 @@ class ModelConstructionTests(AppTestCase):
         """
         self.assertIsInstance(SimpleModel.objects.create(tr_title='Test'), SimpleModel)
         self.assertIsInstance(CharModel.objects.create(pk='test', tr_title='Test'), CharModel)
+
+    @unittest.expectedFailure
+    def test_model_metaclass_create_order(self):
+        """
+        For some reason, having a custom ModelBase metaclass breaks
+        the ``pk`` field detection when ``TranslatableModel`` is the first model in an inheritance chain.
+        Using ``Book(Product, TranslatableModel)`` does work.
+        """
+        from django.db.models.base import ModelBase
+        class FooModelBase(ModelBase):
+            pass
+
+        class FooModel(six.with_metaclass(FooModelBase, models.Model)):
+            class Meta:
+                abstract = True
+
+        class Product(FooModel):
+            pass
+
+        class Book(TranslatableModel, Product):
+            translations = TranslatedFields(
+                slug=models.SlugField(blank=False, default='', max_length=128)
+            )
+
+        self.assertTrue(Book._meta.pk)

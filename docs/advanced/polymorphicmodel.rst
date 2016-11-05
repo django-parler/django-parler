@@ -48,7 +48,7 @@ pattern works for a polymorphic Django model:
 
 
 	@python_2_unicode_compatible
-	class Pen(TranslatableModel, Product):
+	class Pen(Product, TranslatableModel):
 	    # Solution 2: override the default manager.
 	    default_manager = TranslatableManager()
 	
