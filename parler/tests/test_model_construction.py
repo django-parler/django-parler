@@ -1,10 +1,15 @@
-import unittest
 
 from django.db import models
 from django.db.models import Manager
 from django.utils import six
 from parler.models import TranslatableModel
 from parler.models import TranslatedFields
+
+try:
+    from unittest import expectedFailure
+except ImportError:
+    # python<2.7
+    from django.utils.unittest import expectedFailure
 
 from .utils import AppTestCase
 from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel, DoubleModel, RegularModel, CharModel
@@ -100,7 +105,7 @@ class ModelConstructionTests(AppTestCase):
         self.assertIsInstance(SimpleModel.objects.create(tr_title='Test'), SimpleModel)
         self.assertIsInstance(CharModel.objects.create(pk='test', tr_title='Test'), CharModel)
 
-    @unittest.expectedFailure
+    @expectedFailure
     def test_model_metaclass_create_order(self):
         """
         For some reason, having a custom ModelBase metaclass breaks
