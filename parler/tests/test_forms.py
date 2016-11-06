@@ -43,6 +43,16 @@ class FormTests(AppTestCase):
     Test model construction
     """
 
+    def test_form_language_validation(self):
+        form_instance = SimpleForm(_current_language='fr-FR')
+        self.assertEqual(form_instance.language_code, 'fr-FR')
+
+        with self.assertRaises(ValueError):
+            SimpleForm(_current_language='fa')
+
+        with self.assertRaises(ValueError):
+            SimpleForm(_current_language='va_VN')
+
     def test_form_fields(self):
         """
         Check if the form fields exist.
