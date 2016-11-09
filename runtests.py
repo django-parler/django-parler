@@ -90,6 +90,12 @@ if not settings.configured:
 
         SITE_ID = 4,
         LANGUAGE_CODE = 'en',
+        LANGUAGES = (
+            ('nl', 'Dutch'),
+            ('de', 'German'),
+            ('en', 'English'),
+            ('fr', 'French'),
+        ),
         PARLER_LANGUAGES = {
             4: (
                 {'code': 'nl'},
