@@ -77,12 +77,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                 self.language_code = current_language or get_language()
 
         try:
-            try:
-                from django.utils.translation.trans_real import get_supported_language_variant
-                get_supported_language_variant(self.language_code)
-            except ImportError:
-                if self.language_code.split('-')[0] not in [lang[0].split('-')[0] for lang in settings.LANGUAGES]:
-                    raise LookupError('%s not supported' % self.language_code)
+            compat.get_supported_language_variant(self.language_code)
         except LookupError:
             # Instead of raising a ValidationError
             raise ValueError(

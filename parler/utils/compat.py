@@ -27,6 +27,17 @@ except ImportError:
         return form_url
 
 
+# Django 1.6 get_supported_language_variant function
+try:
+    from django.utils.translation.trans_real import get_supported_language_variant
+except ImportError:
+    def get_supported_language_variant(language_code, strict=False):
+        generic_lang_code = language_code.split('-')[0]
+        if generic_lang_code not in [lang[0].split('-')[0] for lang in settings.LANGUAGES]:
+            raise LookupError('%s not supported' % self.language_code)
+        return generic_lang_code
+
+
 def with_metaclass(meta, *bases):
     # Function from python-future and jinja2. License: BSD.
     # Allow consistent behaviours across all django versions
