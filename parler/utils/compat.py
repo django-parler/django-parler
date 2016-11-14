@@ -2,6 +2,7 @@
 Django compatibility features
 """
 from django.db import transaction, models
+from django.conf import settings
 
 __all__ = (
     'transaction_atomic',
