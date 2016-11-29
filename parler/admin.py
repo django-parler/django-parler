@@ -496,6 +496,14 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             "app_label": opts.app_label,
         }
 
+        # Small hack for django-polymorphic-tree.
+        # This makes sure the breadcrumb renders correctly,
+        # and avoids errors when the child model is not registered in the admin.
+        if hasattr(self, 'base_model'):
+            context.update({
+                'base_opts': self.base_model._meta,
+            })
+
         return render(request, self.delete_confirmation_template or [
             "admin/%s/%s/delete_confirmation.html" % (opts.app_label, opts.object_name.lower()),
             "admin/%s/delete_confirmation.html" % opts.app_label,
