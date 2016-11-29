@@ -1,11 +1,15 @@
 Changelog
 =========
 
-Changes in git
---------------
+Changes in 1.7 (2016-11-29)
+---------------------------
 
 * Added ``delete_translation()`` API.
-* Fix creating translations which only have default values.
+* Added ``PARLER_DEFAULT_ACTIVATE`` setting, which allows to display translated texts in the default
+  language even through ``translation.activate()`` is not called yet.
+* Improve language code validation in forms, allows to enter a language variant.
+* Fixed not creating translations when default values were filled in.
+* Fixed breadcrumb errors in delete translation view when using django-polymorphic-tree_.
 
 
 Changes in 1.6.5 (2016-07-11)
@@ -281,5 +285,6 @@ Changes in version 0.9 (beta)
 .. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
 .. _django-mptt: https://github.com/django-mptt/django-mptt
-.. _django-slug-preview: https://github.com/edoburu/django-slug-preview
+.. _django-polymorphic-tree: https://github.com/django-polymorphic/django-polymorphic-tree
 .. _django-rest-framework: https://github.com/tomchristie/django-rest-framework
+.. _django-slug-preview: https://github.com/edoburu/django-slug-preview
