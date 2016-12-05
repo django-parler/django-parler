@@ -291,7 +291,11 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
                 return self.form_class
             else:
                 model = _get_view_model(self)
-                return modelform_factory(model, form=TranslatableModelForm)
+                if self.fields:
+                    fields = self.fields
+                    return modelform_factory(model, form=TranslatableModelForm, fields=fields)
+                else:
+                    return modelform_factory(model, form=TranslatableModelForm)
 
     def get_form_kwargs(self):
         """
