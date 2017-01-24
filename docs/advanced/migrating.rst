@@ -48,9 +48,14 @@ Using Django
 
 Create an empty migration::
 
-    manage.py makemigrations --empty myapp "migrate_translatable_fields"
+    manage.py makemigrations --empty myapp --name "migrate_translatable_fields"
 
 And use it to move the data::
+
+    from django.db import migrations
+    from django.conf import settings
+    from django.core.exceptions import ObjectDoesNotExist
+
 
     def forwards_func(apps, schema_editor):
         MyModel = apps.get_model('myapp', 'MyModel')
