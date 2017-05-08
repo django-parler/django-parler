@@ -49,11 +49,11 @@ if not settings.configured:
             TEMPLATE_CONTEXT_PROCESSORS = list(default_settings.TEMPLATE_CONTEXT_PROCESSORS) + [
                 'django.core.context_processors.request',
             ],
+            TEMPLATE_DEBUG = True,
         )
 
     settings.configure(
         DEBUG = False,  # will be False anyway by DjangoTestRunner.
-        TEMPLATE_DEBUG = True,
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
