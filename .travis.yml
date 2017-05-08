@@ -13,6 +13,7 @@ env:
 - DJANGO="django>=1.8.0,<1.9.0"
 - DJANGO="django>=1.9.0,<1.10.0"
 - DJANGO="django>=1.10.1,<1.11.0"
+- DJANGO="django>=1.11.0,<1.12.0"
 matrix:
   exclude:
   - python: '2.6'
@@ -23,20 +24,25 @@ matrix:
     env: DJANGO="django>=1.9.0,<1.10.0"
   - python: '2.6'
     env: DJANGO="django>=1.10.1,<1.11.0"
+  - python: '2.6'
+    env: DJANGO="django>=1.11.0,<1.12.0"
   - python: '3.3'
     env: DJANGO="django>=1.4.0,<1.5.0"
   - python: '3.3'
     env: DJANGO="django>=1.9.0,<1.10.0"
   - python: '3.3'
     env: DJANGO="django>=1.10.1,<1.11.0"
+  - python: '3.3'
+    env: DJANGO="django>=1.11.0,<1.12.0"
   allow_failures:
-    - env: DJANGO="django>=1.10.1,<1.11.0"
+    - env: DJANGO="django>=1.11.0,<1.12.0"
 before_install:
 - pip install codecov
 install:
+- pip install -U pip wheel setuptools
 - travis_retry pip install $DJANGO -e .
 script:
-- coverage run --source=example/article,parler runtests.py
+- coverage run --rcfile=.coveragerc runtests.py
 after_success:
 - codecov
 branches:

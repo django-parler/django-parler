@@ -1,0 +1,5 @@
+[run]
+source = example/article,parler
+omit =
+    */south_migrations/*
+    */migrations/*
