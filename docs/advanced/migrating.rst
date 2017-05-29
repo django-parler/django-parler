@@ -34,7 +34,8 @@ First create the translatable fields::
 
 Now create the migration:
 
-* For Django 1.7, use: ``manage.py makemigrations myapp  "add_translation_model"``
+* For Django 1.7, use: ``manage.py makemigrations myapp "add_translation_model"``
+* For Django 1.8 and above, use: ``manage.py makemigrations myapp --name "add_translation_model"``
 * For South, use:  ``manage.py schemamigration myapp --auto "add_translation_model"``
 
 
@@ -183,7 +184,8 @@ The example model now looks like::
 
 Create the database migration, it will simply remove the original field.
 
-* For Django 1.7, use: ``manage.py makemigrations myapp  "remove_untranslated_fields"``
+* For Django 1.7, use: ``manage.py makemigrations myapp "remove_untranslated_fields"``
+* For Django 1.8 and above, use: ``manage.py makemigrations myapp --name "remove_untranslated_fields"``
 * For South, use:  ``manage.py schemamigration myapp --auto "remove_untranslated_fields"``
 
 
