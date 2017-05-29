@@ -105,6 +105,14 @@ And a function to query just a specific field::
 
     model.safe_translation_getter('title', language_code='fr')
 
+Deleting all translations for a model instance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In order to delete all registered translations for a model instance simply run::
+
+    >>> for translation in object.translations.all():
+    >>>     translation.delete()
+    
+where ``translations`` is the field name that was assigned to ``TranslatedFields()``. This approach however does not work if there is more than one field that carries the translations.
 
 Configuration
 -------------
