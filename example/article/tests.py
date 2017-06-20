@@ -2,7 +2,10 @@
 from __future__ import unicode_literals
 # from django.conf import settings
 import unittest
+from collections import deque
+
 import django
+from django.test.html import parse_html, Element
 from django.utils import encoding, translation
 from django.test import TestCase
 from django.contrib import auth
@@ -54,6 +57,35 @@ class TestMixin(object):
 
     def assertNotInContent(self, member, resp, msg=None):
         return super(TestMixin, self).assertNotIn(member, encoding.smart_text(resp.content), msg)
+
+    def assertHTMLInContent(self, html_tag, resp):
+        find_html = parse_html(html_tag)
+        if find_html.children:
+            raise ValueError("Can only look for single tags")
+        tag_name = find_html.name
+        find_attrs = dict(find_html.attributes)
+
+        html = parse_html(encoding.smart_text(resp.content))
+        queue = deque()
+        queue.extend(html.children)
+        while queue:
+            node = queue.popleft()
+            if isinstance(node, Element):
+                if node.name == tag_name and _is_dict_subset(find_attrs, dict(node.attributes)):
+                    return
+
+                if node.children:
+                    queue.extend(node.children)
+
+        raise AssertionError("Element <{html_tag}> not found in {html}".format(
+            html_tag=html_tag,
+            html=html,
+        ))
+
+
+def _is_dict_subset(d1, d2):
+    # This is compatible with any version of Python, and doesn't care about dict ordering.
+    return all(key in d2 and d2[key] == d1[key] for key in d1)
 
 
 class ArticleTestCase(TestMixin, TestCase):
@@ -165,20 +197,20 @@ class AdminArticleTestCase(TestMixin, TestCase):
         resp = self.client.get(reverse('admin:article_article_change', args=[self.art_id]), {"language": "en"})
         self.assertEqual(200, resp.status_code)
         self.assertInContent('<h1>Change Article (English)</h1>', resp)
-        self.assertInContent('name="title" type="text" value="Cheese omelet"', resp)
+        self.assertHTMLInContent('<input name="title" type="text" value="Cheese omelet">', resp)
 
         translation.activate('fr')
         resp = self.client.get(reverse('admin:article_article_change', args=[self.art_id]), {"language": "en"})
         self.assertEqual(200, resp.status_code)
         self.assertInContent('<h1>Modification de Article (Anglais)</h1>', resp)
-        self.assertInContent('name="title" type="text" value="Cheese omelet"', resp)
+        self.assertHTMLInContent('<input name="title" type="text" value="Cheese omelet">', resp)
 
         translation.activate('en')
 
         resp = self.client.get(reverse('admin:article_article_change', args=[self.art_id]), {"language": "nl"})
         self.assertEqual(200, resp.status_code)
         self.assertInContent('<h1>Change Article (Dutch)</h1>', resp)
-        self.assertInContent('name="title" type="text" />', resp)
+        self.assertHTMLInContent('<input name="title" type="text">', resp)
 
     def test_admin_change_category(self):
         self.client.login(**self.credentials)

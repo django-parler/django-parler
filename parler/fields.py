@@ -153,7 +153,7 @@ class LanguageCodeDescriptor(object):
 
     def __get__(self, instance, instance_type=None):
         if not instance:
-            raise AttributeError("language_code must be accessed via instance")
+            return self
 
         return instance._current_language
 
