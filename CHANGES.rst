@@ -1,6 +1,20 @@
 Changelog
 =========
 
+Changes in 1.8 (2017-06-20)
+-----------------------------
+
+* Dropped Django 1.5, 1.6 and Python 2.6 support.
+* Fixed Django 1.10 / 1.11 support:
+
+  * Fix ``.language('xx').get()`` usage.
+  * Fix models construction via ``Model(**kwargs)``.
+  * Fix test warnings due to tests corrupting the app registry.
+
+* Fix support for ``ModelFormMixin.fields`` in ``TranslatableUpdateView``.
+  Django allows that attribute as alternative to setting a ``form_class`` manually.
+
+
 Changes in 1.7 (2016-11-29)
 ---------------------------
 
