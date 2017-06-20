@@ -53,7 +53,7 @@ The same database layout is used by django-hvad_, making a transition to django-
 
 Advantages:
 
-* Works with existing tools, such as South.
+* Works with existing tools, such as the Django migration framework.
 * Unlimited languages can be supported
 * Languages can be added on the fly, no database migrations needed.
 
@@ -89,7 +89,7 @@ The advantages are:
 The disadvantages are:
 
 * The database schema is changed based on the project settings.
-* Third party packages can't provide reasonable South data migrations for translated fields.
+* Third party packages can't provide reasonable data migrations for translated fields.
 * For projects with a large number of languages, a lot of additional fields will be read with each query,
 
 

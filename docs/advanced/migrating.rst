@@ -36,16 +36,12 @@ Now create the migration:
 
 * For Django 1.7, use: ``manage.py makemigrations myapp "add_translation_model"``
 * For Django 1.8 and above, use: ``manage.py makemigrations myapp --name "add_translation_model"``
-* For South, use:  ``manage.py schemamigration myapp --auto "add_translation_model"``
 
 
 Step 2: Copy the data
 ---------------------
 
 Within the data migration, copy the existing data:
-
-Using Django
-~~~~~~~~~~~~
 
 Create an empty migration::
 
@@ -76,7 +72,7 @@ And use it to move the data::
         for object in MyModel.objects.all():
             translation = _get_translation(object, MyModelTranslation)
             object.name = translation.name
-            object.save()   # Note this only calls Model.save() in South.
+            object.save()   # Note this only calls Model.save()
 
     def _get_translation(object, MyModelTranslation):
         translations = MyModelTranslation.objects.filter(master_id=object.pk)
@@ -108,69 +104,6 @@ And use it to move the data::
    In this example, the ``backwards_func()`` logic is extremely defensive not to loose translated data.
 
 
-Using South
-~~~~~~~~~~~
-
-With South, create a data migration::
-
-    manage.py datamigration myapp "migrate_translatable_fields"
-
-The logic is identical, only the way for receiving the ORM models differs::
-
-    class Migration(DataMigration):
-
-        def forwards(self, orm):
-            MyModel = orm['myapp.MyModel']
-            MyModelTranslation = orm['myapp.MyModelTranslation']
-
-            for object in MyModel.objects.all():
-                MyModelTranslation.objects.create(
-                    master_id=object.pk,
-                    language_code=settings.LANGUAGE_CODE,
-                    name=object.name
-                )
-
-        def backwards(self, orm):
-            # Convert all fields back to the single-language table.
-            MyModel = orm['myapp.MyModel']
-            MyModelTranslation = orm['myapp.MyModelTranslation']
-
-            for object in MyModel.objects.all():
-                translation = _get_translation(object, MyModelTranslation)
-                object.name = translation.name
-                object.save()   # Note this only calls Model.save() in South.
-
-
-    def _get_translation(object, MyModelTranslation):
-        translations = MyModelTranslation.objects.filter(master_id=object.pk)
-        try:
-            # Try default translation
-            return translations.get(language_code=settings.LANGUAGE_CODE)
-        except ObjectDoesNotExist:
-            try:
-                # Try default language
-                return translations.get(language_code=settings.PARLER_DEFAULT_LANGUAGE_CODE)
-            except ObjectDoesNotExist:
-                # Maybe the object was translated only in a specific language?
-                # Hope there is a single translation
-                return translations.get()
-
-The forwards method can also be implemented in raw SQL::
-
-    class Migration(DataMigration):
-
-        def forwards(self, orm):
-            db.execute(
-                'INSERT INTO myapp_mymodel_translation(name, language_code, master_id)'
-                ' SELECT name, _cached_url, %s, id FROM myapp_mymodel',
-                [settings.LANGUAGE_CODE]
-            )
-
-.. note::
-   Be careful which language is used to migrate the existing data.
-   In this example, the ``backwards()`` logic is extremely defensive not to loose translated data.
-
-
 Step 3: Remove the old fields
 -----------------------------
 
@@ -186,7 +119,6 @@ Create the database migration, it will simply remove the original field.
 
 * For Django 1.7, use: ``manage.py makemigrations myapp "remove_untranslated_fields"``
 * For Django 1.8 and above, use: ``manage.py makemigrations myapp --name "remove_untranslated_fields"``
-* For South, use:  ``manage.py schemamigration myapp --auto "remove_untranslated_fields"``
 
 
 Updating code

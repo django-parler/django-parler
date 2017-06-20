@@ -1,14 +1,14 @@
 from django import forms
 import django
-from django.conf import settings
 from django.core.exceptions import NON_FIELD_ERRORS, ObjectDoesNotExist, ValidationError
 from django.forms.forms import BoundField
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
 from django.utils.functional import cached_property
 from django.utils.translation import get_language
 from django.utils import six
+from django.utils.translation.trans_real import get_supported_language_variant
+
 from parler.models import TranslationDoesNotExist
-from parler.utils import compat
 
 
 __all__ = (
@@ -77,7 +77,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                 self.language_code = current_language or get_language()
 
         try:
-            compat.get_supported_language_variant(self.language_code)
+            get_supported_language_variant(self.language_code)
         except LookupError:
             # Instead of raising a ValidationError
             raise ValueError(
@@ -347,19 +347,12 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     return formfield
 
 
-if django.VERSION < (1, 5):
-    # Django 1.4 doesn't recognize the use of with_metaclass.
-    # This breaks the form initialization in modelform_factory()
-    class TranslatableModelForm(BaseTranslatableModelForm, forms.ModelForm):
-        __metaclass__ = TranslatableModelFormMetaclass
-else:
-    class TranslatableModelForm(compat.with_metaclass(TranslatableModelFormMetaclass, BaseTranslatableModelForm, forms.ModelForm)):
-        """
-        The model form to use for translated models.
-        """
+class TranslatableModelForm(six.with_metaclass(TranslatableModelFormMetaclass, BaseTranslatableModelForm, forms.ModelForm)):
+    """
+    The model form to use for translated models.
+    """
 
-    # six.with_metaclass does not handle more than 2 parent classes for django < 1.6
-    # but we need all of them in django 1.7 to pass check admin.E016:
+    # The multiple parent classes are needed in django 1.7 to pass check admin.E016:
     #       "The value of 'form' must inherit from 'BaseModelForm'"
     # so we use our copied version in parler.utils.compat
     #

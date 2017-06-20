@@ -24,7 +24,6 @@
       As the URL is translated too, make sure the admin points to the current one.
       Using `get_absolute_url` call so the object returns the URL in the currently activated language.
     {% endcomment %}
-    {# admin_urlquote is not compatible with django 1.4, use urlencode instead #}
     <li><a href="{% url opts|admin_urlname:'history' original.pk|urlencode %}" class="historylink">{% trans "History" %}</a></li>
     {% if not add and has_absolute_url %}<li><a href="{{ original.get_absolute_url }}" class="viewsitelink">{% trans "View on site" %}</a></li>{% endif%}
 {% endblock %}

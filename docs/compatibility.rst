@@ -3,8 +3,8 @@ Django compatibility
 
 This package has been tested with:
 
-* Django versions 1.5, 1.6, 1.7, 1.8 and 1.9
-* Python versions 2.6, 2.7, 3.3 and 3.4
+* Django versions 1.7 up to 1.11
+* Python versions 2.7 up to 3.6
 
 .. _orm-restrictions:
 
@@ -99,14 +99,3 @@ Use :func:`~django.contrib.admin.ModelAdmin.get_prepopulated_fields` as workarou
             return {
                 'slug': ('title',)
             }
-
-Using ``fieldsets`` in Django 1.4
----------------------------------
-
-When using Django 1.4, there is a small tweak you'll have to make in the admin.
-Instead of using :attr:`~django.contrib.admin.ModelAdmin.fieldsets`, use ``declared_fieldsets``
-on the :class:`~django.contrib.admin.ModelAdmin` definition.
-
-The Django 1.4 admin validation doesn't actually check the form fields,
-but only checks whether the fields exist in the model - which they obviously don't.
-Using ``declared_fieldsets`` instead of ``fieldsets`` circumvents this check.

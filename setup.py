@@ -39,7 +39,7 @@ setup(
     license='Apache 2.0',
 
     requires=[
-        'Django (>=1.4.2)',
+        'Django (>=1.7)',
     ],
 
     description='Simple Django model translations without nasty hacks, featuring nice admin integration.',
@@ -65,16 +65,15 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Framework :: Django',
-        'Framework :: Django :: 1.4',
-        'Framework :: Django :: 1.5',
-        'Framework :: Django :: 1.6',
         'Framework :: Django :: 1.7',
         'Framework :: Django :: 1.8',
+        'Framework :: Django :: 1.9',
+        'Framework :: Django :: 1.10',
+        'Framework :: Django :: 1.11',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Application Frameworks',

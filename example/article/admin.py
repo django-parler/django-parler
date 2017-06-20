@@ -30,7 +30,6 @@ class ArticleAdmin(TranslatableAdmin):
     # Example custom form usage.
     form = ArticleAdminForm
 
-    # NOTE: when using Django 1.4, use declared_fieldsets= instead of fieldsets=
     fieldsets = (
         (None, {
             'fields': ('title', 'slug', 'published', 'category'),

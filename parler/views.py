@@ -89,15 +89,6 @@ class ViewUrlMixin(object):
 
         return reverse(self.view_url_name, args=self.args, kwargs=self.kwargs)
 
-    if django.VERSION < (1, 5):
-        # The `get_translated_url` tag relies on the fact that the template can access the view again.
-        # This was not possible until Django 1.5, so provide the `ContextMixin` logic for earlier Django versions.
-
-        def get_context_data(self, **kwargs):
-            if 'view' not in kwargs:
-                kwargs['view'] = self
-            return kwargs
-
 
 class TranslatableSlugMixin(object):
     """

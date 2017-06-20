@@ -1,32 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-# from django.conf import settings
-import unittest
 from collections import deque
+from unittest import skipIf, expectedFailure
 
 import django
 from django.test.html import parse_html, Element
+from django.test.utils import override_settings
 from django.utils import encoding, translation
 from django.test import TestCase
 from django.contrib import auth
-from django.core.urlresolvers import reverse, get_urlconf
+from django.core.urlresolvers import reverse
 from .models import Article, Category
 from parler.appsettings import PARLER_LANGUAGES
-
-try:
-    from unittest import skipIf, expectedFailure
-except ImportError:
-    # python<2.7
-    from django.utils.unittest import skipIf, expectedFailure
-
-try:
-    from django.test.utils import override_settings  # Django 1.7+
-except ImportError:
-    def override_settings(ROOT_URLCONF=None):
-        assert get_urlconf() == ROOT_URLCONF
-        def dummy_dec(func):
-            return func
-        return dummy_dec
 
 
 class TestMixin(object):

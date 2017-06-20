@@ -1,38 +1,25 @@
 from __future__ import print_function
+import os
+
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.contrib.sites.models import Site
 from django.test import TestCase
 from django.test.utils import override_settings
-import os
+from importlib import import_module
+
 from parler import appsettings
 
-try:
-    from importlib import import_module
-except ImportError:
-    from django.utils.importlib import import_module  # Python 2.6
-
-try:
-    User = get_user_model()
-except ImportError:  # django < 1.5
-    from django.contrib.auth.models import User
+User = get_user_model()
 
 
 def clear_cache():
     """
     Clear internal cache of apps loading
     """
-    import django
-    if django.VERSION >= (1.7):
-        try:
-            from django.db.models import loading
-            loading.cache.loaded = False
-        except ImportError:  # Django >= 1.9
-            pass
-    else:
-        from django.apps import apps
-        apps.clear_cache()
+    apps.clear_cache()
 
 
 class override_parler_settings(override_settings):
@@ -90,7 +77,7 @@ class AppTestCase(TestCase):
                 call_command('syncdb', verbosity=0)  # may run south's overlaid version
 
         # Create basic objects
-        # 1.4 does not create site automatically with the defined SITE_ID, 1.3 does.
+        # Django does not create site automatically with the defined SITE_ID
         Site.objects.get_or_create(id=settings.SITE_ID, defaults=dict(domain='django.localhost', name='django at localhost'))
         cls.user, _ = User.objects.get_or_create(is_superuser=True, is_staff=True, username="admin")
 

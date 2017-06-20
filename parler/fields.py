@@ -162,14 +162,3 @@ class LanguageCodeDescriptor(object):
 
     def __delete__(self, instance):
         raise AttributeError("The 'language_code' attribute cannot be deleted!")
-
-
-try:
-    from south.modelsinspector import add_ignored_fields
-except ImportError:
-    pass
-else:
-    _name_re = "^" + __name__.replace(".", "\.")
-    add_ignored_fields((
-        _name_re + "\.TranslatedField",
-    ))

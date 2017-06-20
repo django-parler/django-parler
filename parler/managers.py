@@ -121,7 +121,6 @@ class TranslatableManager(models.Manager):
             raise ImproperlyConfigured("{0}.queryset_class does not inherit from TranslatableQuerySet".format(self.__class__.__name__))
         return self.queryset_class(self.model, using=self._db)
 
-    # For Django 1.5
     # Leave for Django 1.6/1.7, so backwards compatibility can be fixed.
     # It will be removed in Django 1.8, so remove it here too to avoid false promises.
     if django.VERSION < (1, 8):
@@ -129,7 +128,6 @@ class TranslatableManager(models.Manager):
 
     # NOTE: Fetching the queryset is done by calling self.all() here on purpose.
     # By using .all(), the proper get_query_set()/get_queryset() will be used for each Django version.
-    # Django 1.4/1.5 need to use get_query_set(), because the RelatedManager overrides that.
 
     def language(self, language_code=None):
         """

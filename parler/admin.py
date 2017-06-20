@@ -42,27 +42,23 @@ from django.conf import settings
 from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
-try:
-    from django.contrib.admin.utils import get_deleted_objects, unquote
-except ImportError:
-    from django.contrib.admin.util import get_deleted_objects, unquote
+from django.contrib.admin.utils import get_deleted_objects, unquote
+from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.core.urlresolvers import reverse
-from django.db import router
+from django.db import router, transaction
 from django.forms import Media
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
-from django.utils.functional import lazy, cached_property
+from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, get_language
-from django.utils import six
 from parler import appsettings
 from parler.forms import TranslatableModelForm, TranslatableBaseInlineFormSet
 from parler.managers import TranslatableQuerySet
 from parler.models import TranslatableModelMixin
-from parler.utils.compat import transaction_atomic, add_preserved_filters
 from parler.utils.i18n import get_language_title, is_multilingual_project
 from parler.utils.views import get_language_parameter, get_language_tabs
 from parler.utils.template import select_template_name
@@ -171,9 +167,6 @@ class BaseTranslatableAdmin(BaseModelAdmin):
                 qs = qs.language(qs_language)
 
         return qs
-
-    # For Django 1.5
-    queryset = get_queryset
 
     def get_language_tabs(self, request, obj, available_languages, css_class=None):
         """
@@ -376,10 +369,6 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         return super(TranslatableAdmin, self).render_change_form(request, context, add, change, form_url, obj)
 
     def response_add(self, request, obj, post_url_continue=None):
-        # Minor behavior difference for Django 1.4
-        if post_url_continue is None and django.VERSION < (1, 5):
-            post_url_continue = '../%s/'
-
         # Make sure ?language=... is included in the redirects.
         redirect = super(TranslatableAdmin, self).response_add(request, obj, post_url_continue)
         return self._patch_redirect(request, obj, redirect)
@@ -407,7 +396,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         return redirect
 
     @csrf_protect_m
-    @transaction_atomic
+    @transaction.atomic
     def delete_translation(self, request, object_id, language_code):
         """
         The 'delete translation' admin view for this model.
@@ -566,12 +555,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         Fetch the inline translations
         """
-        # django 1.4 do not accept the obj parameter
-        if django.VERSION < (1, 5):
-            inline_instances = self.get_inline_instances(request)
-        else:
-            inline_instances = self.get_inline_instances(request, obj=obj)
-
+        inline_instances = self.get_inline_instances(request, obj=obj)
         for inline in inline_instances:
             if issubclass(inline.model, TranslatableModelMixin):
                 # leverage inlineformset_factory() to find the ForeignKey.
