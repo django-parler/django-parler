@@ -48,6 +48,22 @@ class ModelAttributeTests(AppTestCase):
             x.set_current_language('ca-fr')
             self.assertEqual(x.tr_title, 'TRANS_CA')
 
+    def test_get_language(self):
+        """
+        See how ``.language().get()`` works.
+        """
+        with translation.override('fr'):
+            # Despite being
+            # Initialize form in other language.
+            x = SimpleModel(shared='SHARED', tr_title='TRANS', _current_language='nl')
+            self.assertEqual(x.get_current_language(), 'nl')
+            x.save()
+
+            x2 = SimpleModel.objects.language('nl').get(pk=x.pk)
+            self.assertEqual(x2.get_current_language(), 'nl')
+            self.assertEqual(x2.shared, 'SHARED')
+            self.assertEqual(x2.tr_title, 'TRANS')
+
     def test_init_args(self):
         """
         Test whether passing translated attributes to __init__() works.

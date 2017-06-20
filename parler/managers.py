@@ -38,6 +38,17 @@ class TranslatableQuerySet(QuerySet):
             kwargs['_current_language'] = self._language
         return super(TranslatableQuerySet, self).create(**kwargs)
 
+    def _fetch_all(self):
+        # Make sure the current language is assigned when Django fetches the data.
+        # This low-level method is overwritten as that works better across Django versions.
+        # Alternatives include:
+        # - overwriting iterator() for Django <= 1.10
+        # - hacking _iterable_class, which breaks django-polymorphic
+        super(TranslatableQuerySet, self)._fetch_all()
+        if self._language is not None and self._result_cache and isinstance(self._result_cache[0], models.Model):
+            for obj in self._result_cache:
+                obj.set_current_language(self._language)
+
     def language(self, language_code=None):
         """
         Set the language code to assign to objects retrieved using this QuerySet.
@@ -97,21 +108,6 @@ class TranslatableQuerySet(QuerySet):
         # Alternative: (language,)          when hide_untranslated == True
         language_codes = get_active_language_choices(language_code)
         return self.translated(*language_codes, **translated_fields)
-
-    def iterator(self):
-        """
-        Overwritten iterator which will set the current language before returning the object.
-        """
-        # Based on django-queryset-transform.
-        # This object however, operates on a per-object instance
-        # without breaking the result generators
-        base_iterator = super(TranslatableQuerySet, self).iterator()
-        for obj in base_iterator:
-            # Apply the language setting to model instances only.
-            if self._language and isinstance(obj, models.Model):
-                obj.set_current_language(self._language)
-
-            yield obj
 
 
 class TranslatableManager(models.Manager):
