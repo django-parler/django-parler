@@ -68,7 +68,7 @@ Replace ``None`` with the ``SITE_ID`` when you run a multi-site project with the
 Each ``SITE_ID`` can be added as additional entry in the dictionary.
 
 Make sure your project is configured for multiple languages.
-It might be useful to limit the ``LANGUAGES`` seting. For example:
+It might be useful to limit the ``LANGUAGES`` setting. For example:
 
 .. code-block:: python
 
