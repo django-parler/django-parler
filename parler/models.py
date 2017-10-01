@@ -582,7 +582,7 @@ class TranslatableModelMixin(object):
             try:
                 for fallback_lang in check_languages:
                     trans = local_cache.get(fallback_lang, None)
-                    if trans:
+                    if trans and trans is not MISSING:
                         return trans
                 return next(t for t in six.itervalues(local_cache) if t is not MISSING)
             except StopIteration:
