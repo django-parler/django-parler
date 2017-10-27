@@ -303,3 +303,9 @@ class ModelAttributeTests(AppTestCase):
         # Check that we get language code as a fallback, when language is
         # not configured.
         self.assertEqual(translation_as_str, missing_language_code)
+
+    def test_get_or_create_defaults(self):
+        y, _ = SimpleModel.objects.language('nl').get_or_create(
+            shared='XXX', defaults={'tr_title': 'TRANS_TITLE'})
+        self.assertEqual(y.get_current_language(), 'nl')
+        self.assertEqual(y.tr_title, "TRANS_TITLE")

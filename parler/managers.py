@@ -49,6 +49,20 @@ class TranslatableQuerySet(QuerySet):
             for obj in self._result_cache:
                 obj.set_current_language(self._language)
 
+    def _extract_model_params(self, defaults, **kwargs):
+        # Django>1.10 don't allow non-field attributes, so process them manually
+        translated_defaults = {}
+        for field in self.model._parler_meta.get_all_fields():
+            try:
+                translated_defaults[field] = defaults.pop(field)
+            except KeyError:
+                pass
+
+        lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
+        params.update(translated_defaults)
+
+        return lookup, params
+
     def language(self, language_code=None):
         """
         Set the language code to assign to objects retrieved using this QuerySet.
