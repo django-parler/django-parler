@@ -50,7 +50,8 @@ class TranslatableQuerySet(QuerySet):
                 obj.set_current_language(self._language)
 
     def _extract_model_params(self, defaults, **kwargs):
-        # Django>1.10 don't allow non-field attributes, so process them manually
+        # default implementation in Django>=1.11 doesn't allow non-field attributes,
+        # so process them manually
         translated_defaults = {}
         for field in self.model._parler_meta.get_all_fields():
             try:
@@ -60,6 +61,10 @@ class TranslatableQuerySet(QuerySet):
 
         lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
         params.update(translated_defaults)
+
+        if (1, 7) <= django.VERSION < (1, 8):
+            if self._language:
+                params['_current_language'] = self._language
 
         return lookup, params
 
