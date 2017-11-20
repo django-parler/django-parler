@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Changes in 1.8.1 (2017-11-20)
+-----------------------------
+
+* Fixed checkes for missing fallback languages (``IsMissing`` sentinel value leaked through caching)
+* Fixed preserving the language tab in the admin.
+* Fixed ``get_or_create()`` call.
+
+
 Changes in 1.8 (2017-06-20)
 -----------------------------
 
