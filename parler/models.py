@@ -475,7 +475,7 @@ class TranslatableModelMixin(object):
             object = local_cache[language_code]
 
             # If cached object indicates the language doesn't exist, need to query the fallback.
-            if object is not MISSING:
+            if object:
                 return object
         except KeyError:
             # 2. No cache, need to query
