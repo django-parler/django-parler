@@ -68,7 +68,7 @@ from django.utils.functional import lazy
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.utils import six
 from parler import signals
-from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field
+from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field, is_missing
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
 from parler.utils import compat
@@ -500,7 +500,7 @@ class TranslatableModelMixin(object):
                             local_cache[language_code] = MISSING  # Set fallback marker
                         local_cache[object.language_code] = object
                         return object
-                    elif local_cache.get(language_code, None) is MISSING:
+                    elif is_missing(local_cache.get(language_code, None)):
                         # If get_cached_translation() explicitly set the "does not exist" marker,
                         # there is no need to try a database query.
                         pass
@@ -648,7 +648,7 @@ class TranslatableModelMixin(object):
             for translation in prefetch:
                 lang = translation.language_code
                 languages_seen.append(lang)
-                if lang not in local_cache or local_cache[lang] is MISSING:
+                if lang not in local_cache or is_missing(local_cache[lang]):
                     local_cache[lang] = translation
 
         return languages_seen
@@ -679,7 +679,7 @@ class TranslatableModelMixin(object):
 
         for local_cache in six.itervalues(self._translations_cache):
             for translation in six.itervalues(local_cache):
-                if translation is MISSING:  # Skip fallback markers
+                if is_missing(translation):  # Skip fallback markers
                     continue
 
                 try:
@@ -709,7 +709,7 @@ class TranslatableModelMixin(object):
             # Save all translated objects which were fetched.
             # This also supports switching languages several times, and save everything in the end.
             for translation in translations:
-                if translation is MISSING:  # Skip fallback markers
+                if is_missing(translation):  # Skip fallback markers
                     continue
 
                 self.save_translation(translation, *args, **kwargs)

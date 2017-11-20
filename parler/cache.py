@@ -35,6 +35,14 @@ class IsMissing(object):
 MISSING = IsMissing()  # sentinel value
 
 
+def is_missing(value):
+    """
+    Check whether the returned value indicates there is no data for the language.
+    """
+    # Don't use `value is MISSING` because cached values may have a different reference.
+    return isinstance(value, IsMissing)
+
+
 def get_object_cache_keys(instance):
     """
     Return the cache keys associated with an object.
