@@ -53,11 +53,12 @@ class TranslatableQuerySet(QuerySet):
         # default implementation in Django>=1.11 doesn't allow non-field attributes,
         # so process them manually
         translated_defaults = {}
-        for field in self.model._parler_meta.get_all_fields():
-            try:
-                translated_defaults[field] = defaults.pop(field)
-            except KeyError:
-                pass
+        if defaults:
+            for field in self.model._parler_meta.get_all_fields():
+                try:
+                    translated_defaults[field] = defaults.pop(field)
+                except KeyError:
+                    pass
 
         lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
         params.update(translated_defaults)
