@@ -1,11 +1,16 @@
 from __future__ import unicode_literals
 import django
-from django.core.urlresolvers import reverse, resolve, get_urlconf
 from django.test import RequestFactory
 from django.utils import translation
 from parler.templatetags.parler_tags import get_translated_url
 from .utils import AppTestCase
 from .testapp.models import ArticleSlugModel
+
+try:
+    from django.urls import reverse, resolve, get_urlconf
+except ImportError:
+    # Support for Django <= 1.10
+    from django.core.urlresolvers import reverse, resolve, get_urlconf
 
 try:
     from django.test.utils import override_settings  # Django 1.7+

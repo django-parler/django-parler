@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=200, verbose_name='Title')),
                 ('slug', models.SlugField(verbose_name='Slug')),
                 ('content', models.TextField()),
-                ('master', models.ForeignKey(to='article.Article', null=True, related_name='translations', editable=False)),
+                ('master', models.ForeignKey(to='article.Article', null=True, related_name='translations', editable=False, on_delete=models.CASCADE)),
             ],
             options={
                 'default_permissions': (),
@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article',
             name='category',
-            field=models.ForeignKey(to='article.Category', null=True, blank=True),
+            field=models.ForeignKey(to='article.Category', null=True, blank=True, on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.CreateModel(

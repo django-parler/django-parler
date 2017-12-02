@@ -1,10 +1,15 @@
 from __future__ import unicode_literals
-from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from parler.fields import TranslatedField
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
 from parler.utils.context import switch_language
+
+try:
+    from django.urls import reverse
+except ImportError:
+    # Django <= 1.10
+    from django.core.urlresolvers import reverse
 
 
 class ManualModel(TranslatableModel):
@@ -12,7 +17,7 @@ class ManualModel(TranslatableModel):
 
 
 class ManualModelTranslations(TranslatedFieldsModel):
-    master = models.ForeignKey(ManualModel, related_name='translations')
+    master = models.ForeignKey(ManualModel, related_name='translations', on_delete=models.CASCADE)
     tr_title = models.CharField(max_length=200)
 
 
@@ -181,12 +186,12 @@ class DoubleModel(TranslatableModel):
 
 
 class DoubleModelTranslations(TranslatedFieldsModel):
-    master = models.ForeignKey(DoubleModel, related_name='base_translations')
+    master = models.ForeignKey(DoubleModel, related_name='base_translations', on_delete=models.CASCADE)
     l1_title = models.CharField(max_length=200)
 
 
 class DoubleModelMoreTranslations(TranslatedFieldsModel):
-    master = models.ForeignKey(DoubleModel, related_name='more_translations')
+    master = models.ForeignKey(DoubleModel, related_name='more_translations', on_delete=models.CASCADE)
     l2_title = models.CharField(max_length=200)
 
 
@@ -200,13 +205,13 @@ class CharModel(TranslatableModel):
 
 
 class CharModelTranslation(TranslatedFieldsModel):
-    master = models.ForeignKey(CharModel)
+    master = models.ForeignKey(CharModel, on_delete=models.CASCADE)
     tr_title = models.CharField(max_length=200)
 
 
 class ForeignKeyTranslationModel(TranslatableModel):
     translations = TranslatedFields(
-        translated_foreign = models.ForeignKey('RegularModel'),
+        translated_foreign = models.ForeignKey('RegularModel', on_delete=models.CASCADE),
     )
     shared = models.CharField(max_length=200)
 
@@ -217,11 +222,11 @@ class TranslationRelated(TranslatableModel):
 
 
 class TranslationRelatedTranslation(TranslatedFieldsModel):
-    master = models.ForeignKey(TranslationRelated, related_name='translations')
+    master = models.ForeignKey(TranslationRelated, related_name='translations', on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     m2m_regular = models.ManyToManyField(RegularModel)
 
 
 class TranslationRelatedRelation(models.Model):
-    translation = models.ForeignKey(TranslationRelatedTranslation, related_name='translation_relations')
+    translation = models.ForeignKey(TranslationRelatedTranslation, related_name='translation_relations', on_delete=models.CASCADE)
     name = models.CharField(max_length=200)

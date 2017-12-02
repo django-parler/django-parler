@@ -11,7 +11,7 @@ admin.autodiscover()
 if django.VERSION >= (1, 8):
     # New style without prefix argument
     urlpatterns = i18n_patterns(
-        url(r'^admin/', include(admin.site.urls)),
+        url(r'^admin/', admin.site.urls),
         url(r'', include('article.urls')),
     )
 else:

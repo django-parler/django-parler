@@ -9,9 +9,14 @@ from django.test.utils import override_settings
 from django.utils import encoding, translation
 from django.test import TestCase
 from django.contrib import auth
-from django.core.urlresolvers import reverse
 from .models import Article, Category
 from parler.appsettings import PARLER_LANGUAGES
+
+try:
+    from django.urls import reverse
+except ImportError:
+    # Support for Django <= 1.10
+    from django.core.urlresolvers import reverse
 
 
 class TestMixin(object):

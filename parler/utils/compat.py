@@ -23,3 +23,11 @@ class HideChoicesCharField(models.CharField):
             pass
 
         return name, path, args, kwargs
+
+
+def get_remote_field(klass):
+    try:
+        return klass.master.field.remote_field
+    except AttributeError:
+        # Django <= 1.8 compatibility
+        return klass.master.field.rel

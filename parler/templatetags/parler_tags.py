@@ -1,5 +1,5 @@
 import inspect
-from django.core.urlresolvers import reverse
+import django
 from django.template import Node, Library, TemplateSyntaxError
 from django.utils.encoding import force_text
 from django.utils.translation import get_language
@@ -7,7 +7,20 @@ from django.utils import six
 from parler.models import TranslatableModel, TranslationDoesNotExist
 from parler.utils.context import switch_language, smart_override
 
+try:
+    from django.urls import reverse
+except ImportError:
+    # Support for Django <= 1.10
+    from django.core.urlresolvers import reverse
+
+
 register = Library()
+
+if django.VERSION < (1, 9):
+    # Support older versions without implicit assignment support in simple_tag.
+    simple_tag = register.assignment_tag
+else:
+    simple_tag = register.simple_tag
 
 
 class ObjectLanguageNode(Node):
@@ -62,7 +75,7 @@ def objectlanguage(parser, token):
     return ObjectLanguageNode(nodelist, object_var, language_var)
 
 
-@register.assignment_tag(takes_context=True)
+@simple_tag(takes_context=True)
 def get_translated_url(context, lang_code, object=None):
     """
     Get the proper URL for this page in a different language.

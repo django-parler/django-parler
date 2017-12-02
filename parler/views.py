@@ -16,7 +16,6 @@ The following views are available:
 from __future__ import unicode_literals
 import django
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
-from django.core.urlresolvers import reverse
 from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.utils import translation
@@ -27,6 +26,13 @@ from parler.models import TranslatableModelMixin
 from parler.utils import get_active_language_choices
 from parler.utils.context import switch_language
 from parler.utils.views import get_language_parameter, get_language_tabs
+
+try:
+    from django.urls import reverse
+except ImportError:
+    # Support for Django <= 1.10
+    from django.core.urlresolvers import reverse
+
 
 __all__ = (
     'ViewUrlMixin',

@@ -52,6 +52,13 @@ if not settings.configured:
             TEMPLATE_DEBUG = True,
         )
 
+    MIDDLEWARE = (
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'django.middleware.locale.LocaleMiddleware',  # / will be redirected to /<locale>/
+    )
+
     settings.configure(
         DEBUG = False,  # will be False anyway by DjangoTestRunner.
         DATABASES = {
@@ -79,12 +86,8 @@ if not settings.configured:
             'theme1',
         ),
         # we define MIDDLEWARE_CLASSES explicitly, the default were changed in django 1.7
-        MIDDLEWARE_CLASSES=(
-            'django.contrib.sessions.middleware.SessionMiddleware',
-            'django.contrib.auth.middleware.AuthenticationMiddleware',
-            'django.contrib.messages.middleware.MessageMiddleware',
-            'django.middleware.locale.LocaleMiddleware',  # / will be redirected to /<locale>/
-        ),
+        MIDDLEWARE_CLASSES=MIDDLEWARE,
+        MIDDLEWARE=MIDDLEWARE,  # support Django >= 2.0
         ROOT_URLCONF = 'example.urls',
         TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner' if django.VERSION < (1, 6) else 'django.test.runner.DiscoverRunner',
 
