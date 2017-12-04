@@ -62,6 +62,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 )
+# Support Django >= 2.0
+MIDDLEWARE = MIDDLEWARE_CLASSES
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.i18n',

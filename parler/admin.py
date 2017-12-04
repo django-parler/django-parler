@@ -45,7 +45,6 @@ from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineM
 from django.contrib.admin.utils import get_deleted_objects, unquote
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
-from django.core.urlresolvers import reverse
 from django.db import router, transaction
 from django.forms import Media
 from django.http import HttpResponseRedirect, Http404, HttpRequest
@@ -62,6 +61,12 @@ from parler.models import TranslatableModelMixin
 from parler.utils.i18n import get_language_title, is_multilingual_project
 from parler.utils.views import get_language_parameter, get_language_tabs
 from parler.utils.template import select_template_name
+
+try:
+    from django.urls import reverse
+except ImportError:
+    # Support for Django <= 1.10
+    from django.core.urlresolvers import reverse
 
 # Code partially taken from django-hvad
 # which is (c) 2011, Jonas Obrist, BSD licensed

@@ -1,9 +1,14 @@
 from __future__ import unicode_literals
-from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from parler.models import TranslatableModel, TranslatedFields
 from parler.utils.context import switch_language
+
+try:
+    from django.urls import reverse
+except ImportError:
+    # Django <= 1.10
+    from django.core.urlresolvers import reverse
 
 
 @python_2_unicode_compatible
@@ -28,7 +33,7 @@ class Article(TranslatableModel):
 
     # Regular fields
     published = models.BooleanField("Is published", default=False)
-    category = models.ForeignKey("Category", null=True, blank=True)
+    category = models.ForeignKey("Category", null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Article"

@@ -163,7 +163,8 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     attrs['Meta'] = type(str('Meta'), (object,), meta)
     attrs['__module__'] = shared_model.__module__
     attrs['objects'] = models.Manager()
-    attrs['master'] = models.ForeignKey(shared_model, related_name=related_name, editable=False, null=True)
+    attrs['master'] = models.ForeignKey(shared_model, related_name=related_name, editable=False, null=True,
+                                        on_delete=models.CASCADE)
 
     # Create and return the new model
     translations_model = TranslatedFieldsModelBase(name, (TranslatedFieldsModel,), attrs)
@@ -840,8 +841,12 @@ def _validate_master(new_class):
     if not new_class.master or not isinstance(new_class.master, ForwardManyToOneDescriptor):
         raise ImproperlyConfigured("{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__))
 
-    rel = new_class.master.field.rel
-    shared_model = rel.to
+    remote_field = compat.get_remote_field(new_class)
+    try:
+        shared_model = remote_field.model
+    except AttributeError:
+        # Django <= 1.8 compatibility
+        shared_model = remote_field.to
 
     if not issubclass(shared_model, models.Model):
         # Not supporting models.ForeignKey("tablename") yet. Can't use get_model() as the models are still being constructed.
@@ -851,8 +856,8 @@ def _validate_master(new_class):
     if meta is not None:
         if meta._has_translations_model(new_class):
             raise ImproperlyConfigured("The model '{0}' already has an associated translation table!".format(shared_model.__name__))
-        if meta._has_translations_field(rel.related_name):
-            raise ImproperlyConfigured("The model '{0}' already has an associated translation field named '{1}'!".format(shared_model.__name__, rel.related_name))
+        if meta._has_translations_field(remote_field.related_name):
+            raise ImproperlyConfigured("The model '{0}' already has an associated translation field named '{1}'!".format(shared_model.__name__, remote_field.related_name))
 
     return shared_model
 
@@ -898,14 +903,18 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
         """
         Returns the shared model this model is linked to.
         """
-        return self.__class__.master.field.rel.to
+        remote_field = compat.get_remote_field(self.__class__)
+        try:
+            return remote_field.model
+        except AttributeError:
+            return remote_field.to
 
     @property
     def related_name(self):
         """
         Returns the related name that this model is known at in the shared model.
         """
-        return self.__class__.master.field.rel.related_name
+        return compat.get_remote_field(self.__class__).related_name
 
     def save_base(self, raw=False, using=None, **kwargs):
         # As of Django 1.8, not calling translations.activate() or disabling the translation
@@ -982,13 +991,12 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
         """
         # Instance at previous inheritance level, if set.
         base = shared_model._parler_meta
-
         if base is not None and base[-1].shared_model is shared_model:
             # If a second translations model is added, register it in the same object level.
             base.add_meta(ParlerMeta(
                 shared_model=shared_model,
                 translations_model=cls,
-                related_name=cls.master.field.rel.related_name
+                related_name=compat.get_remote_field(cls).related_name
             ))
         else:
             # Place a new _parler_meta at the current inheritance level.
@@ -997,7 +1005,7 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
                 base,
                 shared_model=shared_model,
                 translations_model=cls,
-                related_name=cls.master.field.rel.related_name
+                related_name=compat.get_remote_field(cls).related_name
             )
 
         # Assign the proxy fields
