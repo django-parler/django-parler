@@ -4,6 +4,7 @@ import os
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.management import call_command
 from django.contrib.sites.models import Site
 from django.test import TestCase
@@ -51,6 +52,10 @@ class AppTestCase(TestCase):
     install_apps = (
         'parler.tests.testapp',
     )
+
+    def setUp(self):
+        super(AppTestCase, self).setUp()
+        cache.clear()
 
     @classmethod
     def setUpClass(cls):

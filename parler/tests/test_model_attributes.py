@@ -304,8 +304,15 @@ class ModelAttributeTests(AppTestCase):
         # not configured.
         self.assertEqual(translation_as_str, missing_language_code)
 
+    def test_get_or_create_no_defaults(self):
+        y, created = SimpleModel.objects.language('nl').get_or_create(shared='XYZ')
+        self.assertTrue(created)
+        self.assertEqual(y.get_current_language(), 'nl')
+        self.assertRaises(TranslationDoesNotExist, lambda: y.tr_title)
+
     def test_get_or_create_defaults(self):
-        y, _ = SimpleModel.objects.language('nl').get_or_create(
+        y, created = SimpleModel.objects.language('nl').get_or_create(
             shared='XXX', defaults={'tr_title': 'TRANS_TITLE'})
+        self.assertTrue(created)
         self.assertEqual(y.get_current_language(), 'nl')
         self.assertEqual(y.tr_title, "TRANS_TITLE")
