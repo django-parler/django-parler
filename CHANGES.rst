@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Changes in 1.9 (2017-12-04)
+---------------------------
+
+* Added Django 2.0 support.
+* Fixed ``get_or_create()`` call when no defaults are given.
+
+
 Changes in 1.8.1 (2017-11-20)
 -----------------------------
 
