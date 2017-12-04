@@ -316,3 +316,6 @@ class ModelAttributeTests(AppTestCase):
         self.assertTrue(created)
         self.assertEqual(y.get_current_language(), 'nl')
         self.assertEqual(y.tr_title, "TRANS_TITLE")
+
+    def test_get_or_create_no_defaults(self):
+        SimpleModel.objects.language('nl').get_or_create(shared='XXX')
