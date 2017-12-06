@@ -51,8 +51,9 @@ from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import cached_property
-from django.utils.html import conditional_escape, escape, mark_safe
+from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _, get_language
 from parler import appsettings
 from parler.forms import TranslatableModelForm, TranslatableBaseInlineFormSet
