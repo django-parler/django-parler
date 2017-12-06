@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in 1.9.1 (2017-12-06)
+-----------------------------
+
+* Fixed HTML output in Django 2.0 for the the ``language_column`` and ``all_languages_column`` fields in the Django admin.
+
+
 Changes in 1.9 (2017-12-04)
 ---------------------------
 
