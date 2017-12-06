@@ -218,6 +218,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         return mark_safe(
             self._languages_column(object, span_classes='available-languages')
         )  # span class for backwards compatibility
+    language_column.allow_tags = True  # Django < 1.9
     language_column.short_description = _("Languages")
 
     def all_languages_column(self, object):
@@ -231,6 +232,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 object, all_languages, span_classes='all-languages'
             )
         )
+    all_languages_column.allow_tags = True  # Django < 1.9
     all_languages_column.short_description = _("Languages")
 
     def _languages_column(self, object, all_languages=None, span_classes=''):
