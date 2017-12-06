@@ -51,7 +51,7 @@ from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import cached_property
-from django.utils.html import conditional_escape, escape
+from django.utils.html import conditional_escape, escape, mark_safe
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, get_language
 from parler import appsettings
@@ -215,8 +215,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         The language column which can be included in the ``list_display``.
         """
-        return self._languages_column(object, span_classes='available-languages')  # span class for backwards compatibility
-    language_column.allow_tags = True
+        return mark_safe(
+            self._languages_column(object, span_classes='available-languages')
+        )  # span class for backwards compatibility
     language_column.short_description = _("Languages")
 
     def all_languages_column(self, object):
@@ -225,8 +226,11 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         It also shows untranslated languages
         """
         all_languages = [code for code, __ in settings.LANGUAGES]
-        return self._languages_column(object, all_languages, span_classes='all-languages')
-    all_languages_column.allow_tags = True
+        return mark_safe(
+            self._languages_column(
+                object, all_languages, span_classes='all-languages'
+            )
+        )
     all_languages_column.short_description = _("Languages")
 
     def _languages_column(self, object, all_languages=None, span_classes=''):
