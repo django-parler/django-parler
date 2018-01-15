@@ -401,7 +401,11 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         # Pass ?language=.. to next page.
         language = request.GET.get(self.query_language_key)
         if language:
-            continue_urls = (uri, "../add/", reverse('admin:{0}_{1}_add'.format(*info)))
+            continue_urls = (
+                uri,
+                "../add/",
+                reverse('admin:{0}_{1}_add'.format(*info), current_app=self.admin_site.name),
+            )
             redirect_parts = redirect['Location'].split('?')
             if redirect_parts[0] in continue_urls and self.query_language_key in request.GET:
                 # "Save and add another" / "Save and continue" URLs
