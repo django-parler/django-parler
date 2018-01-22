@@ -226,7 +226,7 @@ class TranslatedFields(object):
         self.meta = meta
         self.name = None
 
-    def contribute_to_class(self, cls, name):
+    def contribute_to_class(self, cls, name, **kwargs):
         # Called from django.db.models.base.ModelBase.__new__
         self.name = name
         create_translations_model(cls, name, self.meta, **self.fields)

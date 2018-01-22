@@ -51,7 +51,7 @@ class TranslatedField(object):
         self.any_language = any_language
         self._meta = None
 
-    def contribute_to_class(self, cls, name):
+    def contribute_to_class(self, cls, name, **kwargs):
         #super(TranslatedField, self).contribute_to_class(cls, name)
         self.model = cls
         self.name = name
