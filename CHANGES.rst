@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Changes in 1.9.2 (2018-02-12)
+-----------------------------
+
+* Fixed Django 2.0 ``contribute_to_class()`` call signature.
+* Fixed "Save and add another" button redirect when using different admin sites.
+* Fixed import location of ``mark_safe()``.
+
+
 Changes in 1.9.1 (2017-12-06)
 -----------------------------
 
