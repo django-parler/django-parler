@@ -95,7 +95,7 @@ else:
 
 _language_prepopulated_media = _language_media + Media(js=(
     'admin/js/urlify.js',
-    'admin/js/prepopulate.min.js'
+    'admin/js/prepopulate{}.js'.format('' if settings.DEBUG else '.min'),
 ))
 
 _fakeRequest = HttpRequest()
@@ -116,9 +116,9 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         # Currently, `prepopulated_fields` can't be used because it breaks the admin validation.
         # TODO: as a fix TranslatedFields should become a RelatedField on the shared model (may also support ORM queries)
         # As workaround, declare the fields in get_prepopulated_fields() and we'll provide the admin media automatically.
-        has_prepoplated = len(self.get_prepopulated_fields(_fakeRequest))
+        has_prepopulated = len(self.get_prepopulated_fields(_fakeRequest))
         base_media = super(BaseTranslatableAdmin, self).media
-        if has_prepoplated:
+        if has_prepopulated:
             return base_media + _language_prepopulated_media
         else:
             return base_media + _language_media
