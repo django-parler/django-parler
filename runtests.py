@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import sys
 import django
-from django.core.management import execute_from_command_line
 from django.conf import settings, global_settings as default_settings
+from django.core.management import execute_from_command_line
 from os import path
 
 # Give feedback on used versions
