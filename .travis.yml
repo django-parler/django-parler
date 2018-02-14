@@ -35,6 +35,7 @@ before_install:
 - pip install codecov
 install:
 - pip install -U pip wheel setuptools
+- pip install django-composite-foreignkey
 - travis_retry pip install $DJANGO -e .
 script:
 - coverage run --rcfile=.coveragerc runtests.py
