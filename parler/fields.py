@@ -12,7 +12,9 @@ indicate that the derived model is expected to provide that translatable field.
 from __future__ import unicode_literals
 
 import django
+from compositefk.fields import RawFieldValue, CompositeOneToOneField
 from django.forms.forms import pretty_name
+from parler.utils.i18n import get_language
 
 
 # TODO: inherit RelatedField?
@@ -162,3 +164,34 @@ class LanguageCodeDescriptor(object):
 
     def __delete__(self, instance):
         raise AttributeError("The 'language_code' attribute cannot be deleted!")
+
+
+class CompositeOneToOneVirtualField(CompositeOneToOneField):
+    """
+    Class to fix problem with creation repetitive migrations
+    """
+    def deconstruct(self):
+        name, path, args, kwargs = super(CompositeOneToOneVirtualField, self).deconstruct()
+        if 'to_fields' in kwargs:
+            kwargs['to_fields'] = {'master_id': None, 'language_code': None}
+        if "on_delete" in kwargs:
+            del kwargs['on_delete']
+        if "null_if_equal" in kwargs:
+            del kwargs['null_if_equal']
+        return name, path, args, kwargs
+
+
+class RawActiveLangFieldValue(RawFieldValue):
+    """
+    Raw value with active language
+    """
+    def __init__(self):
+        super(RawActiveLangFieldValue, self).__init__(None)
+
+    @property
+    def value(self):
+        return get_language()
+
+    @value.setter
+    def value(self, value):
+        pass

@@ -62,7 +62,7 @@ class QueryCountTests(AppTestCase):
         Test that uncached queries work, albeit slowly.
         """
         with override_parler_settings(PARLER_ENABLE_CACHING=False):
-            self.assertNumTranslatedQueries(1 + len(self.country_list), SimpleModel.objects.all())
+            self.assertNumTranslatedQueries(1, SimpleModel.objects.all())
 
     def test_iteration_with_non_qs_methods(self):
         """
@@ -94,7 +94,7 @@ class QueryCountTests(AppTestCase):
 
         with override_parler_settings(PARLER_ENABLE_CACHING=False):
             qs = SimpleModel.objects.all()
-            self.assertNumTranslatedQueries(1 + len(self.country_list), qs)
+            self.assertNumTranslatedQueries(1, qs)
             self.assertNumTranslatedQueries(0, qs)   # All should be cached on the QuerySet and object now.
 
             qs = SimpleModel.objects.prefetch_related('translations')

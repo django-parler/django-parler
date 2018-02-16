@@ -9,6 +9,25 @@ from django.utils.translation import get_language
 from django.utils import six
 from parler import appsettings
 from parler.utils import get_active_language_choices
+from parler.utils.fields import get_extra_related_translalation_paths
+
+
+class SelectRelatedTranslationsQuerySetMixin(object):
+    """
+    Mixin to add to the QuerySets which joins with translatable models by select_related.
+    Automatically add active and default translation models to query join
+    for all occurrences models with translations in select_related paths
+    Use it in your normal models which joins with translatable models
+
+    TODO: add/remove extra_paths to deferred_loading if it used
+    """
+    def select_related(self, *fields):
+        extra_paths = []
+        for field in fields:
+            extra_paths += get_extra_related_translalation_paths(self.model, field)
+        if extra_paths:
+            fields = tuple(set(extra_paths)) + fields
+        return super(SelectRelatedTranslationsQuerySetMixin, self).select_related(*fields)
 
 
 class TranslatableQuerySet(QuerySet):
@@ -22,6 +41,34 @@ class TranslatableQuerySet(QuerySet):
     def __init__(self, *args, **kwargs):
         super(TranslatableQuerySet, self).__init__(*args, **kwargs)
         self._language = None
+        if self.model._meta.proxy:
+            return
+        # Add composite fields to select_related here
+        # It is hard to know should to add them or not in _fetch_all
+        for extension in self.model._parler_meta:
+            if extension.rel_name:
+                self.query.add_select_related([extension.rel_name_active, extension.rel_name_default])
+
+    def _cleanup_select_related(self):
+        """
+        Remove select_related added in __init__ if there are deferred loading
+        If the query run with values_list select_related already cleaned
+        """
+        existing, defer = self.query.deferred_loading
+        related = set()
+        for extension in self.model._parler_meta:
+            if extension.rel_name:
+                related.add(extension.rel_name_active)
+                related.add(extension.rel_name_default)
+        if not existing:
+            return
+        if defer:
+            related_to_remove = related.intersection(existing)
+        else:
+            related_to_remove = related.difference(existing)
+        for name in related_to_remove:
+            if name in self.query.select_related:
+                self.query.select_related.pop(name)
 
     def _clone(self, klass=None, setup=False, **kw):
         if django.VERSION < (1, 9):
@@ -44,6 +91,7 @@ class TranslatableQuerySet(QuerySet):
         # Alternatives include:
         # - overwriting iterator() for Django <= 1.10
         # - hacking _iterable_class, which breaks django-polymorphic
+        self._cleanup_select_related()
         super(TranslatableQuerySet, self)._fetch_all()
         if self._language is not None and self._result_cache and isinstance(self._result_cache[0], models.Model):
             for obj in self._result_cache:
