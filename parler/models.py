@@ -151,8 +151,8 @@ def create_translations_composite_fk(shared_model, related_name, translated_mode
         on_delete=models.DO_NOTHING,
         related_name='master_active',
         to_fields={
-            "master_id": "id",
-            "language_code": RawActiveLangFieldValue()
+            'master_id': shared_model._meta.pk.name,
+            'language_code': RawActiveLangFieldValue()
         })
     translations_active.contribute_to_class(shared_model, meta.rel_name_active)
 
@@ -162,8 +162,8 @@ def create_translations_composite_fk(shared_model, related_name, translated_mode
         on_delete=models.DO_NOTHING,
         related_name='master_default',
         to_fields={
-            "master_id": "id",
-            "language_code": RawFieldValue(appsettings.PARLER_LANGUAGES.get_default_language())
+            'master_id': shared_model._meta.pk.name,
+            'language_code': RawFieldValue(appsettings.PARLER_LANGUAGES.get_default_language())
         })
     translations_default.contribute_to_class(shared_model, meta.rel_name_default)
 
@@ -322,6 +322,17 @@ class TranslatableModelMixin(object):
 
         if translated_kwargs:
             self._set_translated_fields(self._current_language, **translated_kwargs)
+
+    @classmethod
+    def create_translations_related_virtual_fields(cls):
+        """
+        Adds active and default composite FKs with links to translations on active and default languages
+        """
+        if not cls._parler_meta:
+            return
+        for meta in cls._parler_meta._local_extensions:
+            if meta.rel_name:
+                create_translations_composite_fk(cls, meta.rel_name, meta.model)
 
     def _set_translated_fields(self, language_code=None, **fields):
         """
@@ -852,7 +863,20 @@ class TranslatableModelMixin(object):
             return default
 
 
-class TranslatableModel(TranslatableModelMixin, models.Model):
+class TranslatableModelBase(ModelBase):
+    """
+    Meta-class for model with translations.
+
+    """
+    def __new__(mcs, name, bases, attrs):
+        new_model = super(TranslatableModelBase, mcs).__new__(mcs, name, bases, attrs)
+        # new_model already has filled _meta structure here, it needs to access to model's pk
+        if not new_model._meta.abstract and not new_model._meta.proxy:
+            new_model.create_translations_related_virtual_fields()
+        return new_model
+
+
+class TranslatableModel(six.with_metaclass(TranslatableModelBase, TranslatableModelMixin, models.Model)):
     """
     Base model class to handle translations.
 
@@ -1075,8 +1099,9 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
                 related_name=related_name
             )
 
-        # Add active and default composite FKs with links to translations on active and default languages
-        if related_name:
+        # For not dynamically created translated shared_model meta class already called
+        # and composite_fk would not be created so we need call it here
+        if shared_model._meta and shared_model._meta.pk and related_name:
             create_translations_composite_fk(shared_model, related_name, cls)
 
         # Assign the proxy fields
@@ -1159,6 +1184,7 @@ class ParlerOptions(object):
 
         self.base = base
         self.inherited = False
+        self._local_extensions = []
 
         if base is None:
             # Make access easier.
@@ -1191,6 +1217,7 @@ class ParlerOptions(object):
             raise RuntimeError("Adding translations afterwards to an already inherited model is not supported yet.")
 
         self._extensions.append(meta)
+        self._local_extensions.append(meta)
 
         # Fill/amend the caches
         translations_model = meta.model
@@ -1213,6 +1240,10 @@ class ParlerOptions(object):
         This is an alias for accessing the first item in the collection.
         """
         return self._extensions[0]
+
+    @property
+    def local_extensions(self):
+        return tuple(self._local_extensions)
 
     def __iter__(self):
         """

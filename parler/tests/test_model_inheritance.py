@@ -24,7 +24,6 @@ class ModelInheritanceTests(AppTestCase):
         self.assertEqual(x.l1_title, "LEVEL1")
         self.assertEqual(x.l2_title, "LEVEL2")
 
-    @skip('sqlite3 seems not support complex outer joins. TODO: to test in postgres')
     def test_save_two_levels(self):
         x = Level2(l1_title='LEVEL1', l2_title='LEVEL2', id=2)
         x.save()
@@ -39,7 +38,6 @@ class ModelInheritanceTests(AppTestCase):
         translation = Level2._parler_meta[-1].model.objects.get(master=x)
         self.assertEqual(translation.l2_title, "LEVEL2")
 
-    @skip('sqlite3 seems not support complex outer joins. TODO: to test in postgres')
     def test_prefetch_levels(self):
         x = Level2(l1_title='LEVEL1', l2_title='LEVEL2', id=3)
         x.save()
