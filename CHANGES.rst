@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Changes in 1.10.0 (2018-02-19)
+-----------------------------
+
+* Add support select related for transalted models with active and default languages
+* Add force_select_related_translations to QuerySet
+
+
 Changes in 1.9.2 (2018-02-12)
 -----------------------------
 
