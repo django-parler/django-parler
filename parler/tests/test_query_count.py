@@ -1,5 +1,6 @@
 import datetime as dt
 
+import django
 from django.core.cache import cache
 from django.utils import translation
 from django.utils.timezone import now
@@ -7,6 +8,12 @@ from parler import appsettings
 
 from .utils import AppTestCase, override_parler_settings
 from .testapp.models import SimpleModel, DateTimeModel
+
+try:
+    from unittest import skipIf
+except ImportError:
+    # python<2.7
+    from django.utils.unittest import skipIf
 
 
 class QueryCountTests(AppTestCase):
@@ -57,12 +64,31 @@ class QueryCountTests(AppTestCase):
         with translation.override(language_code):
             self.assertNumQueries(num, test_qs)
 
+    @skipIf((1, 8) <= django.VERSION < (2, 0), 'Test for django ver 1.7, 2')
     def test_uncached_queries(self):
         """
         Test that uncached queries work, albeit slowly.
         """
         with override_parler_settings(PARLER_ENABLE_CACHING=False):
+            self.assertNumTranslatedQueries(1 + len(self.country_list), SimpleModel.objects.all())
+
+    @skipIf(not (1, 8) <= django.VERSION < (1, 9), 'Test for django ver 1.8')
+    def test_uncached_queries_with_auto_select_related(self):
+        """
+        Test that uncached queries work, albeit slowly.
+        """
+        with override_parler_settings(PARLER_ENABLE_CACHING=False):
+            self.assertNumTranslatedQueries(1, SimpleModel.objects.all().select_related('translations'))
             self.assertNumTranslatedQueries(1, SimpleModel.objects.all())
+
+    @skipIf(not (1, 9) <= django.VERSION < (2, 0), 'Test for django ver 1.9, 1.10, 1.11')
+    def test_uncached_queries_with_select_related(self):
+        """
+        Test that uncached queries work, albeit slowly.
+        """
+        with override_parler_settings(PARLER_ENABLE_CACHING=False):
+            self.assertNumTranslatedQueries(1, SimpleModel.objects.all().select_related('translations'))
+            self.assertNumTranslatedQueries(1 + len(self.country_list), SimpleModel.objects.all())
 
     def test_iteration_with_non_qs_methods(self):
         """
@@ -94,7 +120,10 @@ class QueryCountTests(AppTestCase):
 
         with override_parler_settings(PARLER_ENABLE_CACHING=False):
             qs = SimpleModel.objects.all()
-            self.assertNumTranslatedQueries(1, qs)
+            if (1, 8) <= django.VERSION < (1, 9):
+                self.assertNumTranslatedQueries(1, qs)
+            else:
+                self.assertNumTranslatedQueries(1 + len(self.country_list), qs)
             self.assertNumTranslatedQueries(0, qs)   # All should be cached on the QuerySet and object now.
 
             qs = SimpleModel.objects.prefetch_related('translations')

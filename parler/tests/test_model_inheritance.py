@@ -4,13 +4,6 @@ from parler.tests.utils import AppTestCase
 from .testapp.models import Level2
 
 
-try:
-    from unittest import skip
-except ImportError:
-    # python<2.7
-    from django.utils.unittest import skip
-
-
 class ModelInheritanceTests(AppTestCase):
     """
     Tests with model attributes for multiple object levels

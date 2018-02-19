@@ -67,7 +67,6 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import lazy
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.utils import six
-from compositefk.fields import RawFieldValue
 from parler import signals, appsettings
 from parler.cache import (
     MISSING,
@@ -78,14 +77,8 @@ from parler.cache import (
     _delete_cached_translations,
     is_missing,
 )
-from parler.fields import (
-    TranslatedField,
-    LanguageCodeDescriptor,
-    TranslatedFieldDescriptor,
-    RawActiveLangFieldValue,
-    CompositeOneToOneVirtualField,
-)
-from parler.managers import TranslatableManager
+from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
+from parler.managers import TranslatableManager, TranslatableAutoSelectRelatedManager
 from parler.utils import compat
 from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
                                get_null_language_error)
@@ -101,6 +94,11 @@ if django.VERSION >= (1, 9):
 else:
     from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
+if (1, 8) <= django.VERSION < (2, 0):
+    from compositefk.fields import RawFieldValue
+    from parler.fields import CompositeOneToOneVirtualField, RawActiveLangFieldValue
+
+
 __all__ = (
     'TranslatableModelMixin',
     'TranslatableModel',
@@ -108,7 +106,6 @@ __all__ = (
     'TranslatedFieldsModel',
     'TranslatedFieldsModelBase',
     'TranslationDoesNotExist',
-    #'create_translations_model',
 )
 
 
@@ -137,13 +134,17 @@ _lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.v
 def create_translations_composite_fk(shared_model, related_name, translated_model):
     # type: (models.Model, str, models.Model) -> None
     """
-    Dynamically add fields to shared model with links to translation model
+    Dynamically adds fields to shared model with links to translation model
     with records in active and default languages.
-    Make able to access to translated field from the shared model without doing
-    additional sql queries. It cover most usage case of translation when you just want
+    Makes able to access translated field from the shared model without doing
+    additional sql queries. It covers most usage cases of translation when you just want
     to get data in certain (active) language.
-    Do not cover fallback languages, for them you can use prefetch_related
+    Does not cover fallback languages, for which you can use prefetch_related
+
+    Note: django-composite-foreignkey does not work in django 1.7 and 2+
     """
+    if not (1, 8) <= django.VERSION < (2, 0):
+        return
     meta = shared_model._parler_meta._get_extension_by_related_name(related_name)
     translations_active = CompositeOneToOneVirtualField(
         translated_model,
@@ -567,21 +568,22 @@ class TranslatableModelMixin(object):
                         # there is no need to try a database query.
                         pass
                     else:
-                        # 2.3 from select related data or fetch from database if not
-                        if language_code == appsettings.PARLER_LANGUAGES.get_default_language():
-                            try:
-                                object = getattr(self, meta.rel_name_default) or MISSING
-                            except meta.model.DoesNotExist:
-                                object = MISSING
-                        elif language_code == self._creation_current_language:
-                            try:
-                                object = getattr(self, meta.rel_name_active) or MISSING
-                            except meta.model.DoesNotExist:
-                                object = MISSING
-                            # Double check. It should be almost always object.language_code = language_code
-                            # not hits only if during the queryset iteration active language has changed
-                            if object and object.language_code != language_code:
-                                object = None
+                        # 2.3 from select related data or fetch from database if not (for django >=1.8, <2.0)
+                        if (1, 8) <= django.VERSION < (2, 0):
+                            if language_code == appsettings.PARLER_LANGUAGES.get_default_language():
+                                try:
+                                    object = getattr(self, meta.rel_name_default) or MISSING
+                                except meta.model.DoesNotExist:
+                                    object = MISSING
+                            elif language_code == self._creation_current_language:
+                                try:
+                                    object = getattr(self, meta.rel_name_active) or MISSING
+                                except meta.model.DoesNotExist:
+                                    object = MISSING
+                                # Double check. It should be almost always object.language_code = language_code
+                                # not hits only if during the queryset iteration active language has changed
+                                if object and object.language_code != language_code:
+                                    object = None
                         # 2.4, fetch from database
                         if object is None:
                             try:
@@ -886,7 +888,10 @@ class TranslatableModel(six.with_metaclass(TranslatableModelBase, TranslatableMo
         abstract = True
 
     # change the default manager to the translation manager
-    objects = TranslatableManager()
+    if (1, 8) <= django.VERSION < (1, 9):
+        objects = TranslatableAutoSelectRelatedManager()
+    else:
+        objects = TranslatableManager()
 
 
 class TranslatedFieldsModelBase(ModelBase):
@@ -1099,8 +1104,8 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
                 related_name=related_name
             )
 
-        # For not dynamically created translated shared_model meta class already called
-        # and composite_fk would not be created so we need call it here
+        # Meta class is already called for not dynamically created translated shared_model
+        # and composite_fk would not be created so we need to call it here
         if shared_model._meta and shared_model._meta.pk and related_name:
             create_translations_composite_fk(shared_model, related_name, cls)
 
