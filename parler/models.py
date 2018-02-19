@@ -145,7 +145,10 @@ def create_translations_composite_fk(shared_model, related_name, translated_mode
     """
     if not (1, 8) <= django.VERSION < (2, 0):
         return
+
     meta = shared_model._parler_meta._get_extension_by_related_name(related_name)
+    meta.rel_name_active = related_name + '_active'
+    meta.rel_name_default = related_name + '_default'
     translations_active = CompositeOneToOneVirtualField(
         translated_model,
         null=True,
@@ -569,21 +572,20 @@ class TranslatableModelMixin(object):
                         pass
                     else:
                         # 2.3 from select related data or fetch from database if not (for django >=1.8, <2.0)
-                        if (1, 8) <= django.VERSION < (2, 0):
-                            if language_code == appsettings.PARLER_LANGUAGES.get_default_language():
-                                try:
-                                    object = getattr(self, meta.rel_name_default) or MISSING
-                                except meta.model.DoesNotExist:
-                                    object = MISSING
-                            elif language_code == self._creation_current_language:
-                                try:
-                                    object = getattr(self, meta.rel_name_active) or MISSING
-                                except meta.model.DoesNotExist:
-                                    object = MISSING
-                                # Double check. It should be almost always object.language_code = language_code
-                                # not hits only if during the queryset iteration active language has changed
-                                if object and object.language_code != language_code:
-                                    object = None
+                        if language_code == appsettings.PARLER_LANGUAGES.get_default_language() and meta.rel_name_default:
+                            try:
+                                object = getattr(self, meta.rel_name_default) or MISSING
+                            except meta.model.DoesNotExist:
+                                object = MISSING
+                        elif language_code == self._creation_current_language and meta.rel_name_active:
+                            try:
+                                object = getattr(self, meta.rel_name_active) or MISSING
+                            except meta.model.DoesNotExist:
+                                object = MISSING
+                            # Double check. It should be almost always object.language_code = language_code
+                            # not hits only if during the queryset iteration active language has changed
+                            if object and object.language_code != language_code:
+                                object = None
                         # 2.4, fetch from database
                         if object is None:
                             try:
@@ -1158,9 +1160,8 @@ class ParlerMeta(object):
         self.shared_model = shared_model
         self.model = translations_model
         self.rel_name = related_name
-        if related_name:
-            self.rel_name_active = related_name + '_active'
-            self.rel_name_default = related_name + '_default'
+        self.rel_name_active = None
+        self.rel_name_default = None
 
     def get_translated_fields(self):
         """

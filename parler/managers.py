@@ -50,19 +50,19 @@ class TranslatableQuerySet(QuerySet):
         self._language = None
 
     def select_related(self, *fields):
-        fields_to_add = []
-        fields_to_exclude = []
+        fields_to_add = set()
+        fields_to_exclude = set([None])  # if rel_name_active, rel_name_default is None
         for extension in self.model._parler_meta:
             if extension.rel_name in fields:
-                fields_to_exclude.append(extension.rel_name)  # Can not select related OneToMany field
-                fields_to_add.append(extension.rel_name_active)
-                fields_to_add.append(extension.rel_name_default)
+                fields_to_exclude.add(extension.rel_name)  # Can not select related OneToMany field
+                fields_to_add.add(extension.rel_name_active)
+                fields_to_add.add(extension.rel_name_default)
             if extension.rel_name_active in fields:
-                fields_to_add.append(extension.rel_name_default)
+                fields_to_add.add(extension.rel_name_default)
             if extension.rel_name_default in fields:
-                fields_to_add.append(extension.rel_name_active)
-        fields = [field for field in fields if field not in fields_to_exclude] + fields_to_add
-        return super(TranslatableQuerySet, self).select_related(*tuple(set(fields)))
+                fields_to_add.add(extension.rel_name_active)
+        fields = set(fields).union(fields_to_add).difference(fields_to_exclude)
+        return super(TranslatableQuerySet, self).select_related(*tuple(fields))
 
     def _clone(self, klass=None, setup=False, **kw):
         if django.VERSION < (1, 9):
@@ -83,8 +83,11 @@ class TranslatableQuerySet(QuerySet):
         existing, defer = self.query.deferred_loading
         related_to_add = set()
         for extension in self.model._parler_meta:
-            if extension.rel_name:
+            if not extension.rel_name:
+                continue
+            if extension.rel_name_active:
                 related_to_add.add(extension.rel_name_active)
+            if extension.rel_name_default:
                 related_to_add.add(extension.rel_name_default)
         if defer:
             related_to_add = related_to_add.difference(existing)
