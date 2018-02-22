@@ -78,7 +78,7 @@ from parler.cache import (
     is_missing,
 )
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
-from parler.managers import TranslatableManager, TranslatableAutoSelectRelatedManager
+from parler.managers import TranslatableManager
 from parler.utils import compat
 from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
                                get_null_language_error)
@@ -890,10 +890,7 @@ class TranslatableModel(six.with_metaclass(TranslatableModelBase, TranslatableMo
         abstract = True
 
     # change the default manager to the translation manager
-    if (1, 8) <= django.VERSION < (1, 9):
-        objects = TranslatableAutoSelectRelatedManager()
-    else:
-        objects = TranslatableManager()
+    objects = TranslatableManager()
 
 
 class TranslatedFieldsModelBase(ModelBase):

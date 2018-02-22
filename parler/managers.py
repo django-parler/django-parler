@@ -37,16 +37,18 @@ class TranslatableQuerySet(QuerySet):
     When using this class in combination with *django-polymorphic*, make sure this
     class is first in the chain of inherited classes.
 
-    When force_select_related_translations set to True in your classes it will always
-    adds active and default languages to select_related. It could break values_list method in django 1.9+
-    You can always add translated models to select_related manually. When you call it with rel_name e.g: 'translations'
-    it automatically adds active and default virtual composite FKs.
+    When force_select_related_translations set to True it will always adds translated models with active and
+    default languages by using virtual composite FKs.
+    In light version QS with force select related False you can always add translated models to select_related manually.
+    When you call select_related with translations rel_name e.g: 'translations' it automatically adds active and
+    default translated models to select_related.
     """
 
-    force_select_related_translations = False
+    force_select_related_translations = True
 
     def __init__(self, *args, **kwargs):
         super(TranslatableQuerySet, self).__init__(*args, **kwargs)
+        self._use_values = False
         self._language = None
 
     def select_related(self, *fields):
@@ -64,12 +66,19 @@ class TranslatableQuerySet(QuerySet):
         fields = set(fields).union(fields_to_add).difference(fields_to_exclude)
         return super(TranslatableQuerySet, self).select_related(*tuple(fields))
 
+    if (1, 9) <= django.VERSION:
+        def _values(self, *fields):
+            result = super(TranslatableQuerySet, self)._values(*fields)
+            result._use_values = True
+            return result
+
     def _clone(self, klass=None, setup=False, **kw):
         if django.VERSION < (1, 9):
             kw['klass'] = klass
             kw['setup'] = setup
         c = super(TranslatableQuerySet, self)._clone(**kw)
         c._language = self._language
+        c._use_values = self._use_values
         return c
 
     def create(self, **kwargs):
@@ -96,30 +105,27 @@ class TranslatableQuerySet(QuerySet):
         self.query.add_select_related(related_to_add)
 
     @property
-    def select_related_not_applicable(self):
+    def select_related_is_applicable(self):
         # type: () -> Union[bool, None]
         """
-        Returns is select_related not applicable for current qs.
-        Currently determine only for django ver 1.8, for others returns None
+        Returns is select_related is applicable for current qs.
+        We can not use select_related with values_list, this function checks it.
         """
         result = None
         if self.model._meta.proxy:
-            return True
+            return False
 
-        if (1, 7) < django.VERSION < (1, 9):
+        if (1, 8) <= django.VERSION < (1, 9):
             ValuesListQuerySet = getattr(django.db.models.query, 'ValuesListQuerySet')
-            result = isinstance(self, ValuesListQuerySet)
+            result = not isinstance(self, ValuesListQuerySet)
+        if (1, 9) <= django.VERSION:
+            result = not self._use_values
 
         return result
 
     def _fetch_all(self):
-        # For django ver > 1.8 when values_list method is used
-        #  _iterable_class (FlatValuesListIterable, ValuesListIterable) is known only in iteration stage not here yet
-        # TODO: figure out how to determine non qs methods or
-        #       place _add_active_default_select_related in some other place
-        if self.force_select_related_translations and not self.select_related_not_applicable:
+        if self.force_select_related_translations and self.select_related_is_applicable:
             self._add_active_default_select_related()
-
         # Make sure the current language is assigned when Django fetches the data.
         # This low-level method is overwritten as that works better across Django versions.
         # Alternatives include:
@@ -263,12 +269,12 @@ class TranslatableManager(models.Manager):
         return self.all().active_translations(language_code, **translated_fields)
 
 
-class TranslatableAutoSelectRelatedQuerySet(TranslatableQuerySet):
-    force_select_related_translations = True
+class TranslatableLightSelectRelatedQuerySet(TranslatableQuerySet):
+    force_select_related_translations = False
 
 
-class TranslatableAutoSelectRelatedManager(TranslatableManager):
-    queryset_class = TranslatableAutoSelectRelatedQuerySet
+class TranslatableLightSelectRelatedManager(TranslatableManager):
+    queryset_class = TranslatableLightSelectRelatedQuerySet
 
 
 # Export the names in django-hvad style too:

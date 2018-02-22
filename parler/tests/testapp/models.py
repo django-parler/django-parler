@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from parler.fields import TranslatedField
+from parler.managers import TranslatableLightSelectRelatedManager
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
 from parler.utils.context import switch_language
 
@@ -28,6 +29,20 @@ class SimpleModel(TranslatableModel):
     translations = TranslatedFields(
         tr_title = models.CharField("Translated Title", max_length=200)
     )
+
+    def __str__(self):
+        return self.tr_title
+
+
+@python_2_unicode_compatible
+class SimpleLightModel(TranslatableModel):
+    shared = models.CharField(max_length=200, default='')
+
+    translations = TranslatedFields(
+        tr_title = models.CharField("Translated Title", max_length=200)
+    )
+
+    objects = TranslatableLightSelectRelatedManager()
 
     def __str__(self):
         return self.tr_title
