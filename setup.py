@@ -40,7 +40,7 @@ setup(
 
     install_requires=[
         'Django (>=1.7)',
-        'django-composite-foreignkey (>=1.0.0.a10)',
+        'django-composite-foreignkey (==1.0.1)',
     ],
 
     description='Simple Django model translations without nasty hacks, featuring nice admin integration.',
@@ -80,5 +80,8 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
+    ],
+    dependency_links=[
+        'git+https://github.com/onysos/django-composite-foreignkey.git@7ac6b5fa7a54ddc6f527f648d87fec87540ea00e#egg=django-composite-foreignkey-1.0.1'
     ]
 )

@@ -9,7 +9,7 @@ from django.utils.translation import get_language
 from django.utils import six
 from parler import appsettings
 from parler.utils import get_active_language_choices
-from parler.utils.fields import get_extra_related_translalation_paths
+from parler.utils.fields import get_extra_related_translation_paths
 
 
 class SelectRelatedTranslationsQuerySetMixin(object):
@@ -24,7 +24,7 @@ class SelectRelatedTranslationsQuerySetMixin(object):
     def select_related(self, *fields):
         extra_paths = []
         for field in fields:
-            extra_paths += get_extra_related_translalation_paths(self.model, field)
+            extra_paths += get_extra_related_translation_paths(self.model, field)
         if extra_paths:
             fields = tuple(set(extra_paths)) + fields
         return super(SelectRelatedTranslationsQuerySetMixin, self).select_related(*fields)
@@ -52,19 +52,37 @@ class TranslatableQuerySet(QuerySet):
         self._language = None
 
     def select_related(self, *fields):
+        """
+        Updates select_related to have active and default always together
+        Replaces main field refer to translations ('translations') with 'translations_active' and 'translations_default'
+        """
         fields_to_add = set()
-        fields_to_exclude = set([None])  # if rel_name_active, rel_name_default is None
+        fields_to_exclude = set()
         for extension in self.model._parler_meta:
-            if extension.rel_name in fields:
+            select_related_translations_fields = extension.get_select_related_translations_fields()
+            fields_to_search = set(select_related_translations_fields + [extension.rel_name])
+            if fields_to_search.intersection(fields):
                 fields_to_exclude.add(extension.rel_name)  # Can not select related OneToMany field
-                fields_to_add.add(extension.rel_name_active)
-                fields_to_add.add(extension.rel_name_default)
-            if extension.rel_name_active in fields:
-                fields_to_add.add(extension.rel_name_default)
-            if extension.rel_name_default in fields:
-                fields_to_add.add(extension.rel_name_active)
+                fields_to_add.update(select_related_translations_fields)
         fields = set(fields).union(fields_to_add).difference(fields_to_exclude)
         return super(TranslatableQuerySet, self).select_related(*tuple(fields))
+
+    def only(self, *fields):
+        """
+        Replaces translated fields with 'translations_active' and 'translations_default'
+        pretending they are in original model so we can use .only
+        for translated fields as usual: .objects.only('some_translated_field')
+        """
+        fields_to_add = set()
+        fields_to_exclude = set()
+        for extension in self.model._parler_meta:
+            select_related_translations_fields = extension.get_select_related_translations_fields()
+            translated_fields = set(extension.get_translated_fields()).intersection(fields)
+            if translated_fields:
+                fields_to_exclude.update(translated_fields)  # Can not select related field form translated model (o2m)
+                fields_to_add.update(select_related_translations_fields)
+        fields = set(fields).union(fields_to_add).difference(fields_to_exclude)
+        return super(TranslatableQuerySet, self).only(*tuple(fields))
 
     if (1, 9) <= django.VERSION:
         def _values(self, *fields):
@@ -89,15 +107,17 @@ class TranslatableQuerySet(QuerySet):
         return super(TranslatableQuerySet, self).create(**kwargs)
 
     def _add_active_default_select_related(self):
+        """
+        Auto-adds select_related for active and default languages.
+        Takes in account deferred fields.
+        """
         existing, defer = self.query.deferred_loading
         related_to_add = set()
         for extension in self.model._parler_meta:
             if not extension.rel_name:
                 continue
-            if extension.rel_name_active:
-                related_to_add.add(extension.rel_name_active)
-            if extension.rel_name_default:
-                related_to_add.add(extension.rel_name_default)
+            select_related_translations_fields = extension.get_select_related_translations_fields()
+            related_to_add.update(select_related_translations_fields)
         if defer:
             related_to_add = related_to_add.difference(existing)
         elif existing:

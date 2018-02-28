@@ -9,13 +9,15 @@ class NotRelationField(Exception):
 
 def get_model_from_relation(field):
     # type: (django.db.models.fields.Field) -> models.Model
-    if hasattr(field, 'get_path_info'):
-        return field.get_path_info()[-1].to_opts.model
-    else:
+    try:
+        path_info = field.get_path_info()
+    except AttributeError:
         raise NotRelationField
+    else:
+        return path_info[-1].to_opts.model
 
 
-def get_extra_related_translalation_paths(model, path):
+def get_extra_related_translation_paths(model, path):
     # type: (models.Model, str) -> List[str]
     """
     Returns paths with active and default transalation models for all Translatable models in path
