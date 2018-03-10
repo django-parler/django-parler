@@ -35,7 +35,7 @@ before_install:
 - pip install codecov
 install:
 - pip install -U pip wheel setuptools
-- pip install -e git+https://github.com/onysos/django-composite-foreignkey.git@7ac6b5fa7a54ddc6f527f648d87fec87540ea00e#egg=django-composite-foreignkey-1.0.1
+- pip install django-composite-foreignkey
 - travis_retry pip install $DJANGO -e .
 script:
 - coverage run --rcfile=.coveragerc runtests.py
