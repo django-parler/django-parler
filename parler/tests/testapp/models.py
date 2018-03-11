@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from parler.fields import TranslatedField
-from parler.managers import TranslatableLightSelectRelatedManager
+from parler.managers import TranslatableLightSelectRelatedManager, SelectRelatedTranslationsQuerySetMixin
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
 from parler.utils.context import switch_language
 
@@ -46,6 +46,31 @@ class SimpleLightModel(TranslatableModel):
 
     def __str__(self):
         return self.tr_title
+
+
+class SimpleRelatedModelManager(SelectRelatedTranslationsQuerySetMixin, models.Manager):
+    pass
+
+
+class SimpleRelatedModel(models.Model):
+    some_attribute = models.CharField(max_length=200, default='')
+    some_reference = models.ForeignKey(SimpleModel, on_delete=models.CASCADE)
+
+    objects = SimpleRelatedModelManager()
+
+
+class TranslatedSimpleRelatedModel(TranslatableModel):
+    translations = TranslatedFields(
+        tr_attribute = models.CharField("Translated Attribute", max_length=200)
+    )
+    some_reference = models.ForeignKey(SimpleModel, on_delete=models.CASCADE)
+
+
+class AnotherRelatedModel(models.Model):
+    another_attribute = models.CharField(max_length=200, default='')
+    another_reference = models.OneToOneField(TranslatedSimpleRelatedModel, on_delete=models.CASCADE)
+
+    objects = SimpleRelatedModelManager()
 
 
 class CleanCharField(models.CharField):
