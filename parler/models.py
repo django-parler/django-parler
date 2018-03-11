@@ -140,7 +140,7 @@ def create_translations_composite_fk(shared_model, related_name, translated_mode
     to get data in certain (active) language.
     Does not cover fallback languages, for which you can use prefetch_related
 
-    Note: django-composite-foreignkey does not work in django 1.7 and 2+
+    Note: django-composite-foreignkey only works for Django version >= 1.8
     """
     if django.VERSION < (1, 8):
         return

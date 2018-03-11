@@ -1,38 +1,42 @@
 from django.db.models.constants import LOOKUP_SEP
 from django.db import models
-import django.db.models.fields
+from django.db.models.fields.related import RelatedField
+
+try:
+    from django.db.models.fields.reverse_related import ForeignObjectRel
+except ImportError:
+    from django.db.models.fields.related import ForeignObjectRel
 
 
-class NotRelationField(Exception):
-    pass
+def _get_last_field_from_path(model, path):
+    # type: (models.Model, str) -> models.fields.Field
+    path_parts = path.split(LOOKUP_SEP)
+    option = model._meta
 
-
-def get_model_from_relation(field):
-    # type: (django.db.models.fields.Field) -> models.Model
-    try:
+    for part in path_parts[:-1]:
+        field = option.get_field(part)
         path_info = field.get_path_info()
-    except AttributeError:
-        raise NotRelationField
-    else:
-        return path_info[-1].to_opts.model
+        option = path_info[-1].to_opts
+
+    last_part = path_parts[-1]
+    return option.get_field(last_part)
 
 
 def get_extra_related_translation_paths(model, path):
     # type: (models.Model, str) -> List[str]
     """
-    Returns paths with active and default transalation models for all Translatable models in path
+    Returns paths with active and default translation models for all Translatable models in path
     """
     from parler.models import TranslatableModel
-    pieces = path.split(LOOKUP_SEP)
-    parent = model
-    current_path = ''
-    extra_paths = []
-    for piece in pieces:
-        field = parent._meta.get_field(piece)
-        parent = get_model_from_relation(field)
-        current_path += LOOKUP_SEP + piece if current_path else piece
-        if issubclass(parent, TranslatableModel):
-            for extension in parent._parler_meta:
-                extra_paths.append(current_path + LOOKUP_SEP + extension.rel_name_active)
-                extra_paths.append(current_path + LOOKUP_SEP + extension.rel_name_default)
-    return extra_paths
+
+    last_field = _get_last_field_from_path(model=model, path=path)
+    is_last_field_related_field = isinstance(last_field, RelatedField) or isinstance(last_field, ForeignObjectRel)
+
+    if is_last_field_related_field and issubclass(last_field.related_model, TranslatableModel):
+        extra_paths = []
+        for extension in last_field.related_model._parler_meta:
+            extra_paths.append(path + LOOKUP_SEP + extension.rel_name_active)
+            extra_paths.append(path + LOOKUP_SEP + extension.rel_name_default)
+        return extra_paths
+
+    return []
