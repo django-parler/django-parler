@@ -37,14 +37,14 @@ class TranslatableQuerySet(QuerySet):
     When using this class in combination with *django-polymorphic*, make sure this
     class is first in the chain of inherited classes.
 
-    When force_select_related_translations set to True it will always adds translated models with active and
+    When select_related_translations set to True it will always adds translated models with active and
     default languages by using virtual composite FKs.
     In light version QS with force select related False you can always add translated models to select_related manually.
     When you call select_related with translations rel_name e.g: 'translations' it automatically adds active and
     default translated models to select_related.
     """
 
-    force_select_related_translations = True
+    select_related_translations = True
 
     def __init__(self, *args, **kwargs):
         super(TranslatableQuerySet, self).__init__(*args, **kwargs)
@@ -144,7 +144,7 @@ class TranslatableQuerySet(QuerySet):
         return result
 
     def _fetch_all(self):
-        if self.force_select_related_translations and self.select_related_is_applicable:
+        if self.select_related_translations and self.select_related_is_applicable:
             self._add_active_default_select_related()
         # Make sure the current language is assigned when Django fetches the data.
         # This low-level method is overwritten as that works better across Django versions.
@@ -290,7 +290,7 @@ class TranslatableManager(models.Manager):
 
 
 class TranslatableLightSelectRelatedQuerySet(TranslatableQuerySet):
-    force_select_related_translations = False
+    select_related_translations = False
 
 
 class TranslatableLightSelectRelatedManager(TranslatableManager):
