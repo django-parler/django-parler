@@ -42,7 +42,7 @@ from django.conf import settings
 from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
-from django.contrib.admin.utils import get_deleted_objects, unquote
+from django.contrib.admin.utils import get_deleted_objects, quote, unquote
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.db import router, transaction
@@ -254,7 +254,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 classes.append('current')
 
             info = _get_model_meta(opts)
-            admin_url = reverse('admin:{0}_{1}_change'.format(*info), args=(object.pk,), current_app=self.admin_site.name)
+            admin_url = reverse('admin:{0}_{1}_change'.format(*info), args=(quote(object.pk),), current_app=self.admin_site.name)
             buttons.append('<a class="{classes}" href="{href}?language={language_code}">{title}</a>'.format(
                 language_code=code,
                 classes=' '.join(classes),
