@@ -25,7 +25,7 @@ This package is an attempt to combine the best of both worlds;
 the API simplicity of django-hvad_ with the crude,
 but effective solution of proxying translated attributes.
 
-Added on top of that, the API-suger is provided, similar to what django-hvad has.
+Added on top of that, the API-sugar is provided, similar to what django-hvad has.
 It's possible to create the translations model manually,
 or let it be created dynamically when using the :class:`~parler.models.TranslatedFields` field.
 This is to make your life easier - without loosing the freedom of manually using the API at your will.
