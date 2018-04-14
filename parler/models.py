@@ -78,7 +78,7 @@ from parler.cache import (
     is_missing,
 )
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
-from parler.managers import TranslatableManager, TranslatableAutoSelectRelatedManager
+from parler.managers import TranslatableManager
 from parler.utils import compat
 from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
                                get_null_language_error)
@@ -94,9 +94,8 @@ if django.VERSION >= (1, 9):
 else:
     from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
-if (1, 8) <= django.VERSION < (2, 0):
-    from compositefk.fields import RawFieldValue
-    from parler.fields import CompositeOneToOneVirtualField, RawActiveLangFieldValue
+if django.VERSION >= (1, 8):
+    from compositefk.fields import RawFieldValue, FunctionBasedFieldValue, CompositeOneToOneField
 
 
 __all__ = (
@@ -143,32 +142,39 @@ def create_translations_composite_fk(shared_model, related_name, translated_mode
 
     Note: django-composite-foreignkey does not work in django 1.7 and 2+
     """
-    if not (1, 8) <= django.VERSION < (2, 0):
+    if django.VERSION < (1, 8):
         return
 
     meta = shared_model._parler_meta._get_extension_by_related_name(related_name)
     meta.rel_name_active = related_name + '_active'
     meta.rel_name_default = related_name + '_default'
-    translations_active = CompositeOneToOneVirtualField(
+    translations_active = CompositeOneToOneField(
         translated_model,
         null=True,
         on_delete=models.DO_NOTHING,
-        related_name='master_active',
+        related_name='+',
         to_fields={
             'master_id': shared_model._meta.pk.name,
-            'language_code': RawActiveLangFieldValue()
+            'language_code': FunctionBasedFieldValue(get_language)
         })
+    # Needs hack here.
+    # Set one_to_one = False as Django treat this field as a reversed
+    # see: django.db.models.sql.query.is_reverse_o2o
+    # Django does not include this field to 'must query fields', so it became deferred field if it used with only.
+    # To be able use the field in select_related field must be not deferred.
+    translations_active.one_to_one = False
     translations_active.contribute_to_class(shared_model, meta.rel_name_active)
 
-    translations_default = CompositeOneToOneVirtualField(
+    translations_default = CompositeOneToOneField(
         translated_model,
         null=True,
         on_delete=models.DO_NOTHING,
-        related_name='master_default',
+        related_name='+',
         to_fields={
             'master_id': shared_model._meta.pk.name,
             'language_code': RawFieldValue(appsettings.PARLER_LANGUAGES.get_default_language())
         })
+    translations_default.one_to_one = False
     translations_default.contribute_to_class(shared_model, meta.rel_name_default)
 
 
@@ -890,10 +896,7 @@ class TranslatableModel(six.with_metaclass(TranslatableModelBase, TranslatableMo
         abstract = True
 
     # change the default manager to the translation manager
-    if (1, 8) <= django.VERSION < (1, 9):
-        objects = TranslatableAutoSelectRelatedManager()
-    else:
-        objects = TranslatableManager()
+    objects = TranslatableManager()
 
 
 class TranslatedFieldsModelBase(ModelBase):
@@ -1178,6 +1181,14 @@ class ParlerMeta(object):
             self.model.__name__
         )
 
+    def get_select_related_translations_fields(self):
+        result = []
+        if self.rel_name_active:
+            result.append(self.rel_name_active)
+        if self.rel_name_default:
+            result.append(self.rel_name_default)
+        return result
+
 
 class ParlerOptions(object):
     """
@@ -1300,6 +1311,10 @@ class ParlerOptions(object):
         # TODO: should be named get_fields() ?
         meta = self._get_extension_by_related_name(related_name)
         return meta.get_translated_fields()
+
+    def get_select_related_translations_fields(self, related_name=None):
+        meta = self._get_extension_by_related_name(related_name)
+        return meta.get_select_related_translations_fields()
 
     def get_model_by_field(self, name):
         """

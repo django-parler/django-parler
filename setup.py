@@ -40,7 +40,7 @@ setup(
 
     install_requires=[
         'Django (>=1.7)',
-        'django-composite-foreignkey (>=1.0.0.a10)',
+        'django-composite-foreignkey (>=1.0.1)',
     ],
 
     description='Simple Django model translations without nasty hacks, featuring nice admin integration.',

@@ -255,7 +255,6 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertEqual(200, resp.status_code)
         self.assertTemplateUsed(resp, 'admin/parler/deletion_not_allowed.html')
 
-    @expectedFailure
     def test_admin_delete_translation_unavailable(self):
         """
         To be fixed : when trying to delete the last language when a translation
