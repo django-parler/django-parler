@@ -69,12 +69,13 @@ from django.utils.translation import ugettext, ugettext_lazy as _
 from django.utils import six
 from parler import signals
 from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field, is_missing
-from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
+from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor, TranslationsForeignKey, _validate_master
 from parler.managers import TranslatableManager
 from parler.utils import compat
 from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
                                get_null_language_error)
 import sys
+import warnings
 
 try:
     from collections import OrderedDict
@@ -163,8 +164,8 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     attrs['Meta'] = type(str('Meta'), (object,), meta)
     attrs['__module__'] = shared_model.__module__
     attrs['objects'] = models.Manager()
-    attrs['master'] = models.ForeignKey(shared_model, related_name=related_name, editable=False, null=True,
-                                        on_delete=models.CASCADE)
+    attrs['master'] = TranslationsForeignKey(shared_model, related_name=related_name, editable=False, null=True,
+                                             on_delete=models.CASCADE)
 
     # Create and return the new model
     translations_model = TranslatedFieldsModelBase(name, (TranslatedFieldsModel,), attrs)
@@ -825,61 +826,32 @@ class TranslatedFieldsModelBase(ModelBase):
         if new_class._meta.abstract or new_class._meta.proxy:
             return new_class
 
-        # Validate a manually configured class.
-        shared_model = _validate_master(new_class)
+        if not isinstance(getattr(new_class.master, 'field'), TranslationsForeignKey):
+            warnings.warn(
+                "Please change {}.master to a parler.fields.TranslationsForeignKey field to support translations in "
+                "data migrations.".format(new_class._meta.model_name), DeprecationWarning,
+            )
 
-        # Add wrappers for all translated fields to the shared models.
-        new_class.contribute_translations(shared_model)
+            # Validate a manually configured class.
+            shared_model = _validate_master(new_class)
+
+            # Add wrappers for all translated fields to the shared models.
+            new_class.contribute_translations(shared_model)
 
         return new_class
 
 
-def _validate_master(new_class):
-    """
-    Check whether the 'master' field on a TranslatedFieldsModel is correctly configured.
-    """
-    if not new_class.master or not isinstance(new_class.master, ForwardManyToOneDescriptor):
-        raise ImproperlyConfigured("{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__))
-
-    remote_field = compat.get_remote_field(new_class)
-    try:
-        shared_model = remote_field.model
-    except AttributeError:
-        # Django <= 1.8 compatibility
-        shared_model = remote_field.to
-
-    if not issubclass(shared_model, models.Model):
-        # Not supporting models.ForeignKey("tablename") yet. Can't use get_model() as the models are still being constructed.
-        raise ImproperlyConfigured("{0}.master should point to a model class, can't use named field here.".format(new_class.__name__))
-
-    meta = shared_model._parler_meta
-    if meta is not None:
-        if meta._has_translations_model(new_class):
-            raise ImproperlyConfigured("The model '{0}' already has an associated translation table!".format(shared_model.__name__))
-        if meta._has_translations_field(remote_field.related_name):
-            raise ImproperlyConfigured("The model '{0}' already has an associated translation field named '{1}'!".format(shared_model.__name__, remote_field.related_name))
-
-    return shared_model
-
-
 @python_2_unicode_compatible
-class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models.Model)):
+class TranslatedFieldsModelMixin(object):
     """
     Base class for the model that holds the translated fields.
     """
-    language_code = compat.HideChoicesCharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
-
     #: The mandatory Foreign key field to the shared model.
     master = None   # FK to shared model.
 
-    class Meta:
-        abstract = True
-        if django.VERSION >= (1, 7):
-            default_permissions = ()
-
     def __init__(self, *args, **kwargs):
         signals.pre_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
-        super(TranslatedFieldsModel, self).__init__(*args, **kwargs)
+        super(TranslatedFieldsModelMixin, self).__init__(*args, **kwargs)
         self._original_values = self._get_field_values()
 
         signals.post_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
@@ -937,7 +909,7 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
             )
 
         # Perform save
-        super(TranslatedFieldsModel, self).save_base(raw=raw, using=using, **kwargs)
+        super(TranslatedFieldsModelMixin, self).save_base(raw=raw, using=using, **kwargs)
         self._original_values = self._get_field_values()
         _cache_translation(self)
 
@@ -954,7 +926,7 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
         if not self._meta.auto_created:
             signals.pre_translation_delete.send(sender=self.shared_model, instance=self, using=using)
 
-        super(TranslatedFieldsModel, self).delete(using=using)
+        super(TranslatedFieldsModelMixin, self).delete(using=using)
         _delete_cached_translation(self)
 
         # Send post-delete signal
@@ -1045,6 +1017,15 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
         return "<{0}: #{1}, {2}, master: #{3}>".format(
             self.__class__.__name__, self.pk, self.language_code, self.master_id
         )
+
+
+class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, TranslatedFieldsModelMixin, models.Model)):
+    language_code = compat.HideChoicesCharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
+
+    class Meta:
+        abstract = True
+        if django.VERSION >= (1, 7):
+            default_permissions = ()
 
 
 class ParlerMeta(object):
