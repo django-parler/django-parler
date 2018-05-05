@@ -12,7 +12,52 @@ indicate that the derived model is expected to provide that translatable field.
 from __future__ import unicode_literals
 
 import django
+from django.core.exceptions import ImproperlyConfigured
+from django.db import models
 from django.forms.forms import pretty_name
+from parler.utils import compat
+
+if django.VERSION >= (1, 9):
+    from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+else:
+    from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
+
+
+def _validate_master(new_class):
+    """
+    Check whether the 'master' field on a TranslatedFieldsModel is correctly configured.
+    """
+    if not new_class.master or not isinstance(new_class.master, ForwardManyToOneDescriptor):
+        raise ImproperlyConfigured("{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__))
+
+    remote_field = compat.get_remote_field(new_class)
+    try:
+        shared_model = remote_field.model
+    except AttributeError:
+        # Django <= 1.8 compatibility
+        shared_model = remote_field.to
+
+    meta = shared_model._parler_meta
+    if meta is not None:
+        if meta._has_translations_model(new_class):
+            raise ImproperlyConfigured("The model '{0}' already has an associated translation table!".format(shared_model.__name__))
+        if meta._has_translations_field(remote_field.related_name):
+            raise ImproperlyConfigured("The model '{0}' already has an associated translation field named '{1}'!".format(shared_model.__name__, remote_field.related_name))
+
+    return shared_model
+
+
+class TranslationsForeignKey(models.ForeignKey):
+    """
+    Foreign Key field that adds translations to the `to` model.
+    """
+    def contribute_to_related_class(self, cls, related):
+        from parler.models import TranslatedFieldsModelMixin
+
+        super(TranslationsForeignKey, self).contribute_to_related_class(cls, related)
+        _validate_master(self.model)
+        if issubclass(self.model, TranslatedFieldsModelMixin):
+            self.model.contribute_translations(cls)
 
 
 # TODO: inherit RelatedField?
