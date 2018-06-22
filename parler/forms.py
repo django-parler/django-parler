@@ -63,7 +63,9 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                 else:
                     for field in meta.get_translated_fields():
                         try:
-                            self.initial.setdefault(field, getattr(translation, field))
+                            value = getattr(translation, field)
+                            prepared_value = translation._meta.get_field(field).get_prep_value(value)
+                            self.initial.setdefault(field, prepared_value)
                         except ObjectDoesNotExist:
                             # This occurs when a ForeignKey field is part of the translation,
                             # but it's value is still not yet, and the field has null=False.
