@@ -400,7 +400,7 @@ class TranslatableModelMixin(object):
         try:
             # Check the local cache directly, and the answer is known.
             # NOTE this may also return newly auto created translations which are not saved yet.
-            return self._translations_cache[meta.model][language_code] is not MISSING
+            return not is_missing(self._translations_cache[meta.model][language_code])
         except KeyError:
             # If there is a prefetch, will be using that.
             # However, don't assume the prefetch contains all possible languages.
@@ -440,7 +440,7 @@ class TranslatableModelMixin(object):
             db_languages = qs.values_list('language_code', flat=True).order_by('language_code')
 
         if include_unsaved:
-            local_languages = (k for k, v in six.iteritems(self._translations_cache[meta.model]) if v is not MISSING)
+            local_languages = (k for k, v in six.iteritems(self._translations_cache[meta.model]) if not is_missing(v))
             return list(set(db_languages) | set(local_languages))
         else:
             return db_languages
@@ -476,7 +476,7 @@ class TranslatableModelMixin(object):
             object = local_cache[language_code]
 
             # If cached object indicates the language doesn't exist, need to query the fallback.
-            if object is not MISSING:
+            if not is_missing(object):
                 return object
         except KeyError:
             # 2. No cache, need to query
@@ -583,9 +583,9 @@ class TranslatableModelMixin(object):
             try:
                 for fallback_lang in check_languages:
                     trans = local_cache.get(fallback_lang, None)
-                    if trans and trans is not MISSING:
+                    if trans and not is_missing(trans):
                         return trans
-                return next(t for t in six.itervalues(local_cache) if t is not MISSING)
+                return next(t for t in six.itervalues(local_cache) if not is_missing(t))
             except StopIteration:
                 pass
 
