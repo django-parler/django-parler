@@ -9,6 +9,25 @@ from django.utils.translation import get_language
 from django.utils import six
 from parler import appsettings
 from parler.utils import get_active_language_choices
+from parler.utils.fields import get_extra_related_translation_paths
+
+
+class SelectRelatedTranslationsQuerySetMixin(object):
+    """
+    Mixin to add to the QuerySets which joins with translatable models by select_related.
+    Automatically adds active and default translation models to query join tables
+    for all occurrences of models with translations in select_related paths.
+    Use it in your normal models which join with translatable models.
+
+    TODO: add/remove extra_paths to deferred_loading if it used
+    """
+    def select_related(self, *fields):
+        extra_paths = []
+        for field in fields:
+            extra_paths += get_extra_related_translation_paths(self.model, field)
+        if extra_paths:
+            fields = tuple(set(extra_paths)) + fields
+        return super(SelectRelatedTranslationsQuerySetMixin, self).select_related(*fields)
 
 
 class TranslatableQuerySet(QuerySet):
@@ -17,11 +36,59 @@ class TranslatableQuerySet(QuerySet):
 
     When using this class in combination with *django-polymorphic*, make sure this
     class is first in the chain of inherited classes.
+
+    When select_related_translations set to True it will always adds translated models with active and
+    default languages by using virtual composite FKs.
+    In light version QS with force select related False you can always add translated models to select_related manually.
+    When you call select_related with translations rel_name e.g: 'translations' it automatically adds active and
+    default translated models to select_related.
     """
+
+    select_related_translations = True
 
     def __init__(self, *args, **kwargs):
         super(TranslatableQuerySet, self).__init__(*args, **kwargs)
+        self._use_values = False
         self._language = None
+
+    def select_related(self, *fields):
+        """
+        Updates select_related to have active and default always together
+        Replaces main field refer to translations ('translations') with 'translations_active' and 'translations_default'
+        """
+        fields_to_add = set()
+        fields_to_exclude = set()
+        for extension in self.model._parler_meta:
+            select_related_translations_fields = extension.get_select_related_translations_fields()
+            fields_to_search = set(select_related_translations_fields + [extension.rel_name])
+            if fields_to_search.intersection(fields):
+                fields_to_exclude.add(extension.rel_name)  # Can not select related OneToMany field
+                fields_to_add.update(select_related_translations_fields)
+        fields = set(fields).union(fields_to_add).difference(fields_to_exclude)
+        return super(TranslatableQuerySet, self).select_related(*tuple(fields))
+
+    def only(self, *fields):
+        """
+        Replaces translated fields with 'translations_active' and 'translations_default'
+        pretending they are in original model so we can use .only
+        for translated fields as usual: .objects.only('some_translated_field')
+        """
+        fields_to_add = set()
+        fields_to_exclude = set()
+        for extension in self.model._parler_meta:
+            select_related_translations_fields = extension.get_select_related_translations_fields()
+            translated_fields = set(extension.get_translated_fields()).intersection(fields)
+            if translated_fields:
+                fields_to_exclude.update(translated_fields)  # Can not select related field form translated model (o2m)
+                fields_to_add.update(select_related_translations_fields)
+        fields = set(fields).union(fields_to_add).difference(fields_to_exclude)
+        return super(TranslatableQuerySet, self).only(*tuple(fields))
+
+    if (1, 9) <= django.VERSION:
+        def _values(self, *fields):
+            result = super(TranslatableQuerySet, self)._values(*fields)
+            result._use_values = True
+            return result
 
     def _clone(self, klass=None, setup=False, **kw):
         if django.VERSION < (1, 9):
@@ -29,6 +96,7 @@ class TranslatableQuerySet(QuerySet):
             kw['setup'] = setup
         c = super(TranslatableQuerySet, self)._clone(**kw)
         c._language = self._language
+        c._use_values = self._use_values
         return c
 
     def create(self, **kwargs):
@@ -38,7 +106,46 @@ class TranslatableQuerySet(QuerySet):
             kwargs['_current_language'] = self._language
         return super(TranslatableQuerySet, self).create(**kwargs)
 
+    def _add_active_default_select_related(self):
+        """
+        Auto-adds select_related for active and default languages.
+        Takes in account deferred fields.
+        """
+        existing, defer = self.query.deferred_loading
+        related_to_add = set()
+        for extension in self.model._parler_meta:
+            if not extension.rel_name:
+                continue
+            select_related_translations_fields = extension.get_select_related_translations_fields()
+            related_to_add.update(select_related_translations_fields)
+        if defer:
+            related_to_add = related_to_add.difference(existing)
+        elif existing:
+            related_to_add = related_to_add.intersection(existing)
+        self.query.add_select_related(related_to_add)
+
+    @property
+    def select_related_is_applicable(self):
+        # type: () -> Union[bool, None]
+        """
+        Returns is select_related is applicable for current qs.
+        We can not use select_related with values_list, this function checks it.
+        """
+        result = None
+        if self.model._meta.proxy:
+            return False
+
+        if (1, 8) <= django.VERSION < (1, 9):
+            ValuesListQuerySet = getattr(django.db.models.query, 'ValuesListQuerySet')
+            result = not isinstance(self, ValuesListQuerySet)
+        if (1, 9) <= django.VERSION:
+            result = not self._use_values
+
+        return result
+
     def _fetch_all(self):
+        if self.select_related_translations and self.select_related_is_applicable:
+            self._add_active_default_select_related()
         # Make sure the current language is assigned when Django fetches the data.
         # This low-level method is overwritten as that works better across Django versions.
         # Alternatives include:
@@ -180,6 +287,14 @@ class TranslatableManager(models.Manager):
         When ``hide_untranslated = True``, only the currently active language will be returned.
         """
         return self.all().active_translations(language_code, **translated_fields)
+
+
+class TranslatableLightSelectRelatedQuerySet(TranslatableQuerySet):
+    select_related_translations = False
+
+
+class TranslatableLightSelectRelatedManager(TranslatableManager):
+    queryset_class = TranslatableLightSelectRelatedQuerySet
 
 
 # Export the names in django-hvad style too:

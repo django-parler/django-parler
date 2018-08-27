@@ -67,8 +67,16 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import lazy
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.utils import six
-from parler import signals
-from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field, is_missing
+from parler import signals, appsettings
+from parler.cache import (
+    MISSING,
+    _cache_translation,
+    _cache_translation_needs_fallback,
+    _delete_cached_translation,
+    get_cached_translation,
+    _delete_cached_translations,
+    is_missing,
+)
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor
 from parler.managers import TranslatableManager
 from parler.utils import compat
@@ -86,6 +94,10 @@ if django.VERSION >= (1, 9):
 else:
     from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
+if django.VERSION >= (1, 8):
+    from compositefk.fields import RawFieldValue, FunctionBasedFieldValue, CompositeOneToOneField
+
+
 __all__ = (
     'TranslatableModelMixin',
     'TranslatableModel',
@@ -93,7 +105,6 @@ __all__ = (
     'TranslatedFieldsModel',
     'TranslatedFieldsModelBase',
     'TranslationDoesNotExist',
-    #'create_translations_model',
 )
 
 
@@ -117,6 +128,54 @@ class TranslationDoesNotExist(AttributeError, ObjectDoesNotExist):
 
 
 _lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.verbose_name), six.text_type)
+
+
+def create_translations_composite_fk(shared_model, related_name, translated_model):
+    # type: (models.Model, str, models.Model) -> None
+    """
+    Dynamically adds fields to shared model with links to translation model
+    with records in active and default languages.
+    Makes able to access translated field from the shared model without doing
+    additional sql queries. It covers most usage cases of translation when you just want
+    to get data in certain (active) language.
+    Does not cover fallback languages, for which you can use prefetch_related
+
+    Note: django-composite-foreignkey only works for Django version >= 1.8
+    """
+    if django.VERSION < (1, 8):
+        return
+
+    meta = shared_model._parler_meta._get_extension_by_related_name(related_name)
+    meta.rel_name_active = related_name + '_active'
+    meta.rel_name_default = related_name + '_default'
+    translations_active = CompositeOneToOneField(
+        translated_model,
+        null=True,
+        on_delete=models.DO_NOTHING,
+        related_name='+',
+        to_fields={
+            'master_id': shared_model._meta.pk.name,
+            'language_code': FunctionBasedFieldValue(get_language)
+        })
+    # Needs hack here.
+    # Set one_to_one = False as Django treat this field as a reversed
+    # see: django.db.models.sql.query.is_reverse_o2o
+    # Django does not include this field to 'must query fields', so it became deferred field if it used with only.
+    # To be able use the field in select_related field must be not deferred.
+    translations_active.one_to_one = False
+    translations_active.contribute_to_class(shared_model, meta.rel_name_active)
+
+    translations_default = CompositeOneToOneField(
+        translated_model,
+        null=True,
+        on_delete=models.DO_NOTHING,
+        related_name='+',
+        to_fields={
+            'master_id': shared_model._meta.pk.name,
+            'language_code': RawFieldValue(appsettings.PARLER_LANGUAGES.get_default_language())
+        })
+    translations_default.one_to_one = False
+    translations_default.contribute_to_class(shared_model, meta.rel_name_default)
 
 
 def create_translations_model(shared_model, related_name, meta, **fields):
@@ -269,9 +328,21 @@ class TranslatableModelMixin(object):
         # Assign translated args manually.
         self._translations_cache = defaultdict(dict)
         self._current_language = normalize_language_code(current_language or get_language())  # What you used to fetch the object is what you get.
+        self._creation_current_language = self._current_language  # save the language in which data was queried from db
 
         if translated_kwargs:
             self._set_translated_fields(self._current_language, **translated_kwargs)
+
+    @classmethod
+    def create_translations_related_virtual_fields(cls):
+        """
+        Adds active and default composite FKs with links to translations on active and default languages
+        """
+        if not cls._parler_meta:
+            return
+        for meta in cls._parler_meta._local_extensions:
+            if meta.rel_name:
+                create_translations_composite_fk(cls, meta.rel_name, meta.model)
 
     def _set_translated_fields(self, language_code=None, **fields):
         """
@@ -506,13 +577,29 @@ class TranslatableModelMixin(object):
                         # there is no need to try a database query.
                         pass
                     else:
-                        # 2.3, fetch from database
-                        try:
-                            object = self._get_translated_queryset(meta).get(language_code=language_code)
-                        except meta.model.DoesNotExist:
-                            pass
-                        else:
-                            local_cache[language_code] = object
+                        # 2.3 from select related data or fetch from database if not (for django >=1.8, <2.0)
+                        if language_code == appsettings.PARLER_LANGUAGES.get_default_language() and meta.rel_name_default:
+                            try:
+                                object = getattr(self, meta.rel_name_default) or MISSING
+                            except meta.model.DoesNotExist:
+                                object = MISSING
+                        elif language_code == self._creation_current_language and meta.rel_name_active:
+                            try:
+                                object = getattr(self, meta.rel_name_active) or MISSING
+                            except meta.model.DoesNotExist:
+                                object = MISSING
+                            # Double check. It should be almost always object.language_code = language_code
+                            # not hits only if during the queryset iteration active language has changed
+                            if object and object.language_code != language_code:
+                                object = None
+                        # 2.4, fetch from database
+                        if object is None:
+                            try:
+                                object = self._get_translated_queryset(meta).get(language_code=language_code)
+                            except meta.model.DoesNotExist:
+                                object = MISSING
+                        local_cache[language_code] = object
+                        if object:
                             _cache_translation(object)  # Store in memcached
                             return object
 
@@ -786,7 +873,20 @@ class TranslatableModelMixin(object):
             return default
 
 
-class TranslatableModel(TranslatableModelMixin, models.Model):
+class TranslatableModelBase(ModelBase):
+    """
+    Meta-class for model with translations.
+
+    """
+    def __new__(mcs, name, bases, attrs):
+        new_model = super(TranslatableModelBase, mcs).__new__(mcs, name, bases, attrs)
+        # new_model already has filled _meta structure here, it needs to access to model's pk
+        if not new_model._meta.abstract and not new_model._meta.proxy:
+            new_model.create_translations_related_virtual_fields()
+        return new_model
+
+
+class TranslatableModel(six.with_metaclass(TranslatableModelBase, TranslatableModelMixin, models.Model)):
     """
     Base model class to handle translations.
 
@@ -991,12 +1091,13 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
         """
         # Instance at previous inheritance level, if set.
         base = shared_model._parler_meta
+        related_name = compat.get_remote_field(cls).related_name
         if base is not None and base[-1].shared_model is shared_model:
             # If a second translations model is added, register it in the same object level.
             base.add_meta(ParlerMeta(
                 shared_model=shared_model,
                 translations_model=cls,
-                related_name=compat.get_remote_field(cls).related_name
+                related_name=related_name
             ))
         else:
             # Place a new _parler_meta at the current inheritance level.
@@ -1005,8 +1106,13 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, models
                 base,
                 shared_model=shared_model,
                 translations_model=cls,
-                related_name=compat.get_remote_field(cls).related_name
+                related_name=related_name
             )
+
+        # Meta class is already called for not dynamically created translated shared_model
+        # and composite_fk would not be created so we need to call it here
+        if shared_model._meta and shared_model._meta.pk and related_name:
+            create_translations_composite_fk(shared_model, related_name, cls)
 
         # Assign the proxy fields
         for name in cls.get_translated_fields():
@@ -1057,6 +1163,8 @@ class ParlerMeta(object):
         self.shared_model = shared_model
         self.model = translations_model
         self.rel_name = related_name
+        self.rel_name_active = None
+        self.rel_name_default = None
 
     def get_translated_fields(self):
         """
@@ -1073,6 +1181,14 @@ class ParlerMeta(object):
             self.model.__name__
         )
 
+    def get_select_related_translations_fields(self):
+        result = []
+        if self.rel_name_active:
+            result.append(self.rel_name_active)
+        if self.rel_name_default:
+            result.append(self.rel_name_default)
+        return result
+
 
 class ParlerOptions(object):
     """
@@ -1085,6 +1201,7 @@ class ParlerOptions(object):
 
         self.base = base
         self.inherited = False
+        self._local_extensions = []
 
         if base is None:
             # Make access easier.
@@ -1117,6 +1234,7 @@ class ParlerOptions(object):
             raise RuntimeError("Adding translations afterwards to an already inherited model is not supported yet.")
 
         self._extensions.append(meta)
+        self._local_extensions.append(meta)
 
         # Fill/amend the caches
         translations_model = meta.model
@@ -1139,6 +1257,10 @@ class ParlerOptions(object):
         This is an alias for accessing the first item in the collection.
         """
         return self._extensions[0]
+
+    @property
+    def local_extensions(self):
+        return tuple(self._local_extensions)
 
     def __iter__(self):
         """
@@ -1189,6 +1311,10 @@ class ParlerOptions(object):
         # TODO: should be named get_fields() ?
         meta = self._get_extension_by_related_name(related_name)
         return meta.get_translated_fields()
+
+    def get_select_related_translations_fields(self, related_name=None):
+        meta = self._get_extension_by_related_name(related_name)
+        return meta.get_select_related_translations_fields()
 
     def get_model_by_field(self, name):
         """

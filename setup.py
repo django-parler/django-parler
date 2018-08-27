@@ -38,8 +38,9 @@ setup(
     version=find_version('parler', '__init__.py'),
     license='Apache 2.0',
 
-    requires=[
+    install_requires=[
         'Django (>=1.7)',
+        'django-composite-foreignkey (>=1.0.1)',
     ],
 
     description='Simple Django model translations without nasty hacks, featuring nice admin integration.',
@@ -54,7 +55,7 @@ setup(
     packages=find_packages(exclude=('example*',)),
     include_package_data=True,
 
-    test_suite = 'runtests',
+    test_suite='runtests',
 
     zip_safe=False,
     classifiers=[
@@ -79,5 +80,5 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+    ],
 )

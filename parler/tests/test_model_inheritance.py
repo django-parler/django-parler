@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 from django.core.cache import cache
-from .utils import AppTestCase
+from parler.tests.utils import AppTestCase
 from .testapp.models import Level2
 
 
