@@ -432,7 +432,10 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             else:
                 qs_opts = qs.model._meta
 
-            deleted_result = get_deleted_objects(qs, qs_opts, request.user, self.admin_site, using)
+            if django.VERSION >= (2, 1):
+                deleted_result = get_deleted_objects(qs, request, self.admin_site)
+            else:
+                deleted_result = get_deleted_objects(qs, qs_opts, request.user, self.admin_site, using)
             (del2, model_counts, perms2, protected2) = deleted_result
 
             deleted_objects += del2
