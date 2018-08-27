@@ -22,8 +22,8 @@ class TranslatableQuerySet(QuerySet):
         super(TranslatableQuerySet, self).__init__(*args, **kwargs)
         self._language = None
 
-    def _clone(self, *args, **kwargs):
-        c = super(TranslatableQuerySet, self)._clone(*args, **kwargs)
+    def _clone(self):
+        c = super(TranslatableQuerySet, self)._clone()
         c._language = self._language
         return c
 
