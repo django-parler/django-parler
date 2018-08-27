@@ -1,17 +1,11 @@
-import django
 from django.conf.urls import url
 from django.conf.urls.i18n import i18n_patterns
+from django.urls import reverse_lazy
 from .views import ArticleSlugView
 
 # To intru
 from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import views as auth_views
-
-try:
-    from django.urls import reverse_lazy
-except ImportError:
-    # Support for Django <= 1.10
-    from django.core.urlresolvers import reverse_lazy
 
 
 class PasswordResetForm(auth_forms.PasswordResetForm):
@@ -32,8 +26,4 @@ urls = [
     url(r'^password-reset/done/$', auth_views.password_reset_done, name='password-reset-done'),
 ]
 
-if django.VERSION >= (1, 8):
-    # New style without prefix
-    urlpatterns = i18n_patterns(*urls)
-else:
-    urlpatterns = i18n_patterns('', *urls)
+urlpatterns = i18n_patterns(*urls)

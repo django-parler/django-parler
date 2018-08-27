@@ -32,10 +32,9 @@ First create the translatable fields::
               name=models.CharField(max_length=123),
         )
 
-Now create the migration:
+Now create the migration::
 
-* For Django 1.7, use: ``manage.py makemigrations myapp "add_translation_model"``
-* For Django 1.8 and above, use: ``manage.py makemigrations myapp --name "add_translation_model"``
+    manage.py makemigrations myapp --name "add_translation_model"
 
 
 Step 2: Copy the data
@@ -115,10 +114,9 @@ The example model now looks like::
             name=models.CharField(max_length=123),
         )
 
-Create the database migration, it will simply remove the original field.
+Create the database migration, it will simply remove the original field::
 
-* For Django 1.7, use: ``manage.py makemigrations myapp "remove_untranslated_fields"``
-* For Django 1.8 and above, use: ``manage.py makemigrations myapp --name "remove_untranslated_fields"``
+    manage.py makemigrations myapp --name "remove_untranslated_fields"
 
 
 Updating code

@@ -2,7 +2,6 @@
 
 from __future__ import unicode_literals
 
-import django
 from django.test import TestCase
 from django.utils.translation import override
 
@@ -102,8 +101,7 @@ class UtilTestCase(TestCase):
         """Test get_language patch function, no fallback"""
 
         with override(None):
-            if django.VERSION >= (1, 8):
-                self.assertEquals(get_language(), None)
+            self.assertEquals(get_language(), None)
 
     @override_parler_settings(PARLER_DEFAULT_ACTIVATE=True)
     def test_get_language_with_fallback(self):
@@ -111,8 +109,7 @@ class UtilTestCase(TestCase):
         from parler import appsettings
 
         with override(None):
-            if django.VERSION >= (1, 8):
-                self.assertEquals(get_language(), appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
+            self.assertEquals(get_language(), appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
 
     def test_url_qs(self):
         matches = [

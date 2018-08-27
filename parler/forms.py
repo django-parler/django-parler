@@ -1,5 +1,4 @@
 from django import forms
-import django
 from django.core.exceptions import NON_FIELD_ERRORS, ObjectDoesNotExist, ValidationError
 from django.forms.forms import BoundField
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
@@ -156,44 +155,20 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                     continue
                 setattr(self.instance, field, getattr(translation, field))
 
-    if django.VERSION >= (1, 6):
+    def _post_clean_translation(self, translation):
+        exclude = self._get_translation_validation_exclusions(translation)
+        try:
+            translation.full_clean(
+                exclude=exclude, validate_unique=False)
+        except ValidationError as e:
+            self._update_errors(e)
 
-        def _post_clean_translation(self, translation):
-            exclude = self._get_translation_validation_exclusions(translation)
+        # Validate uniqueness if needed.
+        if self._validate_unique:
             try:
-                translation.full_clean(
-                    exclude=exclude, validate_unique=False)
+                translation.validate_unique()
             except ValidationError as e:
                 self._update_errors(e)
-
-            # Validate uniqueness if needed.
-            if self._validate_unique:
-                try:
-                    translation.validate_unique()
-                except ValidationError as e:
-                    self._update_errors(e)
-    else:
-
-        def _post_clean_translation(self, translation):
-            exclude = self._get_translation_validation_exclusions(translation)
-            # Clean the model instance's fields.
-            try:
-                translation.clean_fields(exclude=exclude)
-            except ValidationError as e:
-                self._update_errors(e.message_dict)
-
-            # Call the model instance's clean method.
-            try:
-                translation.clean()
-            except ValidationError as e:
-                self._update_errors({NON_FIELD_ERRORS: e.messages})
-
-            # Validate uniqueness if needed.
-            if self._validate_unique:
-                try:
-                    translation.validate_unique()
-                except ValidationError as e:
-                    self._update_errors(e.message_dict)
 
     @cached_property
     def _translated_fields(self):

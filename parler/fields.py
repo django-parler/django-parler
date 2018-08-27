@@ -11,16 +11,10 @@ indicate that the derived model is expected to provide that translatable field.
 """
 from __future__ import unicode_literals
 
-import django
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
+from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
 from django.forms.forms import pretty_name
-from parler.utils import compat
-
-if django.VERSION >= (1, 9):
-    from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
-else:
-    from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
 
 def _validate_master(new_class):
@@ -30,12 +24,8 @@ def _validate_master(new_class):
     if not new_class.master or not isinstance(new_class.master, ForwardManyToOneDescriptor):
         raise ImproperlyConfigured("{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__))
 
-    remote_field = compat.get_remote_field(new_class)
-    try:
-        shared_model = remote_field.model
-    except AttributeError:
-        # Django <= 1.8 compatibility
-        shared_model = remote_field.to
+    remote_field = new_class.master.field.remote_field
+    shared_model = remote_field.model
 
     meta = shared_model._parler_meta
     if meta is not None:
@@ -183,11 +173,7 @@ class TranslatedFieldDescriptor(object):
             # Fallback to what the admin label_for_field() would have done otherwise.
             return pretty_name(self.field.name)
 
-        if django.VERSION >= (1, 8):
-            field = translations_model._meta.get_field(self.field.name)
-        else:
-            field = translations_model._meta.get_field_by_name(self.field.name)[0]
-
+        field = translations_model._meta.get_field(self.field.name)
         return field.verbose_name
 
 

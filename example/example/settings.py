@@ -1,5 +1,4 @@
 # Django settings for example project.
-import django
 from os.path import join, dirname, realpath
 
 SRC_DIR = dirname(dirname(realpath(__file__)))
@@ -63,7 +62,7 @@ TEMPLATES = [
 ]
 
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',   # Inserted language switcher, easy way to have multiple frontend languages.
@@ -71,8 +70,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 )
-# Support Django >= 2.0
-MIDDLEWARE = MIDDLEWARE_CLASSES
 
 ROOT_URLCONF = 'example.urls'
 
@@ -117,8 +114,7 @@ LOGGING = {
     }
 }
 
-if django.VERSION >= (1, 7):
-    TEST_RUNNER = 'django.test.runner.DiscoverRunner'  # silence system checks
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'  # silence system checks
 
 PARLER_DEFAULT_LANGUAGE = 'en'
 

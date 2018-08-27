@@ -1,18 +1,11 @@
 from functools import wraps
+import unittest
 
-import django
 from django.db import models
 from django.db.models import Manager
 from django.utils import six
 from parler.models import TranslatableModel
 from parler.models import TranslatedFields
-
-try:
-    from unittest import expectedFailure, skipIf
-except ImportError:
-    # python<2.7
-    from django.utils.unittest import expectedFailure, skipIf
-
 from .utils import AppTestCase
 from .testapp.models import ManualModel, ManualModelTranslations, SimpleModel, Level1, Level2, ProxyBase, ProxyModel, DoubleModel, RegularModel, CharModel
 
@@ -31,10 +24,7 @@ def clear_app_registry(func):
             # TODO: this doens't yet work.
             apps.clear_cache()
 
-    if django.VERSION >= (1, 10):
-        return _clearing_dec
-    else:
-        return func
+    return _clearing_dec
 
 
 class ModelConstructionTests(AppTestCase):
@@ -107,51 +97,9 @@ class ModelConstructionTests(AppTestCase):
         self.assertEqual(DoubleModel._parler_meta[0].rel_name, "base_translations")
         self.assertEqual(DoubleModel._parler_meta[1].rel_name, "more_translations")
 
-    @skipIf(django.VERSION >= (1, 10), "This breaks the Django 1.10 app registry")
-    @clear_app_registry
-    def test_overlapping_proxy_model(self):
-        """
-        Test the simple model syntax.
-        """
-        from parler.tests.testapp.invalid_models import RegularModelProxy
-
-        # Create an object without translations
-        RegularModel.objects.create(id=98, original_field='untranslated')
-        self.assertEqual(RegularModelProxy.objects.count(), 1)
-
-        # Refetch from db, should raise an error.
-        self.assertRaises(RuntimeError, lambda: RegularModelProxy.objects.all()[0])
-
     def test_model_with_different_pks(self):
         """
         Test that TranslatableModels works with different types of pks
         """
         self.assertIsInstance(SimpleModel.objects.create(tr_title='Test'), SimpleModel)
         self.assertIsInstance(CharModel.objects.create(pk='test', tr_title='Test'), CharModel)
-
-    @skipIf(django.VERSION >= (1, 10), "This breaks the Django 1.10 app registry")
-    @clear_app_registry
-    @expectedFailure
-    def test_model_metaclass_create_order(self):
-        """
-        For some reason, having a custom ModelBase metaclass breaks
-        the ``pk`` field detection when ``TranslatableModel`` is the first model in an inheritance chain.
-        Using ``Book(Product, TranslatableModel)`` does work.
-        """
-        from django.db.models.base import ModelBase
-        class FooModelBase(ModelBase):
-            pass
-
-        class FooModel(six.with_metaclass(FooModelBase, models.Model)):
-            class Meta:
-                abstract = True
-
-        class Product(FooModel):
-            pass
-
-        class Book(TranslatableModel, Product):
-            translations = TranslatedFields(
-                slug=models.SlugField(blank=False, default='', max_length=128)
-            )
-
-        self.assertTrue(Book._meta.pk)

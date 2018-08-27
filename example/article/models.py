@@ -1,14 +1,9 @@
 from __future__ import unicode_literals
 from django.db import models
+from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
 from parler.models import TranslatableModel, TranslatedFields
 from parler.utils.context import switch_language
-
-try:
-    from django.urls import reverse
-except ImportError:
-    # Django <= 1.10
-    from django.core.urlresolvers import reverse
 
 
 @python_2_unicode_compatible

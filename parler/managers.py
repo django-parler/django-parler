@@ -1,7 +1,6 @@
 """
 Custom generic managers
 """
-import django
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.query import QuerySet
@@ -23,11 +22,8 @@ class TranslatableQuerySet(QuerySet):
         super(TranslatableQuerySet, self).__init__(*args, **kwargs)
         self._language = None
 
-    def _clone(self, klass=None, setup=False, **kw):
-        if django.VERSION < (1, 9):
-            kw['klass'] = klass
-            kw['setup'] = setup
-        c = super(TranslatableQuerySet, self)._clone(**kw)
+    def _clone(self, *args, **kwargs):
+        c = super(TranslatableQuerySet, self)._clone(*args, **kwargs)
         c._language = self._language
         return c
 
@@ -41,9 +37,7 @@ class TranslatableQuerySet(QuerySet):
     def _fetch_all(self):
         # Make sure the current language is assigned when Django fetches the data.
         # This low-level method is overwritten as that works better across Django versions.
-        # Alternatives include:
-        # - overwriting iterator() for Django <= 1.10
-        # - hacking _iterable_class, which breaks django-polymorphic
+        # Alternatives includes hacking the _iterable_class, which breaks django-polymorphic
         super(TranslatableQuerySet, self)._fetch_all()
         if self._language is not None and self._result_cache and isinstance(self._result_cache[0], models.Model):
             for obj in self._result_cache:
@@ -62,11 +56,6 @@ class TranslatableQuerySet(QuerySet):
 
         lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
         params.update(translated_defaults)
-
-        if (1, 7) <= django.VERSION < (1, 8):
-            if self._language:
-                params['_current_language'] = self._language
-
         return lookup, params
 
     def language(self, language_code=None):
@@ -130,57 +119,16 @@ class TranslatableQuerySet(QuerySet):
         return self.translated(*language_codes, **translated_fields)
 
 
-class TranslatableManager(models.Manager):
+class TranslatableManager(models.Manager.from_queryset(TranslatableQuerySet)):
     """
     The manager class which ensures the enhanced TranslatableQuerySet object is used.
     """
-    queryset_class = TranslatableQuerySet
 
     def get_queryset(self):
-        if not issubclass(self.queryset_class, TranslatableQuerySet):
-            raise ImproperlyConfigured("{0}.queryset_class does not inherit from TranslatableQuerySet".format(self.__class__.__name__))
-        return self.queryset_class(self.model, using=self._db)
-
-    # Leave for Django 1.6/1.7, so backwards compatibility can be fixed.
-    # It will be removed in Django 1.8, so remove it here too to avoid false promises.
-    if django.VERSION < (1, 8):
-        get_query_set = get_queryset
-
-    # NOTE: Fetching the queryset is done by calling self.all() here on purpose.
-    # By using .all(), the proper get_query_set()/get_queryset() will be used for each Django version.
-
-    def language(self, language_code=None):
-        """
-        Set the language code to assign to objects retrieved using this Manager.
-        """
-        return self.all().language(language_code)
-
-    def translated(self, *language_codes, **translated_fields):
-        """
-        Only return objects which are translated in the given languages.
-
-        NOTE: due to Django `ORM limitations <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_,
-        this method can't be combined with other filters that access the translated fields. As such, query the fields in one filter:
-
-        .. code-block:: python
-
-            qs.translated('en', name="Cheese Omelette")
-
-        This will query the translated model for the ``name`` field.
-        """
-        return self.all().translated(*language_codes, **translated_fields)
-
-    def active_translations(self, language_code=None, **translated_fields):
-        """
-        Only return objects which are translated, or have a fallback that should be displayed.
-
-        Typically that's the currently active language and fallback language.
-        This should be combined with ``.distinct()``.
-
-        When ``hide_untranslated = True``, only the currently active language will be returned.
-        """
-        return self.all().active_translations(language_code, **translated_fields)
-
+        qs = super(TranslatableManager, self).get_queryset()
+        if not isinstance(qs, TranslatableQuerySet):
+            raise ImproperlyConfigured("{0}._queryset_class does not inherit from TranslatableQuerySet".format(self.__class__.__name__))
+        return qs
 
 # Export the names in django-hvad style too:
 TranslationQueryset = TranslatableQuerySet

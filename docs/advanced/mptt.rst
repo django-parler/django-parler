@@ -49,23 +49,19 @@ Say we have a base ``Category`` model that needs to be translatable:
 Combining managers
 ------------------
 
-The managers can be combined by inheriting them.
-Unfortunately, django-mptt_ 0.7 overrides the ``get_queryset()`` method,
-so it needs to be redefined:
+The managers can be combined by inheriting them:
 
 .. code-block:: python
 
-        import django
         from parler.managers import TranslatableManager, TranslatableQuerySet
         from mptt.managers import TreeManager
-        from mptt.querysets import TreeQuerySet  # new as of mptt 0.7
+        from mptt.querysets import TreeQuerySet
 
 
         class CategoryQuerySet(TranslatableQuerySet, TreeQuerySet):
-            pass
 
-            # Optional: make sure the Django 1.7 way of creating managers works.
             def as_manager(cls):
+                # make sure creating managers from querysets works.
                 manager = CategoryManager.from_queryset(cls)()
                 manager._built_with_as_manager = True
                 return manager
@@ -74,15 +70,7 @@ so it needs to be redefined:
 
 
         class CategoryManager(TreeManager, TranslatableManager):
-            queryset_class = CategoryQuerySet
-
-            def get_queryset(self):
-                # This is the safest way to combine both get_queryset() calls
-                # supporting all Django versions and MPTT 0.7.x versions
-                return self.queryset_class(self.model, using=self._db).order_by(self.tree_id_attr, self.left_attr)
-
-            if django.VERSION < (1,6):
-                get_query_set = get_queryset
+            _queryset_class = CategoryQuerySet
 
 
 Assign the manager to the model ``objects`` attribute.

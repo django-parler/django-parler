@@ -5,7 +5,6 @@ These functions are used internally by django-parler to fetch model data.
 Since all calls to the translation table are routed through our model descriptor fields,
 cache access and expiry is rather simple to implement.
 """
-import django
 from django.core.cache import cache
 from django.utils import six
 from parler import appsettings
@@ -13,11 +12,6 @@ from parler.utils import get_language_settings
 
 if six.PY3:
     long = int
-
-if django.VERSION >= (1, 6):
-    DEFAULT_TIMEOUT = cache.default_timeout
-else:
-    DEFAULT_TIMEOUT = 0
 
 
 class IsMissing(object):
@@ -150,7 +144,7 @@ def _get_cached_values(instance, translated_model, language_code, use_fallback=F
     return values
 
 
-def _cache_translation(translation, timeout=DEFAULT_TIMEOUT):
+def _cache_translation(translation, timeout=cache.default_timeout):
     """
     Store a new translation in the cache.
     """
@@ -171,7 +165,7 @@ def _cache_translation(translation, timeout=DEFAULT_TIMEOUT):
     cache.set(key, values, timeout=timeout)
 
 
-def _cache_translation_needs_fallback(instance, language_code, related_name, timeout=DEFAULT_TIMEOUT):
+def _cache_translation_needs_fallback(instance, language_code, related_name, timeout=cache.default_timeout):
     """
     Store the fact that a translation doesn't exist, and the fallback should be used.
     """

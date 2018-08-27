@@ -14,50 +14,7 @@ sys.stderr.write('Using Django version {0} from {1}\n'.format(
 
 if not settings.configured:
     module_root = path.dirname(path.realpath(__file__))
-
     sys.path.insert(0, path.join(module_root, 'example'))
-
-    if django.VERSION >= (1, 8):
-        template_settings = dict(
-            TEMPLATES = [
-                {
-                    'BACKEND': 'django.template.backends.django.DjangoTemplates',
-                    'DIRS': (),
-                    'OPTIONS': {
-                        'loaders': (
-                            'django.template.loaders.filesystem.Loader',
-                            'django.template.loaders.app_directories.Loader',
-                        ),
-                        'context_processors': (
-                            'django.template.context_processors.debug',
-                            'django.template.context_processors.i18n',
-                            'django.template.context_processors.media',
-                            'django.template.context_processors.request',
-                            'django.template.context_processors.static',
-                            'django.contrib.auth.context_processors.auth',
-                        ),
-                    },
-                },
-            ]
-        )
-    else:
-        template_settings = dict(
-            TEMPLATE_LOADERS = (
-                'django.template.loaders.app_directories.Loader',
-                'django.template.loaders.filesystem.Loader',
-            ),
-            TEMPLATE_CONTEXT_PROCESSORS = list(default_settings.TEMPLATE_CONTEXT_PROCESSORS) + [
-                'django.core.context_processors.request',
-            ],
-            TEMPLATE_DEBUG = True,
-        )
-
-    MIDDLEWARE = (
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'django.contrib.messages.middleware.MessageMiddleware',
-        'django.middleware.locale.LocaleMiddleware',  # / will be redirected to /<locale>/
-    )
 
     settings.configure(
         DEBUG = False,  # will be False anyway by DjangoTestRunner.
@@ -85,11 +42,34 @@ if not settings.configured:
             'article',
             'theme1',
         ),
-        # we define MIDDLEWARE_CLASSES explicitly, the default were changed in django 1.7
-        MIDDLEWARE_CLASSES=MIDDLEWARE,
-        MIDDLEWARE=MIDDLEWARE,  # support Django >= 2.0
+        TEMPLATES = [
+            {
+                'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                'DIRS': (),
+                'OPTIONS': {
+                    'loaders': (
+                        'django.template.loaders.filesystem.Loader',
+                        'django.template.loaders.app_directories.Loader',
+                    ),
+                    'context_processors': (
+                        'django.template.context_processors.debug',
+                        'django.template.context_processors.i18n',
+                        'django.template.context_processors.media',
+                        'django.template.context_processors.request',
+                        'django.template.context_processors.static',
+                        'django.contrib.auth.context_processors.auth',
+                    ),
+                },
+            },
+        ],
+        MIDDLEWARE = (
+            'django.contrib.sessions.middleware.SessionMiddleware',
+            'django.contrib.auth.middleware.AuthenticationMiddleware',
+            'django.contrib.messages.middleware.MessageMiddleware',
+            'django.middleware.locale.LocaleMiddleware',  # / will be redirected to /<locale>/
+        ),
         ROOT_URLCONF = 'example.urls',
-        TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner' if django.VERSION < (1, 6) else 'django.test.runner.DiscoverRunner',
+        TEST_RUNNER = 'django.test.runner.DiscoverRunner',
 
         SITE_ID = 4,
         LANGUAGE_CODE = 'en',
@@ -108,8 +88,7 @@ if not settings.configured:
             'default': {
                 'fallbacks': ['en'],
             },
-        },
-        **template_settings
+        }
     )
 
 

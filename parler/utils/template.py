@@ -5,7 +5,7 @@ from django.utils import six
 _cached_name_lookups = {}
 
 
-def select_template_name(template_name_list):
+def select_template_name(template_name_list, using=None):
     """
     Given a list of template names, find the first one that exists.
     """
@@ -18,8 +18,7 @@ def select_template_name(template_name_list):
         # Find which template of the template_names is selected by the Django loader.
         for template_name in template_name_list:
             try:
-                # TODO: For Django 1.8, add using= parameter so it only selects templates from the same engine.
-                get_template(template_name)
+                get_template(template_name, using=using)
             except TemplateDoesNotExist:
                 continue
             else:

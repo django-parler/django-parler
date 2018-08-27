@@ -49,6 +49,7 @@ from django.db import router, transaction
 from django.forms import Media
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, escape
@@ -63,12 +64,6 @@ from parler.utils.i18n import get_language_title, is_multilingual_project
 from parler.utils.views import get_language_parameter, get_language_tabs
 from parler.utils.template import select_template_name
 
-try:
-    from django.urls import reverse
-except ImportError:
-    # Support for Django <= 1.10
-    from django.core.urlresolvers import reverse
-
 # Code partially taken from django-hvad
 # which is (c) 2011, Jonas Obrist, BSD licensed
 
@@ -81,17 +76,11 @@ __all__ = (
     'SortedRelatedFieldListFilter',
 )
 
-if django.VERSION >= (1, 9) or 'flat' in settings.INSTALLED_APPS:
-    _language_media = Media(css={
-        'all': (
-            'parler/admin/parler_admin.css',
-            'parler/admin/parler_admin_flat.css',
-        )
-    })
-else:
-    _language_media = Media(css={
-        'all': ('parler/admin/parler_admin.css',)
-    })
+_language_media = Media(css={
+    'all': (
+        'parler/admin/parler_admin.css',
+    )
+})
 
 _language_prepopulated_media = _language_media + Media(js=(
     'admin/js/urlify.js',
@@ -158,10 +147,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         """
         Make sure the current language is selected.
         """
-        if django.VERSION >= (1, 6):
-            qs = super(BaseTranslatableAdmin, self).get_queryset(request)
-        else:
-            qs = super(BaseTranslatableAdmin, self).queryset(request)
+        qs = super(BaseTranslatableAdmin, self).get_queryset(request)
 
         if self._has_translatable_model():
             if not isinstance(qs, TranslatableQuerySet):
@@ -219,7 +205,6 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         return mark_safe(
             self._languages_column(object, span_classes='available-languages')
         )  # span class for backwards compatibility
-    language_column.allow_tags = True  # Django < 1.9
     language_column.short_description = _("Languages")
 
     def all_languages_column(self, object):
@@ -233,7 +218,6 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 object, all_languages, span_classes='all-languages'
             )
         )
-    all_languages_column.allow_tags = True  # Django < 1.9
     all_languages_column.short_description = _("Languages")
 
     def _languages_column(self, object, all_languages=None, span_classes=''):
@@ -253,7 +237,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             if code == current_language:
                 classes.append('current')
 
-            info = _get_model_meta(opts)
+            info = opts.app_label, opts.model_name
             admin_url = reverse('admin:{0}_{1}_change'.format(*info), args=(quote(object.pk),), current_app=self.admin_site.name)
             buttons.append('<a class="{classes}" href="{href}?language={language_code}">{title}</a>'.format(
                 language_code=code,
@@ -301,7 +285,6 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         Make sure the object is fetched in the correct language.
         """
-        # The args/kwargs are to support Django 1.8, which adds a from_field parameter
         obj = super(TranslatableAdmin, self).get_object(request, object_id, *args, **kwargs)
 
         if obj is not None and self._has_translatable_model():  # Allow fallback to regular models.
@@ -328,22 +311,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return urlpatterns
         else:
             opts = self.model._meta
-            info = _get_model_meta(opts)
-
-            if django.VERSION < (1, 9):
-                delete_path = url(
-                    r'^(.+)/delete-translation/(.+)/$',
-                    self.admin_site.admin_view(self.delete_translation),
-                    name='{0}_{1}_delete_translation'.format(*info)
-                )
-            else:
-                delete_path = url(
-                    r'^(.+)/change/delete-translation/(.+)/$',
-                    self.admin_site.admin_view(self.delete_translation),
-                    name='{0}_{1}_delete_translation'.format(*info)
-                )
-
-            return [delete_path] + urlpatterns
+            info = opts.app_label, opts.model_name
+            return [url(
+                r'^(.+)/change/delete-translation/(.+)/$',
+                self.admin_site.admin_view(self.delete_translation),
+                name='{0}_{1}_delete_translation'.format(*info)
+            )] + urlpatterns
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         """
@@ -396,7 +369,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
         uri = iri_to_uri(request.path)
         opts = self.model._meta
-        info = _get_model_meta(opts)
+        info = opts.app_label, opts.model_name
 
         # Pass ?language=.. to next page.
         language = request.GET.get(self.query_language_key)
@@ -460,10 +433,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 qs_opts = qs.model._meta
 
             deleted_result = get_deleted_objects(qs, qs_opts, request.user, self.admin_site, using)
-            if django.VERSION >= (1, 8):
-                (del2, model_counts, perms2, protected2) = deleted_result
-            else:
-                (del2, perms2, protected2) = deleted_result
+            (del2, model_counts, perms2, protected2) = deleted_result
 
             deleted_objects += del2
             perms_needed = perms_needed or perms2
@@ -481,7 +451,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             ))
 
             if self.has_change_permission(request, None):
-                info = _get_model_meta(opts)
+                info = opts.app_label, opts.model_name
                 return HttpResponseRedirect(reverse('admin:{0}_{1}_change'.format(*info), args=(object_id,), current_app=self.admin_site.name))
             else:
                 return HttpResponseRedirect(reverse('admin:index', current_app=self.admin_site.name))
@@ -728,11 +698,3 @@ class SortedRelatedFieldListFilter(admin.RelatedFieldListFilter):
     def __init__(self, *args, **kwargs):
         super(SortedRelatedFieldListFilter, self).__init__(*args, **kwargs)
         self.lookup_choices = sorted(self.lookup_choices, key=lambda a: a[1].lower())
-
-
-if django.VERSION >= (1, 7):
-    def _get_model_meta(opts):
-        return opts.app_label, opts.model_name
-else:
-    def _get_model_meta(opts):
-        return opts.app_label, opts.module_name

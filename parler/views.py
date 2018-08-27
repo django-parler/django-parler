@@ -14,10 +14,10 @@ The following views are available:
 * :class:`TranslatableUpdateView` - The :class:`~django.views.generic.edit.UpdateView` with :class:`TranslatableModelFormMixin` support.
 """
 from __future__ import unicode_literals
-import django
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponsePermanentRedirect
+from django.urls import reverse
 from django.utils import translation
 from django.views import generic
 from django.views.generic.edit import ModelFormMixin
@@ -26,12 +26,6 @@ from parler.models import TranslatableModelMixin
 from parler.utils import get_active_language_choices
 from parler.utils.context import switch_language
 from parler.utils.views import get_language_parameter, get_language_tabs
-
-try:
-    from django.urls import reverse
-except ImportError:
-    # Support for Django <= 1.10
-    from django.core.urlresolvers import reverse
 
 
 __all__ = (

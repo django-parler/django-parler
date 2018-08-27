@@ -9,7 +9,7 @@ __all__ = (
 
 
 class HideChoicesCharField(models.CharField):
-    # For Django 1.7, hide the 'choices' for a field.
+    # Hide the 'choices' for a field.
 
     def deconstruct(self):
         name, path, args, kwargs = models.CharField.deconstruct(self)
@@ -23,11 +23,3 @@ class HideChoicesCharField(models.CharField):
             pass
 
         return name, path, args, kwargs
-
-
-def get_remote_field(klass):
-    try:
-        return klass.master.field.remote_field
-    except AttributeError:
-        # Django <= 1.8 compatibility
-        return klass.master.field.rel

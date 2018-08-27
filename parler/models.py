@@ -57,13 +57,13 @@ The translated model is compatible with django-hvad, making the transition betwe
 The manager and queryset objects of django-parler can work together with django-mptt and django-polymorphic.
 """
 from __future__ import unicode_literals
-from collections import defaultdict
-import django
+from collections import defaultdict, OrderedDict
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
 from django.db import models, router
 from django.db.models.base import ModelBase
-from django.utils.encoding import python_2_unicode_compatible
+from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+from django.utils.encoding import force_text, python_2_unicode_compatible
 from django.utils.functional import lazy
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.utils import six
@@ -76,16 +76,6 @@ from parler.utils.i18n import (normalize_language_code, get_language, get_langua
                                get_null_language_error)
 import sys
 import warnings
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from django.utils.datastructures import SortedDict as OrderedDict
-
-if django.VERSION >= (1, 9):
-    from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
-else:
-    from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
 __all__ = (
     'TranslatableModelMixin',
@@ -153,8 +143,7 @@ def create_translations_model(shared_model, related_name, meta, **fields):
 
     # Avoid creating permissions for the translated model, these are not used at all.
     # This also avoids creating lengthy permission names above 50 chars.
-    if django.VERSION >= (1, 7):
-        meta.setdefault('default_permissions', ())
+    meta.setdefault('default_permissions', ())
 
     # Define attributes for translation table
     name = str('{0}Translation'.format(shared_model.__name__))  # makes it bytes, for type()
@@ -527,7 +516,7 @@ class TranslatableModelMixin(object):
                 'language_code': language_code,
             }
             if self.pk:
-                # ID might be None at this point, and Django 1.8 does not allow that.
+                # ID might be None at this point, and Django does not allow that.
                 kwargs['master'] = self
 
             object = meta.model(**kwargs)
@@ -613,14 +602,8 @@ class TranslatableModelMixin(object):
         if meta is None:
             meta = self._parler_meta.root
 
-        accessor = getattr(self, meta.rel_name)
-        if django.VERSION >= (1, 6):
-            # Call latest version
-            return accessor.get_queryset()
-        else:
-            # Must call RelatedManager.get_query_set() and avoid calling a custom get_queryset()
-            # method for packages with Django 1.6/1.7 compatibility.
-            return accessor.get_query_set()
+        accessor = getattr(self, meta.rel_name)  # RelatedManager
+        return accessor.get_queryset()
 
     def _get_prefetched_translations(self, meta=None):
         """
@@ -677,7 +660,7 @@ class TranslatableModelMixin(object):
         try:
             super(TranslatableModelMixin, self).validate_unique(exclude=exclude)
         except ValidationError as e:
-            errors = e.message_dict  # Django 1.5 + 1.6 compatible
+            errors = e.message_dict
 
         for local_cache in six.itervalues(self._translations_cache):
             for translation in six.itervalues(local_cache):
@@ -875,21 +858,17 @@ class TranslatedFieldsModelMixin(object):
         """
         Returns the shared model this model is linked to.
         """
-        remote_field = compat.get_remote_field(self.__class__)
-        try:
-            return remote_field.model
-        except AttributeError:
-            return remote_field.to
+        return self.__class__.master.field.remote_field.model
 
     @property
     def related_name(self):
         """
         Returns the related name that this model is known at in the shared model.
         """
-        return compat.get_remote_field(self.__class__).related_name
+        return self.__class__.master.field.remote_field.related_name
 
     def save_base(self, raw=False, using=None, **kwargs):
-        # As of Django 1.8, not calling translations.activate() or disabling the translation
+        # Not calling translations.activate() or disabling the translation
         # causes get_language() to explicitly return None instead of LANGUAGE_CODE.
         # This helps developers find solutions by bailing out properly.
         #
@@ -933,24 +912,13 @@ class TranslatedFieldsModelMixin(object):
         if not self._meta.auto_created:
             signals.post_translation_delete.send(sender=self.shared_model, instance=self, using=using)
 
-    if django.VERSION >= (1, 8):
+    def _get_field_names(self):
+        # Use the new Model._meta API.
+        return [field.get_attname() for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
 
-        def _get_field_names(self):
-            # Use the new Model._meta API.
-            return [field.get_attname() for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
-
-        def _get_field_values(self):
-            # Use the new Model._meta API.
-            return [getattr(self, field.get_attname()) for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
-    else:
-
-        def _get_field_names(self):
-            # Return all field names in a consistent (sorted) manner.
-            return [field.get_attname() for field, _ in self._meta.get_fields_with_model()]
-
-        def _get_field_values(self):
-            # Return all field values in a consistent (sorted) manner.
-            return [getattr(self, field.get_attname()) for field, _ in self._meta.get_fields_with_model()]
+    def _get_field_values(self):
+        # Use the new Model._meta API.
+        return [getattr(self, field.get_attname()) for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
 
     @classmethod
     def get_translated_fields(cls):
@@ -968,7 +936,7 @@ class TranslatedFieldsModelMixin(object):
             base.add_meta(ParlerMeta(
                 shared_model=shared_model,
                 translations_model=cls,
-                related_name=compat.get_remote_field(cls).related_name
+                related_name=cls.master.field.remote_field.related_name
             ))
         else:
             # Place a new _parler_meta at the current inheritance level.
@@ -977,7 +945,7 @@ class TranslatedFieldsModelMixin(object):
                 base,
                 shared_model=shared_model,
                 translations_model=cls,
-                related_name=compat.get_remote_field(cls).related_name
+                related_name=cls.master.field.remote_field.related_name
             )
 
         # Assign the proxy fields
@@ -1009,9 +977,7 @@ class TranslatedFieldsModelMixin(object):
         cls.DoesNotExist = type(str('DoesNotExist'), (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
 
     def __str__(self):
-        # use format to avoid weird error in django 1.4
-        # TypeError: coercing to Unicode: need string or buffer, __proxy__ found
-        return "{0}".format(get_language_title(self.language_code))
+        return force_text(get_language_title(self.language_code))
 
     def __repr__(self):
         return "<{0}: #{1}, {2}, master: #{3}>".format(
@@ -1024,8 +990,7 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, Transl
 
     class Meta:
         abstract = True
-        if django.VERSION >= (1, 7):
-            default_permissions = ()
+        default_permissions = ()
 
 
 class ParlerMeta(object):

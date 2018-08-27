@@ -1,33 +1,17 @@
 from __future__ import unicode_literals
-import django
 from django.test import RequestFactory
+from django.test.utils import override_settings
+from django.urls import reverse, resolve, get_urlconf
 from django.utils import translation
 from parler.templatetags.parler_tags import get_translated_url
 from .utils import AppTestCase
 from .testapp.models import ArticleSlugModel
-
-try:
-    from django.urls import reverse, resolve, get_urlconf
-except ImportError:
-    # Support for Django <= 1.10
-    from django.core.urlresolvers import reverse, resolve, get_urlconf
-
-try:
-    from django.test.utils import override_settings  # Django 1.7+
-except ImportError:
-    def override_settings(ROOT_URLCONF=None):
-        assert get_urlconf() == ROOT_URLCONF
-        def dummy_dec(func):
-            return func
-        return dummy_dec
 
 
 class UrlTests(AppTestCase):
     """
     Test model construction
     """
-    if django.VERSION < (1, 8):
-        urls = 'parler.tests.testapp.urls'
 
     @classmethod
     def setUpClass(cls):
@@ -147,10 +131,4 @@ class UrlTests(AppTestCase):
         # Try call on the default slug (which is resolvable), although there is a translated version.
         with translation.override(self.other_lang2):
             response = self.client.get('/{0}/article/default/'.format(self.other_lang2))
-            if django.VERSION >= (1, 9):
-                self.assertRedirects(response, '/{0}/article/lang2/'.format(self.other_lang2), status_code=301)
-            elif django.VERSION >= (1, 7):
-                self.assertRedirects(response, 'http://testserver/{0}/article/lang2/'.format(self.other_lang2), status_code=301)
-            else:
-                self.assertEqual(response.status_code, 301, "Unexpected response, got: {0}, expected 301".format(response.content))
-                self.assertEqual(response['Location'], 'http://testserver/{0}/article/lang2/'.format(self.other_lang2))
+            self.assertRedirects(response, '/{0}/article/lang2/'.format(self.other_lang2), status_code=301)

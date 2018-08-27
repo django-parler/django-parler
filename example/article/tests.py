@@ -1,22 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from collections import deque
-from unittest import skipIf, expectedFailure
 
-import django
 from django.test.html import parse_html, Element
 from django.test.utils import override_settings
+from django.urls import reverse
 from django.utils import encoding, translation
 from django.test import TestCase
 from django.contrib import auth
 from .models import Article, Category
 from parler.appsettings import PARLER_LANGUAGES
-
-try:
-    from django.urls import reverse
-except ImportError:
-    # Support for Django <= 1.10
-    from django.core.urlresolvers import reverse
 
 
 class TestMixin(object):
@@ -79,8 +72,6 @@ def _is_dict_subset(d1, d2):
 
 
 class ArticleTestCase(TestMixin, TestCase):
-    if django.VERSION < (1, 8):
-        urls = 'example.urls'
 
     @override_settings(ROOT_URLCONF='example.urls')
     def test_home(self):
@@ -128,7 +119,6 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertEqual(200, resp.status_code)
         self.assertTemplateUsed(resp, 'admin/change_list.html')
 
-    @skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
     def test_admin_add(self):
         self.client.login(**self.credentials)
 
@@ -153,7 +143,6 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertEqual(200, resp.status_code)
         self.assertInContent('<h1>Add Article (Dutch)</h1>', resp)
 
-    @skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
     def test_admin_add_post(self):
         self.client.login(**self.credentials)
         resp = self.client.post(
@@ -169,7 +158,6 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertRedirects(resp, reverse('admin:article_article_changelist'))
         self.assertEqual(1, Article.objects.filter(translations__slug='my-article').count())
 
-    @skipIf(django.VERSION < (1, 5), "bug with declared_fieldsets in ArticleAdmin")
     def test_admin_change(self):
         self.client.login(**self.credentials)
 
@@ -255,7 +243,6 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertEqual(200, resp.status_code)
         self.assertTemplateUsed(resp, 'admin/parler/deletion_not_allowed.html')
 
-    @expectedFailure
     def test_admin_delete_translation_unavailable(self):
         """
         To be fixed : when trying to delete the last language when a translation

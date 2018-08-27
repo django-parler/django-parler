@@ -1,4 +1,3 @@
-import django
 from django.core.exceptions import ValidationError
 from django.utils import translation
 from parler.forms import TranslatableModelForm
@@ -10,32 +9,28 @@ class SimpleForm(TranslatableModelForm):
 
     class Meta:
         model = SimpleModel
-        if django.VERSION >= (1, 6):
-            fields = '__all__'
+        fields = '__all__'
 
 
 class CleanFieldForm(TranslatableModelForm):
 
     class Meta:
         model = CleanFieldModel
-        if django.VERSION >= (1, 6):
-            fields = '__all__'
+        fields = '__all__'
 
 
 class UniqueTogetherForm(TranslatableModelForm):
 
     class Meta:
         model = UniqueTogetherModel
-        if django.VERSION >= (1, 6):
-            fields = '__all__'
+        fields = '__all__'
 
 
 class ForeignKeyTranslationModelForm(TranslatableModelForm):
 
     class Meta:
         model = ForeignKeyTranslationModel
-        if django.VERSION >= (1, 6):
-            fields = '__all__'
+        fields = '__all__'
 
 
 class FormTests(AppTestCase):
