@@ -1,7 +1,10 @@
 from __future__ import unicode_literals
+
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
+
 from parler.fields import TranslatedField
+from parler.managers import LightTranslatableManager, DeepTranslatableManager, AutoAddTranslationsManager
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
 from parler.utils.context import switch_language
 
@@ -31,6 +34,68 @@ class SimpleModel(TranslatableModel):
 
     def __str__(self):
         return self.tr_title
+
+
+@python_2_unicode_compatible
+class SimpleLightModel(TranslatableModel):
+    shared = models.CharField(max_length=200, default='')
+
+    translations = TranslatedFields(
+        tr_title = models.CharField("Translated Title", max_length=200)
+    )
+
+    objects = LightTranslatableManager()
+
+    def __str__(self):
+        return self.tr_title
+
+
+@python_2_unicode_compatible
+class SimpleModelA(TranslatableModel):
+    translations = TranslatedFields(
+        model_a_title = models.CharField("ModelA Translated Title", max_length=200)
+    )
+
+    def __str__(self):
+        return self.model_a_title
+
+
+@python_2_unicode_compatible
+class SimpleModelB(TranslatableModel):
+    model_a = models.ForeignKey(SimpleModelA, on_delete=models.CASCADE)
+
+    translations = TranslatedFields(
+        model_b_title = models.CharField("ModelB Translated Title", max_length=200)
+    )
+
+    def __str__(self):
+        return self.model_b_title
+
+
+@python_2_unicode_compatible
+class SimpleModelC(TranslatableModel):
+    model_b = models.ForeignKey(SimpleModelB, on_delete=models.CASCADE)
+
+    translations = TranslatedFields(
+        model_c_title = models.CharField("ModelC Translated Title", max_length=200)
+    )
+
+    objects = DeepTranslatableManager()
+
+    def __str__(self):
+        return self.model_c_title
+
+
+@python_2_unicode_compatible
+class SimpleNonTranslatableModelC(models.Model):
+    model_b = models.ForeignKey(SimpleModelB, on_delete=models.CASCADE)
+
+    model_c_title = models.CharField("ModelC Translated Title", max_length=200)
+
+    objects = AutoAddTranslationsManager()
+
+    def __str__(self):
+        return self.model_c_title
 
 
 class CleanCharField(models.CharField):
