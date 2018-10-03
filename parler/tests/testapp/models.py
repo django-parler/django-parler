@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+import uuid
+
 from django.db import models
 from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
@@ -225,3 +227,24 @@ class TranslationRelatedTranslation(TranslatedFieldsModel):
 class TranslationRelatedRelation(models.Model):
     translation = models.ForeignKey(TranslationRelatedTranslation, related_name='translation_relations', on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
+
+
+class IntegerPrimaryKeyModel(TranslatableModel):
+
+    translations = TranslatedFields(
+        tr_title = models.CharField("Translated Title", max_length=200)
+    )
+
+class IntegerPrimaryKeyRelatedModel(models.Model):
+    parent = models.ForeignKey('IntegerPrimaryKeyModel', on_delete=models.CASCADE, related_name='children')
+
+
+class UUIDPrimaryKeyModel(TranslatableModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    translations = TranslatedFields(
+        tr_title = models.CharField("Translated Title", max_length=200)
+    )
+
+class UUIDPrimaryKeyRelatedModel(models.Model):
+    parent = models.ForeignKey('UUIDPrimaryKeyModel', on_delete=models.CASCADE, related_name='children')

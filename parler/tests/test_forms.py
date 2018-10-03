@@ -1,8 +1,11 @@
 from django.core.exceptions import ValidationError
+from django.forms import inlineformset_factory
 from django.utils import translation
 from parler.forms import TranslatableModelForm
 from .utils import AppTestCase
-from .testapp.models import SimpleModel, UniqueTogetherModel, ForeignKeyTranslationModel, RegularModel, CleanFieldModel
+from .testapp.models import (SimpleModel, UniqueTogetherModel, ForeignKeyTranslationModel, RegularModel,
+                             CleanFieldModel, UUIDPrimaryKeyModel, UUIDPrimaryKeyRelatedModel,
+                             IntegerPrimaryKeyModel, IntegerPrimaryKeyRelatedModel)
 
 
 class SimpleForm(TranslatableModelForm):
@@ -30,6 +33,20 @@ class ForeignKeyTranslationModelForm(TranslatableModelForm):
 
     class Meta:
         model = ForeignKeyTranslationModel
+        fields = '__all__'
+
+
+class IntegerPrimaryKeyForm(TranslatableModelForm):
+
+    class Meta:
+        model = IntegerPrimaryKeyModel
+        fields = '__all__'
+
+
+class UUIDPrimaryKeyForm(TranslatableModelForm):
+
+    class Meta:
+        model = UUIDPrimaryKeyModel
         fields = '__all__'
 
 
@@ -148,3 +165,29 @@ class FormTests(AppTestCase):
         form = ForeignKeyTranslationModelForm(instance=a)
 
         self.assertTrue(True)
+
+
+class InlineFormTests(AppTestCase):
+
+    def test_integer_primary_key(self):
+        parent_form = IntegerPrimaryKeyForm(data={'tr_title': 'TRANS'})
+        self.assertTrue(parent_form.is_valid())
+        parent = parent_form.save(commit=False)
+        InlineFormSet = inlineformset_factory(IntegerPrimaryKeyModel, IntegerPrimaryKeyRelatedModel, fields=())
+        formset = InlineFormSet(instance=parent, data={'children-TOTAL_FORMS': 1, 'children-INITIAL_FORMS': 0})
+        self.assertTrue(formset.is_valid())
+        parent.save()
+        self.assertEqual(parent.translations.count(), 1)
+
+    def test_uuid_primary_key(self):
+        parent_form = UUIDPrimaryKeyForm(data={'tr_title': 'TRANS'})
+        self.assertTrue(parent_form.is_valid())
+        parent = parent_form.save(commit=False)
+        self.assertIsNotNone(parent.pk)  # UUID primary key set on instantiation
+        InlineFormSet = inlineformset_factory(UUIDPrimaryKeyModel, UUIDPrimaryKeyRelatedModel, fields=())
+        formset = InlineFormSet(instance=parent, data={'children-TOTAL_FORMS': 1, 'children-INITIAL_FORMS': 0})
+        self.assertTrue(formset.is_valid())
+        self.assertIsNone(parent.pk)  # The formset above will reset the primary key
+        parent.save()
+        self.assertEqual(parent.translations.count(), 1)
+
