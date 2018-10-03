@@ -515,7 +515,7 @@ class TranslatableModelMixin(object):
             kwargs = {
                 'language_code': language_code,
             }
-            if self.pk:
+            if self.pk and not self._state.adding:
                 # ID might be None at this point, and Django does not allow that.
                 kwargs['master'] = self
 
