@@ -405,6 +405,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 uri,
                 "../add/",
                 reverse('admin:{0}_{1}_add'.format(*info), current_app=self.admin_site.name),
+                "../change/",
+                reverse('admin:{0}_{1}_change'.format(*info), args=[obj.pk,], current_app=self.admin_site.name),
             )
             redirect_parts = redirect['Location'].split('?')
             if redirect_parts[0] in continue_urls and self.query_language_key in request.GET:
