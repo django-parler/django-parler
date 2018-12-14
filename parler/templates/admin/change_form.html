@@ -7,20 +7,28 @@
         jQuery.noConflict();
         // Use jQuery via jQuery() instead of via $()
         jQuery(document).ready(function(){
-            // jQuery(".parler-language-tabs span[class != 'current']").hide();
-            jQuery("form").change(function(){
-                jQuery(this).attr("changed", true);
+            var is_changed = false;
+            var is_tab_clicked = false;
+            var form = jQuery("form");
+            
+            form.change(function(){
+                is_changed = true;
             });
+            
             jQuery(".parler-language-tabs span[class != 'current']").click(function() {
-                if (jQuery("form").attr("changed")) {
+                is_tab_clicked = true;
+            });
+            
+            window.onbeforeunload = function (e) {
+                if (is_changed && is_tab_clicked) {
                     jQuery.ajax({
                         url:'.',
                         type:'post',
-                        data: jQuery('form').serialize(),
+                        async: false,
+                        data: form.serialize(),
                     });
                 }
-
-            });
+            }
         });
     </script>
 {% endblock %}
