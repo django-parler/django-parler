@@ -1,0 +1,26 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script type="text/javascript">
+        // automatically save data when user changes language tab
+        jQuery.noConflict();
+        // Use jQuery via jQuery() instead of via $()
+        jQuery(document).ready(function(){
+            // jQuery(".parler-language-tabs span[class != 'current']").hide();
+            jQuery("form").change(function(){
+                jQuery(this).attr("changed", true);
+            });
+            jQuery(".parler-language-tabs span[class != 'current']").click(function() {
+                if (jQuery("form").attr("changed")) {
+                    jQuery.ajax({
+                        url:'.',
+                        type:'post',
+                        data: jQuery('form').serialize(),
+                    });
+                }
+
+            });
+        });
+    </script>
+{% endblock %}
