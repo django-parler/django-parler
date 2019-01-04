@@ -6,7 +6,6 @@
         (function($) {
             'use strict';
             $(document).ready(function() {
-                console.log('11');
                 var is_changed = false;
                 var is_tab_clicked = false;
                 var form = $("form");
@@ -22,8 +21,8 @@
                         var next_href = $(this).find('a').attr('href').split('=')[1];
                         var current_href = $('form').attr('action');
 
-                        $('form').attr('action', current_href + "&next_href=" + next_href);
-                        $('input[name="_continue"]').click();
+                        form.attr('action', current_href + "&next_href=" + next_href);
+                        form.find('input[name="_continue"]').click();
                         return false;
                     }
                 });
@@ -31,14 +30,10 @@
                 window.onbeforeunload = function (e) {
                     if (is_changed && is_tab_clicked) {
                         $.ajax({
-                            url:'.',
+                            url: window.location.href,
                             type:'post',
                             async: false,
                             data: form.serialize(),
-                            success: function(data){
-                                console.log(data);
-                            }
-
                         });
                     }
                 }
