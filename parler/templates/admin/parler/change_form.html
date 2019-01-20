@@ -18,6 +18,11 @@
                 form.change(function(){
                     is_changed = true;
                 });
+                
+                if ($(".django-ckeditor-widget")[0]) {
+                    // django ckeditor widget support
+                    is_changed = true;   
+                }
 
                 $(".parler-language-tabs span[class != 'current']").click(function() {
                     //is_tab_clicked = true;
