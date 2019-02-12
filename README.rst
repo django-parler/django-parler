@@ -20,9 +20,9 @@ Features:
 * Separate table for translated fields, compatible with django-hvad_.
 * Plays nice with others, compatible with django-polymorphic_, django-mptt_ and such:
 
- * No ORM query hacks.
- * Easy to combine with custom Manager or QuerySet classes.
- * Easy to construct the translations model manually when needed.
+  * No ORM query hacks.
+  * Easy to combine with custom Manager or QuerySet classes.
+  * Easy to construct the translations model manually when needed.
 
 See the documentation_ for more details.
 
