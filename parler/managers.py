@@ -54,9 +54,14 @@ class TranslatableQuerySet(QuerySet):
                 except KeyError:
                     pass
 
-        lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
-        params.update(translated_defaults)
-        return lookup, params
+        if django.VERSION < (2, 2):
+            lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
+            params.update(translated_defaults)
+            return lookup, params
+        else:
+            params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
+            params.update(translated_defaults)
+            return params
 
     def language(self, language_code=None):
         """
