@@ -1,6 +1,7 @@
 """
 Custom generic managers
 """
+import django
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.query import QuerySet
