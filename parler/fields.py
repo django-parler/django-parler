@@ -27,6 +27,10 @@ def _validate_master(new_class):
     remote_field = new_class.master.field.remote_field
     shared_model = remote_field.model
 
+    # Skip checks in migration
+    if shared_model.__module__ == '__fake__':
+        return shared_model
+
     meta = shared_model._parler_meta
     if meta is not None:
         if meta._has_translations_model(new_class):
