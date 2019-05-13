@@ -660,7 +660,7 @@ class TranslatableModelMixin(object):
         try:
             super(TranslatableModelMixin, self).validate_unique(exclude=exclude)
         except ValidationError as e:
-            errors = e.message_dict
+            errors = e.error_dict
 
         for local_cache in six.itervalues(self._translations_cache):
             for translation in six.itervalues(local_cache):
@@ -670,7 +670,7 @@ class TranslatableModelMixin(object):
                 try:
                     translation.validate_unique(exclude=exclude)
                 except ValidationError as e:
-                    errors.update(e.message_dict)
+                    errors.update(e.error_dict)
 
         if errors:
             raise ValidationError(errors)
