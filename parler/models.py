@@ -649,7 +649,7 @@ class TranslatableModelMixin(object):
 
     def delete(self, using=None):
         _delete_cached_translations(self)
-        super(TranslatableModelMixin, self).delete(using)
+        return super(TranslatableModelMixin, self).delete(using)
 
     def validate_unique(self, exclude=None):
         """

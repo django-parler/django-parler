@@ -150,6 +150,16 @@ class ModelAttributeTests(AppTestCase):
 
         self.assertEqual(sorted(x.get_available_languages()), ['en'])
 
+    def test_delete_return(self):
+        x = SimpleModel.objects.create()
+        x.create_translation('en', tr_title='TITLE_EN')
+
+        expect = (
+            2,
+            {'testapp.SimpleModelTranslation': 1, 'testapp.SimpleModel': 1}
+        )
+        self.assertEqual(x.delete(), expect)
+
     def test_fallback_language(self):
         """
         Test whether the fallback language will be returned.
