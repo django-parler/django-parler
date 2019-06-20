@@ -1,6 +1,7 @@
 """
 Custom generic managers
 """
+import django
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.query import QuerySet
@@ -54,9 +55,14 @@ class TranslatableQuerySet(QuerySet):
                 except KeyError:
                     pass
 
-        lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
-        params.update(translated_defaults)
-        return lookup, params
+        if django.VERSION >= (2, 2):
+            params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
+            params.update(translated_defaults)
+            return params
+        else:
+            lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
+            params.update(translated_defaults)
+            return lookup, params
 
     def language(self, language_code=None):
         """
