@@ -769,6 +769,12 @@ class TranslatableModelMixin(object):
         else:
             return default
 
+    def refresh_from_db(self, *args, **kwargs):
+        super(TranslatableModelMixin, self).refresh_from_db(*args, **kwargs)
+        _delete_cached_translations(self)
+        self._translations_cache.clear()
+    refresh_from_db.alters_data = True
+
 
 class TranslatableModel(TranslatableModelMixin, models.Model):
     """
