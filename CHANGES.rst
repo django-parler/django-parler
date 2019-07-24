@@ -1,10 +1,10 @@
 Changelog
 =========
 
-Changes in 2.0 (tbd)
---------------------
+Changes in 2.0 (2019-07-26)
+---------------------------
 
-* Added Django 2.2 support
+* Added Django 2.1 and 2.2 support
 * Added translation support to data migrations.
 * Fixed formatting of initial form values for translated fields.
 * Fixed admin change view redirects to preserve ``?language=..`` in the query string.
