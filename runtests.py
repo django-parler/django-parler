@@ -34,9 +34,10 @@ if not settings.configured:
         INSTALLED_APPS = (
             'django.contrib.auth',
             'django.contrib.contenttypes',
+            'django.contrib.messages',
+            'django.contrib.sessions',
             'django.contrib.sites',
             'django.contrib.admin',
-            'django.contrib.sessions',
             'parler',
             'parler.tests.testapp',
             'article',
@@ -57,13 +58,16 @@ if not settings.configured:
                         'django.template.context_processors.media',
                         'django.template.context_processors.request',
                         'django.template.context_processors.static',
+                        'django.contrib.messages.context_processors.messages',
                         'django.contrib.auth.context_processors.auth',
                     ),
                 },
             },
         ],
         MIDDLEWARE = (
+            'django.middleware.common.CommonMiddleware',
             'django.contrib.sessions.middleware.SessionMiddleware',
+            'django.middleware.csrf.CsrfViewMiddleware',
             'django.contrib.auth.middleware.AuthenticationMiddleware',
             'django.contrib.messages.middleware.MessageMiddleware',
             'django.middleware.locale.LocaleMiddleware',  # / will be redirected to /<locale>/
