@@ -12,6 +12,7 @@ env:
 - DJANGO="1.11.*"
 - DJANGO="2.0.*"
 - DJANGO="2.1.*"
+- DJANGO="2.2.*"
 matrix:
   exclude:
   # Django 1.11 is the last one supporting 2.7
@@ -19,9 +20,13 @@ matrix:
     env: DJANGO="2.0.*"
   - python: '2.7'
     env: DJANGO="2.1.*"
+  - python: '2.7'
+    env: DJANGO="2.2.*"
   # Django 2.0 is the last one supporting 3.4
   - python: '3.4'
     env: DJANGO="2.1.*"
+  - python: '3.4'
+    env: DJANGO="2.2.*"
 before_install:
 - pip install codecov
 install:
