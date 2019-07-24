@@ -1,6 +1,25 @@
 Changelog
 =========
 
+Changes in 2.0 (tbd)
+--------------------
+
+* Added Django 2.2 support
+* Added translation support to data migrations.
+* Fixed formatting of initial form values for translated fields.
+* Fixed admin change view redirects to preserve ``?language=..`` in the query string.
+* Fixed admin loading ``prepopulate.js`` for DEBUG=True.
+* Fixed admin quoting for ``object_id`` URLs.
+* Fixed ``UUIDField`` support.
+* Fixed object creation when setting the ``pk`` field on newly added objects.
+* Fixed check on ``MISSING`` sentinel when loading cached models.
+* Fixed ``QuerySet._clone()`` argument signature.
+* Fixed ``model.delete()`` call to return collector data.
+* Fixed ``model.refresh_from_db()`` to clear the translations cache too.
+* Fixed returning full full ``ValidationError`` data from ``validate_unique()``.
+* Drop Django 1.7, 1.8, 1.9, 1.10 compatibility.
+
+
 Changes in 1.9.2 (2018-02-12)
 -----------------------------
 
