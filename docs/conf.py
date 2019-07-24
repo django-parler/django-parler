@@ -37,7 +37,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.graphviz',
     'sphinx.ext.intersphinx',
-    'djangoext.roles',
+    'sphinxcontrib_django',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -54,7 +54,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'django-parler'
-copyright = u'2014, Diederik van der Boor and contributors'
+copyright = u'2014-2019, Diederik van der Boor and contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -270,7 +270,7 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'http://docs.python.org/': None,
-    'https://docs.djangoproject.com/en/dev': 'https://docs.djangoproject.com/en/dev/_objects',
+    'https://docs.python.org/3/': None,
+    'https://docs.djangoproject.com/en/dev': 'https://docs.djangoproject.com/en/dev/_objects/',
     'polymorphic': ('https://django-polymorphic.readthedocs.io/en/latest/', None),
 }
