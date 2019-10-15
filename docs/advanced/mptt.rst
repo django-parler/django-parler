@@ -22,10 +22,11 @@ Say we have a base ``Category`` model that needs to be translatable:
 .. code-block:: python
 
     from django.db import models
-    from django.utils.encoding import python_2_unicode_compatible, force_text
+    from django.utils.encoding import force_text
     from parler.models import TranslatableModel, TranslatedFields
     from parler.managers import TranslatableManager
     from mptt.models import MPTTModel
+    from six import python_2_unicode_compatible
     from .managers import CategoryManager
 
 

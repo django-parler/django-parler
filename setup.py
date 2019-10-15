@@ -40,6 +40,7 @@ setup(
 
     requires=[
         'Django (>=1.7)',
+        'six',
     ],
 
     description='Simple Django model translations without nasty hacks, featuring nice admin integration.',
