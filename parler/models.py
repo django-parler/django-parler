@@ -6,8 +6,8 @@ The default is to use the :class:`TranslatedFields` class in the model, like:
 .. code-block:: python
 
     from django.db import models
-    from django.utils.encoding import python_2_unicode_compatible
     from parler.models import TranslatableModel, TranslatedFields
+    from six import python_2_unicode_compatible
 
 
     @python_2_unicode_compatible
@@ -28,9 +28,9 @@ It's also possible to create the translated fields model manually:
 .. code-block:: python
 
     from django.db import models
-    from django.utils.encoding import python_2_unicode_compatible
     from parler.models import TranslatableModel, TranslatedFieldsModel
     from parler.fields import TranslatedField
+    from six import python_2_unicode_compatible
 
 
     class MyModel(TranslatableModel):
@@ -63,10 +63,9 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldE
 from django.db import models, router
 from django.db.models.base import ModelBase
 from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
-from django.utils.encoding import force_text, python_2_unicode_compatible
+from django.utils.encoding import force_text
 from django.utils.functional import lazy
 from django.utils.translation import ugettext, ugettext_lazy as _
-from django.utils import six
 from parler import signals
 from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field, is_missing
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor, TranslationsForeignKey, _validate_master
@@ -74,6 +73,8 @@ from parler.managers import TranslatableManager
 from parler.utils import compat
 from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
                                get_null_language_error)
+from six import python_2_unicode_compatible
+import six
 import sys
 import warnings
 

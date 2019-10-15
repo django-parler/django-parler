@@ -19,10 +19,11 @@ pattern works for a polymorphic Django model:
 .. code-block:: python
 
 	from django.db import models
-	from django.utils.encoding import python_2_unicode_compatible, force_text
+	from django.utils.encoding import force_text
 	from parler.models import TranslatableModel, TranslatedFields
 	from parler.managers import TranslatableManager
 	from polymorphic import PolymorphicModel
+	from six import python_2_unicode_compatible
 	from .managers import BookManager
 	
 

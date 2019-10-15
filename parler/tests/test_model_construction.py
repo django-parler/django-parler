@@ -1,9 +1,9 @@
 from functools import wraps
 import unittest
 
+import six
 from django.db import models
 from django.db.models import Manager
-from django.utils import six
 from parler.models import TranslatableModel
 from parler.models import TranslatedFields
 from .utils import AppTestCase

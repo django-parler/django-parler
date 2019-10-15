@@ -3,10 +3,10 @@ import uuid
 
 from django.db import models
 from django.urls import reverse
-from django.utils.encoding import python_2_unicode_compatible
 from parler.fields import TranslatedField, TranslationsForeignKey
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
 from parler.utils.context import switch_language
+from six import python_2_unicode_compatible
 
 
 class ManualModel(TranslatableModel):
