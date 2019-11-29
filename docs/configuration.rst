@@ -124,3 +124,13 @@ PARLER_SHOW_EXCLUDED_LANGUAGE_TABS
 
 By default, the admin tabs are limited to the language codes found in :django:setting:`LANGUAGES`.
 If the models have other translations, they can be displayed by setting this value to ``True``.
+
+
+PARLER_DEFAULT_ACTIVATE
+----------------------------------
+
+::
+
+    PARLER_DEFAULT_ACTIVATE = True
+
+Setting, which allows to display translated texts in the default language even through ``translation.activate()`` is not called yet.
