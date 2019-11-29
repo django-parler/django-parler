@@ -8,8 +8,7 @@ import sys
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
-from django.utils.translation import get_language
-from parler.utils.i18n import is_supported_django_language, get_null_language_error
+from parler.utils.i18n import is_supported_django_language, get_null_language_error, get_language
 
 
 def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', **extra_defaults):
