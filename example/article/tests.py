@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 from collections import deque
 
+import django
 from django.test.html import parse_html, Element
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -135,7 +136,11 @@ class AdminArticleTestCase(TestMixin, TestCase):
         translation.activate('fr')
         resp = self.client.get(reverse('admin:article_article_add'))
         self.assertEqual(200, resp.status_code)
-        self.assertInContent('<h1>Ajout Article (Hollandais)</h1>', resp)
+
+        if django.VERSION >= (3, 0):
+            self.assertInContent('<h1>Ajout de Article (Hollandais)</h1>', resp)
+        else:
+            self.assertInContent('<h1>Ajout Article (Hollandais)</h1>', resp)
 
         translation.activate('en')
 
