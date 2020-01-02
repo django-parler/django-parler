@@ -937,7 +937,12 @@ class TranslatedFieldsModelMixin(object):
         Add the proxy attributes to the shared model.
         """
         # Instance at previous inheritance level, if set.
-        base = getattr(shared_model, '_parler_meta', None)
+        # This is checked for None as some migration files don't use bases=TranslatableModel instead
+        try:
+            base = shared_model._parler_meta
+        except AttributeError:
+            raise TypeError("Translatable model {} does not appear to inherit from TranslatableModel".format(shared_model))
+
         if base is not None and base[-1].shared_model is shared_model:
             # If a second translations model is added, register it in the same object level.
             base.add_meta(ParlerMeta(

@@ -31,7 +31,11 @@ def _validate_master(new_class):
     if shared_model.__module__ == '__fake__':
         return shared_model
 
-    meta = getattr(shared_model, '_parler_meta', None)
+    try:
+        meta = shared_model._parler_meta
+    except AttributeError:
+        raise TypeError("Translatable model {} does not appear to inherit from TranslatableModel".format(shared_model))
+
     if meta is not None:
         if meta._has_translations_model(new_class):
             raise ImproperlyConfigured("The model '{0}' already has an associated translation table!".format(shared_model.__name__))
