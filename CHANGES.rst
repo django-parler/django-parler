@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Changes in 2.0.1 (2020-01-02)
+-----------------------------
+
+* Fixed Django 3.0 compatibility by removing django.utils.six dependency.
+* Fixed using ``value_from_object()`` instead of ``get_prep_value()`` in model forms initial data.
+* Fixed using proper ``get_language()`` call when ``PARLER_DEFAULT_ACTIVATE`` is used.
+* Fixed confusing ``AttributeError`` on ``_parler_meta`` when migrations don't inherit from ``TranslatableModel``.
+
+
 Changes in 2.0 (2019-07-26)
 ---------------------------
 
