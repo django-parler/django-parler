@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.utils import translation
 from django.utils.timezone import now
 from parler import appsettings
+from parler.cache import get_translation_cache_key
 
 from .utils import AppTestCase, override_parler_settings
 from .testapp.models import SimpleModel, DateTimeModel
@@ -100,3 +101,23 @@ class QueryCountTests(AppTestCase):
             qs = SimpleModel.objects.prefetch_related('translations')
             self.assertNumTranslatedQueries(2, qs)
             self.assertNumTranslatedQueries(0, qs)   # All should be cached on the QuerySet and object now.
+
+    def test_get_translation_cache_key_empty_prefix(self):
+        """
+        Test that ``get_translation_cache_key`` creates correct cache key if prefix is empty.
+        """
+        with override_parler_settings(PARLER_CACHE_PREFIX=""):
+            model = SimpleModel.objects.first()
+            field = model.translations.first()
+            key = get_translation_cache_key(field.__class__, 1, 'en')
+        self.assertEqual(key, 'parler.testapp.SimpleModelTranslation.1.en')
+
+    def test_get_translation_cache_key_with_prefix(self):
+        """
+        Test that ``get_translation_cache_key`` creates correct cache key if prefix is set.
+        """
+        with override_parler_settings(PARLER_CACHE_PREFIX="mysite"):
+            model = SimpleModel.objects.first()
+            field = model.translations.first()
+            key = get_translation_cache_key(field.__class__, 1, 'en')
+        self.assertEqual(key, 'mysite.parler.testapp.SimpleModelTranslation.1.en')

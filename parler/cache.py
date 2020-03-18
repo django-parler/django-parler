@@ -54,7 +54,8 @@ def get_translation_cache_key(translated_model, master_id, language_code):
     """
     # Always cache the entire object, as this already produces
     # a lot of queries. Don't go for caching individual fields.
-    return f'parler.{translated_model._meta.app_label}.{translated_model.__name__}.{master_id}.{language_code}'
+    prefix = f"{appsettings.PARLER_CACHE_PREFIX}." if appsettings.PARLER_CACHE_PREFIX else ""
+    return f'{prefix}parler.{translated_model._meta.app_label}.{translated_model.__name__}.{master_id}.{language_code}'
 
 
 def get_cached_translation(instance, language_code=None, related_name=None, use_fallback=False):

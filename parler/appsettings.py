@@ -22,6 +22,9 @@ if not PARLER_LANGUAGES:
 
 PARLER_ENABLE_CACHING = getattr(settings, 'PARLER_ENABLE_CACHING', True)
 
+# Prefix for sites that share the same cache. For example Aldryn News & Blog.
+PARLER_CACHE_PREFIX = getattr(settings, 'PARLER_CACHE_PREFIX', '')
+
 # Have to fill the default section explicitly to avoid circular imports
 PARLER_LANGUAGES.setdefault('default', {})
 PARLER_LANGUAGES['default'].setdefault('code', PARLER_DEFAULT_LANGUAGE_CODE)

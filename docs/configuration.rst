@@ -113,6 +113,18 @@ PARLER_ENABLE_CACHING
 
 This setting is strictly for experts or for troubleshooting situations, where disabling caching can be beneficial.
 
+.. _PARLER_CACHE_PREFIX:
+
+PARLER_CACHE_PREFIX
+-------------------
+
+::
+
+    PARLER_CACHE_PREFIX = ''
+
+Prefix for sites that share the same cache. For example Aldryn News & Blog.
+
+
 .. _PARLER_SHOW_EXCLUDED_LANGUAGE_TABS:
 
 PARLER_SHOW_EXCLUDED_LANGUAGE_TABS
