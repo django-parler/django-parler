@@ -8,6 +8,7 @@ Changes in 2.0.1 (2020-01-02)
 * Fixed using ``value_from_object()`` instead of ``get_prep_value()`` in model forms initial data.
 * Fixed using proper ``get_language()`` call when ``PARLER_DEFAULT_ACTIVATE`` is used.
 * Fixed confusing ``AttributeError`` on ``_parler_meta`` when migrations don't inherit from ``TranslatableModel``.
+* Added PARLER_CACHE_PREFIX for sites that share the same cache.
 
 
 Changes in 2.0 (2019-07-26)
