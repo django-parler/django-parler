@@ -158,7 +158,7 @@ class FormTests(AppTestCase):
         r1 = RegularModel.objects.create(original_field='r1')
         a = ForeignKeyTranslationModel.objects.create(translated_foreign=r1, shared='EN')
 
-        # same way as TranslatableAdmin.get_object() inicializing translation, when user swich to new translation language
+        # same way as TranslatableAdmin.get_object() inicializing translation, when user switch to new translation language
         a.set_current_language('fr', initialize=True)
 
         # inicialize form
