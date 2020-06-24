@@ -50,6 +50,25 @@ class UUIDPrimaryKeyForm(TranslatableModelForm):
         fields = '__all__'
 
 
+class OverrideMetaFieldForm(TranslatableModelForm):
+
+    class Meta:
+        model = SimpleModel
+        fields = '__all__'
+        help_texts = {
+            'shared': 'help_text:shared',
+            'tr_title': 'help_text:tr_title',
+        }
+        labels = {
+            'shared': 'label:shared',
+            'tr_title': 'label:tr_title',
+        }
+        error_messages = {
+            'shared': { 'max_length': 'error_message:shared' },
+            'tr_title': { 'max_length': 'error_message:tr_title' },
+        }
+
+
 class FormTests(AppTestCase):
     """
     Test model construction
@@ -165,6 +184,24 @@ class FormTests(AppTestCase):
         form = ForeignKeyTranslationModelForm(instance=a)
 
         self.assertTrue(True)
+
+    def test_override_meta_fields(self):
+        form_instance = OverrideMetaFieldForm(_current_language='fr-FR')
+        self.assertEqual('help_text:shared', form_instance['shared'].help_text)
+        self.assertEqual('help_text:tr_title', form_instance['tr_title'].help_text)
+        self.assertEqual('label:shared', form_instance['shared'].label)
+        self.assertEqual('label:tr_title', form_instance['tr_title'].label)
+
+        # Override error messsages
+        form_instance = OverrideMetaFieldForm(
+            _current_language='fr-FR',
+            data={
+                'shared': 'a' * 201,
+                'tr_title': 'b' * 201,
+            },
+        )
+        self.assertEqual('error_message:shared', form_instance['shared'].errors[0])
+        self.assertEqual('error_message:tr_title', form_instance['tr_title'].errors[0])
 
 
 class InlineFormTests(AppTestCase):

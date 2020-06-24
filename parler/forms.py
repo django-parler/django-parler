@@ -256,6 +256,9 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                     fields = getattr(form_new_meta, 'fields', form_meta.fields)
                     exclude = getattr(form_new_meta, 'exclude', form_meta.exclude) or ()
                     widgets = getattr(form_new_meta, 'widgets', form_meta.widgets) or ()
+                    labels = getattr(form_new_meta, 'labels', form_meta.labels) or ()
+                    help_texts = getattr(form_new_meta, 'help_texts', form_meta.help_texts) or ()
+                    error_messages = getattr(form_new_meta, 'error_messages', form_meta.error_messages) or ()
                     formfield_callback = attrs.get('formfield_callback', None)
 
                     if fields == '__all__':
@@ -279,6 +282,15 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                                 kwargs = {'widget': widgets[f_name]}
                             else:
                                 kwargs = {}
+
+                            if f_name in help_texts:
+                                kwargs['help_text'] = help_texts[f_name]
+
+                            if f_name in labels:
+                                kwargs['label'] = labels[f_name]
+
+                            if f_name in error_messages:
+                                kwargs['error_messages'] = error_messages[f_name]
 
                             # See if this formfield was previously defined using a TranslatedField placeholder.
                             placeholder = _get_mro_attribute(bases, f_name)
