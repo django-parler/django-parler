@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+* Allows to override the `label`, `error_message` and `help_text` in `TranslatableModelForm`-s.
+
+
 Changes in 2.0.1 (2020-01-02)
 -----------------------------
 
