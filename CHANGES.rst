@@ -1,9 +1,10 @@
 Changelog
 =========
 
-next
-----
+Changes in 2.1 (2020-08-05)
+-----------------------------
 * Allows to override the `label`, `error_message` and `help_text` in `TranslatableModelForm`-s.
+* Fixed Django 3.1 compatibility by adopting import path for form utilities.
 
 
 Changes in 2.0.1 (2020-01-02)
