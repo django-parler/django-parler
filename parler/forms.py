@@ -1,7 +1,7 @@
 import six
 from django import forms
 from django.core.exceptions import NON_FIELD_ERRORS, ObjectDoesNotExist, ValidationError
-from django.forms.forms import BoundField
+from django.forms import BoundField
 from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
 from django.utils.functional import cached_property
 from django.utils.translation import get_language

@@ -14,7 +14,7 @@ from __future__ import unicode_literals
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
-from django.forms.forms import pretty_name
+from django.forms.utils import pretty_name
 
 
 def _validate_master(new_class):
