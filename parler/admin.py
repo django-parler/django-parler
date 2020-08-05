@@ -39,7 +39,6 @@ See the :ref:`admin compatibility page <admin-compat>` for details.
 from __future__ import unicode_literals
 import django
 from django.conf import settings
-from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
 from django.contrib.admin.utils import get_deleted_objects, quote, unquote
@@ -49,7 +48,7 @@ from django.db import router, transaction
 from django.forms import Media
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
-from django.urls import reverse
+from django.urls import re_path, reverse
 from django.utils.encoding import iri_to_uri, force_text
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, escape
@@ -312,7 +311,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         else:
             opts = self.model._meta
             info = opts.app_label, opts.model_name
-            return [url(
+            return [re_path(
                 r'^(.+)/change/delete-translation/(.+)/$',
                 self.admin_site.admin_view(self.delete_translation),
                 name='{0}_{1}_delete_translation'.format(*info)
