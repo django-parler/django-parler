@@ -105,7 +105,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         # TODO: as a fix TranslatedFields should become a RelatedField on the shared model (may also support ORM queries)
         # As workaround, declare the fields in get_prepopulated_fields() and we'll provide the admin media automatically.
         has_prepopulated = len(self.get_prepopulated_fields(_fakeRequest))
-        base_media = super(BaseTranslatableAdmin, self).media
+        base_media = super().media
         if has_prepopulated:
             return base_media + _language_prepopulated_media
         else:
@@ -146,7 +146,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         """
         Make sure the current language is selected.
         """
-        qs = super(BaseTranslatableAdmin, self).get_queryset(request)
+        qs = super().get_queryset(request)
 
         if self._has_translatable_model():
             if not isinstance(qs, TranslatableQuerySet):
@@ -269,7 +269,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return self.model._parler_meta.root_model.objects.none()
 
     def get_queryset(self, request):
-        qs = super(TranslatableAdmin, self).get_queryset(request)
+        qs = super().get_queryset(request)
 
         if self.prefetch_language_column:
             # When the available languages are shown in the listing, prefetch available languages.
@@ -284,7 +284,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         Make sure the object is fetched in the correct language.
         """
-        obj = super(TranslatableAdmin, self).get_object(request, object_id, *args, **kwargs)
+        obj = super().get_object(request, object_id, *args, **kwargs)
 
         if obj is not None and self._has_translatable_model():  # Allow fallback to regular models.
             obj.set_current_language(self._language(request, obj), initialize=True)
@@ -295,7 +295,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         Pass the current language to the form.
         """
-        form_class = super(TranslatableAdmin, self).get_form(request, obj, **kwargs)
+        form_class = super().get_form(request, obj, **kwargs)
         if self._has_translatable_model():
             form_class.language_code = self.get_form_language(request, obj)
 
@@ -305,7 +305,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         Add a delete-translation view.
         """
-        urlpatterns = super(TranslatableAdmin, self).get_urls()
+        urlpatterns = super().get_urls()
         if not self._has_translatable_model():
             return urlpatterns
         else:
@@ -350,16 +350,16 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             context['default_change_form_template'] = self.default_change_form_template
 
         #context['base_template'] = self.get_change_form_base_template()
-        return super(TranslatableAdmin, self).render_change_form(request, context, add, change, form_url, obj)
+        return super().render_change_form(request, context, add, change, form_url, obj)
 
     def response_add(self, request, obj, post_url_continue=None):
         # Make sure ?language=... is included in the redirects.
-        redirect = super(TranslatableAdmin, self).response_add(request, obj, post_url_continue)
+        redirect = super().response_add(request, obj, post_url_continue)
         return self._patch_redirect(request, obj, redirect)
 
     def response_change(self, request, obj):
         # Make sure ?language=... is included in the redirects.
-        redirect = super(TranslatableAdmin, self).response_change(request, obj)
+        redirect = super().response_change(request, obj)
         return self._patch_redirect(request, obj, redirect)
 
     def _patch_redirect(self, request, obj, redirect):
@@ -614,7 +614,7 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
         """
         Return the formset, and provide the language information to the formset.
         """
-        FormSet = super(TranslatableInlineModelAdmin, self).get_formset(request, obj, **kwargs)
+        FormSet = super().get_formset(request, obj, **kwargs)
         # Existing objects already got the language code from the queryset().language() method.
         # For new objects, the language code should be set here.
         FormSet.language_code = self.get_form_language(request, obj)
@@ -632,7 +632,7 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
         Return the current language for the currently displayed object fields.
         """
         if self._has_translatable_parent_model():
-            return super(TranslatableInlineModelAdmin, self).get_form_language(request, obj=obj)
+            return super().get_form_language(request, obj=obj)
         else:
             # Follow the ?language parameter
             return self._language(request)
@@ -700,5 +700,5 @@ class SortedRelatedFieldListFilter(admin.RelatedFieldListFilter):
     """
 
     def __init__(self, *args, **kwargs):
-        super(SortedRelatedFieldListFilter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.lookup_choices = sorted(self.lookup_choices, key=lambda a: a[1].lower())

@@ -53,7 +53,7 @@ class SortedSelectMixin(object):
     """
 
     def __init__(self, attrs=None, choices=()):
-        super(SortedSelectMixin, self).__init__(attrs, choices=())
+        super().__init__(attrs, choices=())
         self._choices = choices   # super may set self.choices=()
         self._sorted = False
 

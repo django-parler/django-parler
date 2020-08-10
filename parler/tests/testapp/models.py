@@ -31,7 +31,7 @@ class SimpleModel(TranslatableModel):
 class CleanCharField(models.CharField):
 
     def clean(self, value, model_instance):
-        super(CleanCharField, self).clean(value, model_instance)
+        super().clean(value, model_instance)
         return value + "_cleanchar"
 
 

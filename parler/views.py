@@ -131,7 +131,7 @@ class TranslatableSlugMixin(object):
 
     def dispatch(self, request, *args, **kwargs):
         try:
-            return super(TranslatableSlugMixin, self).dispatch(request, *args, **kwargs)
+            return super().dispatch(request, *args, **kwargs)
         except FallbackLanguageResolved as e:
             # Handle the fallback language redirect for get_object()
             with switch_language(e.object, e.correct_language):
@@ -206,7 +206,7 @@ class LanguageChoiceMixin(object):
         """
         Assign the language for the retrieved object.
         """
-        object = super(LanguageChoiceMixin, self).get_object(queryset)
+        object = super().get_object(queryset)
         if isinstance(object, TranslatableModelMixin):
             object.set_current_language(self.get_language(), initialize=True)
         return object
@@ -236,7 +236,7 @@ class LanguageChoiceMixin(object):
             return self.get_language()
 
     def get_context_data(self, **kwargs):
-        context = super(LanguageChoiceMixin, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['language_tabs'] = self.get_language_tabs()
         return context
 
@@ -270,7 +270,7 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
         """
         Return a ``TranslatableModelForm`` by default if no form_class is set.
         """
-        super_method = super(TranslatableModelFormMixin, self).get_form_class
+        super_method = super().get_form_class
         # no "__func__" on the class level function in python 3
         default_method = getattr(ModelFormMixin.get_form_class, '__func__', ModelFormMixin.get_form_class)
         if not (super_method.__func__ is default_method):
@@ -292,7 +292,7 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
         """
         Pass the current language to the form.
         """
-        kwargs = super(TranslatableModelFormMixin, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         # The TranslatableAdmin can set form.language_code, because the modeladmin always creates a fresh subclass.
         # If that would be done here, the original globally defined form class would be updated.
         kwargs['_current_language'] = self.get_form_language()

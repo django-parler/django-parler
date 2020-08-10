@@ -8,7 +8,7 @@ class BaseArticleMixin(object):
     # Only show published articles.
 
     def get_queryset(self):
-        return super(BaseArticleMixin, self).get_queryset().filter(published=True)
+        return super().get_queryset().filter(published=True)
 
 
 class ArticleListView(BaseArticleMixin, ListView):
@@ -18,7 +18,7 @@ class ArticleListView(BaseArticleMixin, ListView):
     def get_queryset(self):
         # Only show objects translated in the current language.
         language = get_language()
-        return super(ArticleListView, self).get_queryset().filter(translations__language_code=language)
+        return super().get_queryset().filter(translations__language_code=language)
 
 
 class ArticleDetailView(BaseArticleMixin, TranslatableSlugMixin, DetailView):

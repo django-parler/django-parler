@@ -52,7 +52,7 @@ class TranslationsForeignKey(models.ForeignKey):
     def contribute_to_related_class(self, cls, related):
         from parler.models import TranslatedFieldsModelMixin
 
-        super(TranslationsForeignKey, self).contribute_to_related_class(cls, related)
+        super().contribute_to_related_class(cls, related)
         _validate_master(self.model)
         if issubclass(self.model, TranslatedFieldsModelMixin):
             self.model.contribute_translations(cls)
@@ -95,7 +95,7 @@ class TranslatedField(object):
         self._meta = None
 
     def contribute_to_class(self, cls, name, **kwargs):
-        #super(TranslatedField, self).contribute_to_class(cls, name)
+        #super().contribute_to_class(cls, name)
         self.model = cls
         self.name = name
 

@@ -45,7 +45,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
 
     def __init__(self, *args, **kwargs):
         current_language = kwargs.pop('_current_language', None)   # Used for TranslatableViewMixin
-        super(BaseTranslatableModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Load the initial values for the translated fields
         instance = kwargs.get('instance', None)
@@ -123,7 +123,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
         self.save_translated_fields()
 
         # Perform the regular clean checks, this also updates self.instance
-        super(BaseTranslatableModelForm, self)._post_clean()
+        super()._post_clean()
 
     def save_translated_fields(self):
         """
@@ -178,7 +178,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
         Return a :class:`TranslatableBoundField` for translated models.
         This extends the default ``form[field]`` interface that produces the BoundField for HTML templates.
         """
-        boundfield = super(BaseTranslatableModelForm, self).__getitem__(name)
+        boundfield = super().__getitem__(name)
         if name in self._translated_fields:
             # Oh the wonders of Python :)
             boundfield.__class__ = _upgrade_boundfield_class(boundfield.__class__)
@@ -218,7 +218,7 @@ class TranslatableBoundField(BoundField):
             attrs = {}
 
         attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
-        return super(TranslatableBoundField, self).label_tag(contents, attrs, *args, **kwargs)
+        return super().label_tag(contents, attrs, *args, **kwargs)
 
     # The as_widget() won't be overwritten to add a 'class' attr,
     # because it will overwrite what AdminTextInputWidget and fields have as default.
@@ -302,7 +302,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                                 attrs[f_name] = formfield
 
         # Call the super class with updated `attrs` dict.
-        return super(TranslatableModelFormMetaclass, mcs).__new__(mcs, name, bases, attrs)
+        return super().__new__(mcs, name, bases, attrs)
 
 
 def _get_mro_attribute(bases, name, default=None):
@@ -355,12 +355,12 @@ class TranslatableBaseInlineFormSet(BaseInlineFormSet):
     language_code = None
 
     def _construct_form(self, i, **kwargs):
-        form = super(TranslatableBaseInlineFormSet, self)._construct_form(i, **kwargs)
+        form = super()._construct_form(i, **kwargs)
         form.language_code = self.language_code   # Pass the language code for new objects!
         return form
 
     def save_new(self, form, commit=True):
-        obj = super(TranslatableBaseInlineFormSet, self).save_new(form, commit)
+        obj = super().save_new(form, commit)
         return obj
 
 

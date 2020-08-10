@@ -250,7 +250,7 @@ class TranslatableModelMixin(object):
         self._current_language = None
 
         # Run original Django model __init__
-        super(TranslatableModelMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Assign translated args manually.
         self._translations_cache = defaultdict(dict)
@@ -635,7 +635,7 @@ class TranslatableModelMixin(object):
         return languages_seen
 
     def save(self, *args, **kwargs):
-        super(TranslatableModelMixin, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
         # Makes no sense to add these for translated model
         # Even worse: mptt 0.7 injects this parameter when it avoids updating the lft/rgt fields,
@@ -645,7 +645,7 @@ class TranslatableModelMixin(object):
 
     def delete(self, using=None):
         _delete_cached_translations(self)
-        return super(TranslatableModelMixin, self).delete(using)
+        return super().delete(using)
 
     def validate_unique(self, exclude=None):
         """
@@ -654,7 +654,7 @@ class TranslatableModelMixin(object):
         # This is called from ModelForm._post_clean() or Model.full_clean()
         errors = {}
         try:
-            super(TranslatableModelMixin, self).validate_unique(exclude=exclude)
+            super().validate_unique(exclude=exclude)
         except ValidationError as e:
             errors = e.error_dict
 
@@ -766,7 +766,7 @@ class TranslatableModelMixin(object):
             return default
 
     def refresh_from_db(self, *args, **kwargs):
-        super(TranslatableModelMixin, self).refresh_from_db(*args, **kwargs)
+        super().refresh_from_db(*args, **kwargs)
         _delete_cached_translations(self)
         self._translations_cache.clear()
     refresh_from_db.alters_data = True
@@ -799,7 +799,7 @@ class TranslatedFieldsModelBase(ModelBase):
     """
     def __new__(mcs, name, bases, attrs):
 
-        new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
+        new_class = super().__new__(mcs, name, bases, attrs)
         if bases[0] == models.Model:
             return new_class
 
@@ -831,7 +831,7 @@ class TranslatedFieldsModelMixin(object):
 
     def __init__(self, *args, **kwargs):
         signals.pre_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
-        super(TranslatedFieldsModelMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._original_values = self._get_field_values()
 
         signals.post_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
@@ -885,7 +885,7 @@ class TranslatedFieldsModelMixin(object):
             )
 
         # Perform save
-        super(TranslatedFieldsModelMixin, self).save_base(raw=raw, using=using, **kwargs)
+        super().save_base(raw=raw, using=using, **kwargs)
         self._original_values = self._get_field_values()
         _cache_translation(self)
 
@@ -902,7 +902,7 @@ class TranslatedFieldsModelMixin(object):
         if not self._meta.auto_created:
             signals.pre_translation_delete.send(sender=self.shared_model, instance=self, using=using)
 
-        super(TranslatedFieldsModelMixin, self).delete(using=using)
+        super().delete(using=using)
         _delete_cached_translation(self)
 
         # Send post-delete signal

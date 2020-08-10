@@ -78,4 +78,4 @@ class TabsList(list):
         self.css_class = css_class
         self.current_is_translated = False
         self.allow_deletion = False
-        super(TabsList, self).__init__(seq)
+        super().__init__(seq)
