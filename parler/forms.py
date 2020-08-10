@@ -1,4 +1,3 @@
-import six
 from django import forms
 from django.core.exceptions import NON_FIELD_ERRORS, ObjectDoesNotExist, ValidationError
 from django.forms import BoundField
@@ -245,7 +244,7 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
 
             # Detect all placeholders at this class level.
             placeholder_fields = [
-                f_name for f_name, attr_value in six.iteritems(attrs) if isinstance(attr_value, TranslatedField)
+                f_name for f_name, attr_value in attrs.items() if isinstance(attr_value, TranslatedField)
             ]
 
             # Include the translated fields as attributes, pretend that these exist on the form.
@@ -335,7 +334,7 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     return formfield
 
 
-class TranslatableModelForm(six.with_metaclass(TranslatableModelFormMetaclass, BaseTranslatableModelForm, forms.ModelForm)):
+class TranslatableModelForm(BaseTranslatableModelForm, forms.ModelForm, metaclass=TranslatableModelFormMetaclass):
     """
     The model form to use for translated models.
     """

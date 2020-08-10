@@ -38,7 +38,6 @@ setup(
     version=find_version('parler', '__init__.py'),
     license='Apache 2.0',
 
-    install_requires=['six'],
     requires=[
         'Django (>=2.0)',
     ],

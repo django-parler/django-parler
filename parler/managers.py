@@ -2,7 +2,6 @@
 Custom generic managers
 """
 import django
-import six
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.query import QuerySet
@@ -97,7 +96,7 @@ class TranslatableQuerySet(QuerySet):
             language_codes = (get_language(),)
 
         filters = {}
-        for field_name, val in six.iteritems(translated_fields):
+        for field_name, val in translated_fields.items():
             if field_name.startswith('master__'):
                 filters[field_name[8:]] = val  # avoid translations__master__ back and forth
             else:

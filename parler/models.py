@@ -7,10 +7,8 @@ The default is to use the :class:`TranslatedFields` class in the model, like:
 
     from django.db import models
     from parler.models import TranslatableModel, TranslatedFields
-    from six import python_2_unicode_compatible
 
 
-    @python_2_unicode_compatible
     class MyModel(TranslatableModel):
         translations = TranslatedFields(
             title = models.CharField(_("Title"), max_length=200)
@@ -30,7 +28,6 @@ It's also possible to create the translated fields model manually:
     from django.db import models
     from parler.models import TranslatableModel, TranslatedFieldsModel
     from parler.fields import TranslatedField
-    from six import python_2_unicode_compatible
 
 
     class MyModel(TranslatableModel):
@@ -73,8 +70,6 @@ from parler.managers import TranslatableManager
 from parler.utils import compat
 from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
                                get_null_language_error)
-from six import python_2_unicode_compatible
-import six
 import sys
 import warnings
 
@@ -108,7 +103,7 @@ class TranslationDoesNotExist(AttributeError, ObjectDoesNotExist):
     pass
 
 
-_lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.verbose_name), six.text_type)
+_lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.verbose_name), str)
 
 
 def create_translations_model(shared_model, related_name, meta, **fields):
@@ -271,7 +266,7 @@ class TranslatableModelMixin(object):
         objects = []  # no generator, make sure objects are all filled first
         for parler_meta, model_fields in self._parler_meta._split_fields(**fields):
             translation = self._get_translated_model(language_code=language_code, auto_create=True, meta=parler_meta)
-            for field, value in six.iteritems(model_fields):
+            for field, value in model_fields.items():
                 setattr(translation, field, value)
 
             objects.append(translation)
@@ -431,7 +426,7 @@ class TranslatableModelMixin(object):
             db_languages = qs.values_list('language_code', flat=True).order_by('language_code')
 
         if include_unsaved:
-            local_languages = (k for k, v in six.iteritems(self._translations_cache[meta.model]) if not is_missing(v))
+            local_languages = (k for k, v in self._translations_cache[meta.model].items() if not is_missing(v))
             return list(set(db_languages) | set(local_languages))
         else:
             return db_languages
@@ -576,7 +571,7 @@ class TranslatableModelMixin(object):
                     trans = local_cache.get(fallback_lang, None)
                     if trans and not is_missing(trans):
                         return trans
-                return next(t for t in six.itervalues(local_cache) if not is_missing(t))
+                return next(t for t in local_cache.values() if not is_missing(t))
             except StopIteration:
                 pass
 
@@ -663,8 +658,8 @@ class TranslatableModelMixin(object):
         except ValidationError as e:
             errors = e.error_dict
 
-        for local_cache in six.itervalues(self._translations_cache):
-            for translation in six.itervalues(local_cache):
+        for local_cache in self._translations_cache.values():
+            for translation in local_cache.values():
                 if is_missing(translation):  # Skip fallback markers
                     continue
 
@@ -804,10 +799,6 @@ class TranslatedFieldsModelBase(ModelBase):
     """
     def __new__(mcs, name, bases, attrs):
 
-        # Workaround compatibility issue with six.with_metaclass() and custom Django model metaclasses:
-        if not attrs and name == 'NewBase':
-            return super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
-
         new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
         if bases[0] == models.Model:
             return new_class
@@ -831,7 +822,6 @@ class TranslatedFieldsModelBase(ModelBase):
         return new_class
 
 
-@python_2_unicode_compatible
 class TranslatedFieldsModelMixin(object):
     """
     Base class for the model that holds the translated fields.
@@ -997,7 +987,7 @@ class TranslatedFieldsModelMixin(object):
         )
 
 
-class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, TranslatedFieldsModelMixin, models.Model)):
+class TranslatedFieldsModel(TranslatedFieldsModelMixin, models.Model, metaclass=TranslatedFieldsModelBase):
     language_code = compat.HideChoicesCharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
 
     class Meta:
@@ -1109,9 +1099,9 @@ class ParlerOptions(object):
         Get an :class:`ParlerMeta` object by index or model.
         """
         try:
-            if isinstance(item, six.integer_types):
+            if isinstance(item, int):
                 return self._extensions[item]
-            elif isinstance(item, six.string_types):
+            elif isinstance(item, str):
                 return self._get_extension_by_related_name(related_name=item)
             else:
                 return next(meta for meta in self._extensions if meta.model == item)
@@ -1137,7 +1127,7 @@ class ParlerOptions(object):
         """
         Convenience function, return all translated fields with their model.
         """
-        return six.iteritems(self._fields_to_model)
+        return self._fields_to_model.items()
 
     def get_translated_fields(self, related_name=None):
         """

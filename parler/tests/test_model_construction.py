@@ -1,7 +1,6 @@
 from functools import wraps
 import unittest
 
-import six
 from django.db import models
 from django.db.models import Manager
 from parler.models import TranslatableModel

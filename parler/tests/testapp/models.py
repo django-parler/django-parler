@@ -6,7 +6,6 @@ from django.urls import reverse
 from parler.fields import TranslatedField, TranslationsForeignKey
 from parler.models import TranslatableModel, TranslatedFields, TranslatedFieldsModel
 from parler.utils.context import switch_language
-from six import python_2_unicode_compatible
 
 
 class ManualModel(TranslatableModel):
@@ -18,7 +17,6 @@ class ManualModelTranslations(TranslatedFieldsModel):
     tr_title = models.CharField(max_length=200)
 
 
-@python_2_unicode_compatible
 class SimpleModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
@@ -37,7 +35,6 @@ class CleanCharField(models.CharField):
         return value + "_cleanchar"
 
 
-@python_2_unicode_compatible
 class CleanFieldModel(TranslatableModel):
     shared = CleanCharField(max_length=200, default='')
     tr_title = TranslatedField()
@@ -62,7 +59,6 @@ class CleanFieldModelTranslation(TranslatedFieldsModel):
         self.tr_title += "_cleantrans"
 
 
-@python_2_unicode_compatible
 class DateTimeModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
     datetime = models.DateTimeField()
@@ -75,7 +71,6 @@ class DateTimeModel(TranslatableModel):
         return self.tr_title
 
 
-@python_2_unicode_compatible
 class AnyLanguageModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
     tr_title = TranslatedField(any_language=True)
@@ -88,7 +83,6 @@ class AnyLanguageModel(TranslatableModel):
         return self.tr_title
 
 
-@python_2_unicode_compatible
 class NotRequiredModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
@@ -100,7 +94,6 @@ class NotRequiredModel(TranslatableModel):
         return self.tr_title
 
 
-@python_2_unicode_compatible
 class EmptyModel(TranslatableModel):
     shared = models.CharField(max_length=200, default='')
 
@@ -112,7 +105,6 @@ class EmptyModel(TranslatableModel):
         return self.shared
 
 
-@python_2_unicode_compatible
 class ArticleSlugModel(TranslatableModel):
     translations = TranslatedFields(
         slug = models.SlugField()
