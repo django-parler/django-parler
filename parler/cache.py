@@ -17,11 +17,8 @@ if six.PY3:
 class IsMissing(object):
     # Allow _get_any_translated_model() to evaluate this as False.
 
-    def __nonzero__(self):
-        return False   # Python 2
-
     def __bool__(self):
-        return False   # Python 3
+        return False
 
     def __repr__(self):
         return "<IsMissing>"
