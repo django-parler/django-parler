@@ -13,7 +13,7 @@ from .models import Article, Category
 from parler.appsettings import PARLER_LANGUAGES
 
 
-class TestMixin(object):
+class TestMixin:
 
     def setUp(self):
         cat = Category()

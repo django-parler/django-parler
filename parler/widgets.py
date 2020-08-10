@@ -34,7 +34,7 @@ __all__ = (
 )
 
 
-class SortedChoiceIterator(object):
+class SortedChoiceIterator:
 
     def __init__(self, field):
         self.field = field
@@ -47,7 +47,7 @@ class SortedChoiceIterator(object):
         return iter(self.field._choices)
 
 
-class SortedSelectMixin(object):
+class SortedSelectMixin:
     """
     A mixin to have the choices sorted by (translated) title.
     """

@@ -4,7 +4,7 @@ from .models import Article
 from parler.views import TranslatableSlugMixin
 
 
-class BaseArticleMixin(object):
+class BaseArticleMixin:
     # Only show published articles.
 
     def get_queryset(self):

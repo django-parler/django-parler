@@ -38,7 +38,7 @@ __all__ = (
 )
 
 
-class ViewUrlMixin(object):
+class ViewUrlMixin:
     """
     Provide a ``view.get_view_url`` method in the template.
 
@@ -90,7 +90,7 @@ class ViewUrlMixin(object):
         return reverse(self.view_url_name, args=self.args, kwargs=self.kwargs)
 
 
-class TranslatableSlugMixin(object):
+class TranslatableSlugMixin:
     """
     An enhancement for the :class:`~django.views.generic.DetailView` to deal with translated slugs.
     This view makes sure that:
@@ -195,7 +195,7 @@ class FallbackLanguageResolved(Exception):
         self.correct_language = correct_language
 
 
-class LanguageChoiceMixin(object):
+class LanguageChoiceMixin:
     """
     Mixin to add language selection support to class based views, particularly create and update views.
     It adds support for the ``?language=..`` parameter in the query string, and tabs in the context.

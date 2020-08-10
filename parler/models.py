@@ -164,7 +164,7 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     return translations_model
 
 
-class TranslatedFields(object):
+class TranslatedFields:
     """
     Wrapper class to define translated fields on a model.
 
@@ -218,7 +218,7 @@ class TranslatedFields(object):
         create_translations_model(cls, name, self.meta, **self.fields)
 
 
-class TranslatableModelMixin(object):
+class TranslatableModelMixin:
     """
     Base model mixin class to handle translations.
 
@@ -822,7 +822,7 @@ class TranslatedFieldsModelBase(ModelBase):
         return new_class
 
 
-class TranslatedFieldsModelMixin(object):
+class TranslatedFieldsModelMixin:
     """
     Base class for the model that holds the translated fields.
     """
@@ -995,7 +995,7 @@ class TranslatedFieldsModel(TranslatedFieldsModelMixin, models.Model, metaclass=
         default_permissions = ()
 
 
-class ParlerMeta(object):
+class ParlerMeta:
     """
     Meta data for a single inheritance level.
     """
@@ -1022,7 +1022,7 @@ class ParlerMeta(object):
         )
 
 
-class ParlerOptions(object):
+class ParlerOptions:
     """
     Meta data for the translatable models.
     """

@@ -59,7 +59,7 @@ class TranslationsForeignKey(models.ForeignKey):
 
 
 # TODO: inherit RelatedField?
-class TranslatedField(object):
+class TranslatedField:
     """
     Proxy field attached to a model.
 
@@ -109,7 +109,7 @@ class TranslatedField(object):
         return self._meta
 
 
-class TranslatedFieldDescriptor(object):
+class TranslatedFieldDescriptor:
     """
     Descriptor for translated attributes.
 
@@ -185,7 +185,7 @@ class TranslatedFieldDescriptor(object):
         return field.verbose_name
 
 
-class LanguageCodeDescriptor(object):
+class LanguageCodeDescriptor:
     """
     This is the property to access the ``language_code`` in the ``TranslatableModel``.
     """

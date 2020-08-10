@@ -10,7 +10,7 @@ from parler import appsettings
 from parler.utils import get_language_settings
 
 
-class IsMissing(object):
+class IsMissing:
     # Allow _get_any_translated_model() to evaluate this as False.
 
     def __bool__(self):

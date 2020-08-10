@@ -9,7 +9,7 @@ __all__ = (
 )
 
 
-class smart_override(object):
+class smart_override:
     """
     This is a smarter version of :func:`translation.override <django.utils.translation.override>`
     which avoids switching the language if there is no change to make.
@@ -43,7 +43,7 @@ class smart_override(object):
             activate(self.old_language)
 
 
-class switch_language(object):
+class switch_language:
     """
     A contextmanager to switch the translation of an object.
 

@@ -17,7 +17,7 @@ __all__ = (
 )
 
 
-class TranslatedField(object):
+class TranslatedField:
     """
     A wrapper for a translated form field.
 
