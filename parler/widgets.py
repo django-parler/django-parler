@@ -4,7 +4,7 @@ These widgets perform sorting on the choices within Python.
 This is useful when sorting is hard to due translated fields, for example:
 
 * the ORM can't sort it.
-* the ordering depends on ``ugettext()`` output.
+* the ordering depends on ``gettext()`` output.
 * the model ``__unicode__()`` value depends on translated fields.
 
 Use them like any regular form widget::

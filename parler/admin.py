@@ -54,7 +54,7 @@ from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _, get_language
+from django.utils.translation import gettext_lazy as _, get_language
 from parler import appsettings
 from parler.forms import TranslatableModelForm, TranslatableBaseInlineFormSet
 from parler.managers import TranslatableQuerySet

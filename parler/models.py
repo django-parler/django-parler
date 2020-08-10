@@ -62,7 +62,7 @@ from django.db.models.base import ModelBase
 from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
 from django.utils.encoding import force_text
 from django.utils.functional import lazy
-from django.utils.translation import ugettext, ugettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from parler import signals
 from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field, is_missing
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor, TranslationsForeignKey, _validate_master
@@ -103,7 +103,7 @@ class TranslationDoesNotExist(AttributeError, ObjectDoesNotExist):
     pass
 
 
-_lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.verbose_name), str)
+_lazy_verbose_name = lazy(lambda x: gettext("{0} Translation").format(x._meta.verbose_name), str)
 
 
 def create_translations_model(shared_model, related_name, meta, **fields):

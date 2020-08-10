@@ -165,7 +165,7 @@ class TranslatableSlugMixin(object):
 
         if obj is None:
             tried_msg = ", tried languages: {0}".format(", ".join(choices))
-            error_message = translation.ugettext("No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
+            error_message = translation.gettext("No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
             raise Http404(error_message + tried_msg)
 
         # Object found!
