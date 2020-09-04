@@ -36,7 +36,6 @@ While almost every admin feature just works, there are a few special cases to ta
 
 See the :ref:`admin compatibility page <admin-compat>` for details.
 """
-from __future__ import unicode_literals
 import django
 from django.conf import settings
 from django.contrib import admin

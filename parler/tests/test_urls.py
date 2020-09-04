@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from django.test import RequestFactory
 from django.test.utils import override_settings
 from django.urls import reverse, resolve, get_urlconf

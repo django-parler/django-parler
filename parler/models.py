@@ -53,7 +53,6 @@ the :func:`~django.db.models.Model.save` method, or add new methods yourself.
 The translated model is compatible with django-hvad, making the transition between both projects relatively easy.
 The manager and queryset objects of django-parler can work together with django-mptt and django-polymorphic.
 """
-from __future__ import unicode_literals
 from collections import defaultdict, OrderedDict
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
