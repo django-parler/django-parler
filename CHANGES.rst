@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Changes in 2.2 (2020-09-06)
+-----------------------------
+* Drop support for Python-2.7.
+* Drop support for Django-2.1 and lower.
+* Add support for Django-3.1.
+
+
 Changes in 2.1 (2020-08-05)
 -----------------------------
 * Allows to override the `label`, `error_message` and `help_text` in `TranslatableModelForm`-s.
