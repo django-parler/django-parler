@@ -7,10 +7,8 @@ The default is to use the :class:`TranslatedFields` class in the model, like:
 
     from django.db import models
     from parler.models import TranslatableModel, TranslatedFields
-    from six import python_2_unicode_compatible
 
 
-    @python_2_unicode_compatible
     class MyModel(TranslatableModel):
         translations = TranslatedFields(
             title = models.CharField(_("Title"), max_length=200)
@@ -30,7 +28,6 @@ It's also possible to create the translated fields model manually:
     from django.db import models
     from parler.models import TranslatableModel, TranslatedFieldsModel
     from parler.fields import TranslatedField
-    from six import python_2_unicode_compatible
 
 
     class MyModel(TranslatableModel):
@@ -56,7 +53,6 @@ the :func:`~django.db.models.Model.save` method, or add new methods yourself.
 The translated model is compatible with django-hvad, making the transition between both projects relatively easy.
 The manager and queryset objects of django-parler can work together with django-mptt and django-polymorphic.
 """
-from __future__ import unicode_literals
 from collections import defaultdict, OrderedDict
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
@@ -65,7 +61,7 @@ from django.db.models.base import ModelBase
 from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
 from django.utils.encoding import force_text
 from django.utils.functional import lazy
-from django.utils.translation import ugettext, ugettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from parler import signals
 from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field, is_missing
 from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor, TranslationsForeignKey, _validate_master
@@ -73,8 +69,6 @@ from parler.managers import TranslatableManager
 from parler.utils import compat
 from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
                                get_null_language_error)
-from six import python_2_unicode_compatible
-import six
 import sys
 import warnings
 
@@ -108,7 +102,7 @@ class TranslationDoesNotExist(AttributeError, ObjectDoesNotExist):
     pass
 
 
-_lazy_verbose_name = lazy(lambda x: ugettext("{0} Translation").format(x._meta.verbose_name), six.text_type)
+_lazy_verbose_name = lazy(lambda x: gettext("{0} Translation").format(x._meta.verbose_name), str)
 
 
 def create_translations_model(shared_model, related_name, meta, **fields):
@@ -169,7 +163,7 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     return translations_model
 
 
-class TranslatedFields(object):
+class TranslatedFields:
     """
     Wrapper class to define translated fields on a model.
 
@@ -223,7 +217,7 @@ class TranslatedFields(object):
         create_translations_model(cls, name, self.meta, **self.fields)
 
 
-class TranslatableModelMixin(object):
+class TranslatableModelMixin:
     """
     Base model mixin class to handle translations.
 
@@ -255,7 +249,7 @@ class TranslatableModelMixin(object):
         self._current_language = None
 
         # Run original Django model __init__
-        super(TranslatableModelMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Assign translated args manually.
         self._translations_cache = defaultdict(dict)
@@ -271,7 +265,7 @@ class TranslatableModelMixin(object):
         objects = []  # no generator, make sure objects are all filled first
         for parler_meta, model_fields in self._parler_meta._split_fields(**fields):
             translation = self._get_translated_model(language_code=language_code, auto_create=True, meta=parler_meta)
-            for field, value in six.iteritems(model_fields):
+            for field, value in model_fields.items():
                 setattr(translation, field, value)
 
             objects.append(translation)
@@ -431,7 +425,7 @@ class TranslatableModelMixin(object):
             db_languages = qs.values_list('language_code', flat=True).order_by('language_code')
 
         if include_unsaved:
-            local_languages = (k for k, v in six.iteritems(self._translations_cache[meta.model]) if not is_missing(v))
+            local_languages = (k for k, v in self._translations_cache[meta.model].items() if not is_missing(v))
             return list(set(db_languages) | set(local_languages))
         else:
             return db_languages
@@ -576,7 +570,7 @@ class TranslatableModelMixin(object):
                     trans = local_cache.get(fallback_lang, None)
                     if trans and not is_missing(trans):
                         return trans
-                return next(t for t in six.itervalues(local_cache) if not is_missing(t))
+                return next(t for t in local_cache.values() if not is_missing(t))
             except StopIteration:
                 pass
 
@@ -640,7 +634,7 @@ class TranslatableModelMixin(object):
         return languages_seen
 
     def save(self, *args, **kwargs):
-        super(TranslatableModelMixin, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
         # Makes no sense to add these for translated model
         # Even worse: mptt 0.7 injects this parameter when it avoids updating the lft/rgt fields,
@@ -650,7 +644,7 @@ class TranslatableModelMixin(object):
 
     def delete(self, using=None):
         _delete_cached_translations(self)
-        return super(TranslatableModelMixin, self).delete(using)
+        return super().delete(using)
 
     def validate_unique(self, exclude=None):
         """
@@ -659,12 +653,12 @@ class TranslatableModelMixin(object):
         # This is called from ModelForm._post_clean() or Model.full_clean()
         errors = {}
         try:
-            super(TranslatableModelMixin, self).validate_unique(exclude=exclude)
+            super().validate_unique(exclude=exclude)
         except ValidationError as e:
             errors = e.error_dict
 
-        for local_cache in six.itervalues(self._translations_cache):
-            for translation in six.itervalues(local_cache):
+        for local_cache in self._translations_cache.values():
+            for translation in local_cache.values():
                 if is_missing(translation):  # Skip fallback markers
                     continue
 
@@ -771,7 +765,7 @@ class TranslatableModelMixin(object):
             return default
 
     def refresh_from_db(self, *args, **kwargs):
-        super(TranslatableModelMixin, self).refresh_from_db(*args, **kwargs)
+        super().refresh_from_db(*args, **kwargs)
         _delete_cached_translations(self)
         self._translations_cache.clear()
     refresh_from_db.alters_data = True
@@ -804,11 +798,7 @@ class TranslatedFieldsModelBase(ModelBase):
     """
     def __new__(mcs, name, bases, attrs):
 
-        # Workaround compatibility issue with six.with_metaclass() and custom Django model metaclasses:
-        if not attrs and name == 'NewBase':
-            return super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
-
-        new_class = super(TranslatedFieldsModelBase, mcs).__new__(mcs, name, bases, attrs)
+        new_class = super().__new__(mcs, name, bases, attrs)
         if bases[0] == models.Model:
             return new_class
 
@@ -831,8 +821,7 @@ class TranslatedFieldsModelBase(ModelBase):
         return new_class
 
 
-@python_2_unicode_compatible
-class TranslatedFieldsModelMixin(object):
+class TranslatedFieldsModelMixin:
     """
     Base class for the model that holds the translated fields.
     """
@@ -841,7 +830,7 @@ class TranslatedFieldsModelMixin(object):
 
     def __init__(self, *args, **kwargs):
         signals.pre_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
-        super(TranslatedFieldsModelMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._original_values = self._get_field_values()
 
         signals.post_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
@@ -895,7 +884,7 @@ class TranslatedFieldsModelMixin(object):
             )
 
         # Perform save
-        super(TranslatedFieldsModelMixin, self).save_base(raw=raw, using=using, **kwargs)
+        super().save_base(raw=raw, using=using, **kwargs)
         self._original_values = self._get_field_values()
         _cache_translation(self)
 
@@ -912,7 +901,7 @@ class TranslatedFieldsModelMixin(object):
         if not self._meta.auto_created:
             signals.pre_translation_delete.send(sender=self.shared_model, instance=self, using=using)
 
-        super(TranslatedFieldsModelMixin, self).delete(using=using)
+        super().delete(using=using)
         _delete_cached_translation(self)
 
         # Send post-delete signal
@@ -997,7 +986,7 @@ class TranslatedFieldsModelMixin(object):
         )
 
 
-class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, TranslatedFieldsModelMixin, models.Model)):
+class TranslatedFieldsModel(TranslatedFieldsModelMixin, models.Model, metaclass=TranslatedFieldsModelBase):
     language_code = compat.HideChoicesCharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
 
     class Meta:
@@ -1005,7 +994,7 @@ class TranslatedFieldsModel(six.with_metaclass(TranslatedFieldsModelBase, Transl
         default_permissions = ()
 
 
-class ParlerMeta(object):
+class ParlerMeta:
     """
     Meta data for a single inheritance level.
     """
@@ -1032,7 +1021,7 @@ class ParlerMeta(object):
         )
 
 
-class ParlerOptions(object):
+class ParlerOptions:
     """
     Meta data for the translatable models.
     """
@@ -1109,9 +1098,9 @@ class ParlerOptions(object):
         Get an :class:`ParlerMeta` object by index or model.
         """
         try:
-            if isinstance(item, six.integer_types):
+            if isinstance(item, int):
                 return self._extensions[item]
-            elif isinstance(item, six.string_types):
+            elif isinstance(item, str):
                 return self._get_extension_by_related_name(related_name=item)
             else:
                 return next(meta for meta in self._extensions if meta.model == item)
@@ -1137,7 +1126,7 @@ class ParlerOptions(object):
         """
         Convenience function, return all translated fields with their model.
         """
-        return six.iteritems(self._fields_to_model)
+        return self._fields_to_model.items()
 
     def get_translated_fields(self, related_name=None):
         """

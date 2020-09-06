@@ -74,7 +74,7 @@ It might be useful to limit the ``LANGUAGES`` setting. For example:
 
 .. code-block:: python
 
-    from django.utils.translation import ugettext_lazy as _
+    from django.utils.translation import gettext_lazy as _
 
     LANGUAGE_CODE = 'en'
 

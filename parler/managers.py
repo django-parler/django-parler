@@ -2,7 +2,6 @@
 Custom generic managers
 """
 import django
-import six
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.query import QuerySet
@@ -20,11 +19,11 @@ class TranslatableQuerySet(QuerySet):
     """
 
     def __init__(self, *args, **kwargs):
-        super(TranslatableQuerySet, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._language = None
 
     def _clone(self):
-        c = super(TranslatableQuerySet, self)._clone()
+        c = super()._clone()
         c._language = self._language
         return c
 
@@ -33,13 +32,13 @@ class TranslatableQuerySet(QuerySet):
         # like .language('xx').create(..) which is a nice API after all.
         if self._language:
             kwargs['_current_language'] = self._language
-        return super(TranslatableQuerySet, self).create(**kwargs)
+        return super().create(**kwargs)
 
     def _fetch_all(self):
         # Make sure the current language is assigned when Django fetches the data.
         # This low-level method is overwritten as that works better across Django versions.
         # Alternatives includes hacking the _iterable_class, which breaks django-polymorphic
-        super(TranslatableQuerySet, self)._fetch_all()
+        super()._fetch_all()
         if self._language is not None and self._result_cache and isinstance(self._result_cache[0], models.Model):
             for obj in self._result_cache:
                 obj.set_current_language(self._language)
@@ -55,14 +54,9 @@ class TranslatableQuerySet(QuerySet):
                 except KeyError:
                     pass
 
-        if django.VERSION < (2, 2):
-            lookup, params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
-            params.update(translated_defaults)
-            return lookup, params
-        else:
-            params = super(TranslatableQuerySet, self)._extract_model_params(defaults, **kwargs)
-            params.update(translated_defaults)
-            return params
+        params = super()._extract_model_params(defaults, **kwargs)
+        params.update(translated_defaults)
+        return params
 
     def language(self, language_code=None):
         """
@@ -97,7 +91,7 @@ class TranslatableQuerySet(QuerySet):
             language_codes = (get_language(),)
 
         filters = {}
-        for field_name, val in six.iteritems(translated_fields):
+        for field_name, val in translated_fields.items():
             if field_name.startswith('master__'):
                 filters[field_name[8:]] = val  # avoid translations__master__ back and forth
             else:
@@ -131,7 +125,7 @@ class TranslatableManager(models.Manager.from_queryset(TranslatableQuerySet)):
     """
 
     def get_queryset(self):
-        qs = super(TranslatableManager, self).get_queryset()
+        qs = super().get_queryset()
         if not isinstance(qs, TranslatableQuerySet):
             raise ImproperlyConfigured("{0}._queryset_class does not inherit from TranslatableQuerySet".format(self.__class__.__name__))
         return qs

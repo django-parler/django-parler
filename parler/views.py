@@ -13,7 +13,6 @@ The following views are available:
 * :class:`TranslatableCreateView` - The :class:`~django.views.generic.edit.CreateView` with :class:`TranslatableModelFormMixin` support.
 * :class:`TranslatableUpdateView` - The :class:`~django.views.generic.edit.UpdateView` with :class:`TranslatableModelFormMixin` support.
 """
-from __future__ import unicode_literals
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponsePermanentRedirect
@@ -38,7 +37,7 @@ __all__ = (
 )
 
 
-class ViewUrlMixin(object):
+class ViewUrlMixin:
     """
     Provide a ``view.get_view_url`` method in the template.
 
@@ -90,7 +89,7 @@ class ViewUrlMixin(object):
         return reverse(self.view_url_name, args=self.args, kwargs=self.kwargs)
 
 
-class TranslatableSlugMixin(object):
+class TranslatableSlugMixin:
     """
     An enhancement for the :class:`~django.views.generic.DetailView` to deal with translated slugs.
     This view makes sure that:
@@ -131,7 +130,7 @@ class TranslatableSlugMixin(object):
 
     def dispatch(self, request, *args, **kwargs):
         try:
-            return super(TranslatableSlugMixin, self).dispatch(request, *args, **kwargs)
+            return super().dispatch(request, *args, **kwargs)
         except FallbackLanguageResolved as e:
             # Handle the fallback language redirect for get_object()
             with switch_language(e.object, e.correct_language):
@@ -165,7 +164,7 @@ class TranslatableSlugMixin(object):
 
         if obj is None:
             tried_msg = ", tried languages: {0}".format(", ".join(choices))
-            error_message = translation.ugettext("No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
+            error_message = translation.gettext("No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
             raise Http404(error_message + tried_msg)
 
         # Object found!
@@ -195,7 +194,7 @@ class FallbackLanguageResolved(Exception):
         self.correct_language = correct_language
 
 
-class LanguageChoiceMixin(object):
+class LanguageChoiceMixin:
     """
     Mixin to add language selection support to class based views, particularly create and update views.
     It adds support for the ``?language=..`` parameter in the query string, and tabs in the context.
@@ -206,7 +205,7 @@ class LanguageChoiceMixin(object):
         """
         Assign the language for the retrieved object.
         """
-        object = super(LanguageChoiceMixin, self).get_object(queryset)
+        object = super().get_object(queryset)
         if isinstance(object, TranslatableModelMixin):
             object.set_current_language(self.get_language(), initialize=True)
         return object
@@ -236,7 +235,7 @@ class LanguageChoiceMixin(object):
             return self.get_language()
 
     def get_context_data(self, **kwargs):
-        context = super(LanguageChoiceMixin, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['language_tabs'] = self.get_language_tabs()
         return context
 
@@ -270,7 +269,7 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
         """
         Return a ``TranslatableModelForm`` by default if no form_class is set.
         """
-        super_method = super(TranslatableModelFormMixin, self).get_form_class
+        super_method = super().get_form_class
         # no "__func__" on the class level function in python 3
         default_method = getattr(ModelFormMixin.get_form_class, '__func__', ModelFormMixin.get_form_class)
         if not (super_method.__func__ is default_method):
@@ -292,7 +291,7 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
         """
         Pass the current language to the form.
         """
-        kwargs = super(TranslatableModelFormMixin, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         # The TranslatableAdmin can set form.language_code, because the modeladmin always creates a fresh subclass.
         # If that would be done here, the original globally defined form class would be updated.
         kwargs['_current_language'] = self.get_form_language()

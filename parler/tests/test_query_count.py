@@ -16,7 +16,7 @@ class QueryCountTests(AppTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(QueryCountTests, cls).setUpClass()
+        super().setUpClass()
 
         cls.country_list = (
             'Mexico',

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from collections import deque
 
 import django
@@ -13,7 +11,7 @@ from .models import Article, Category
 from parler.appsettings import PARLER_LANGUAGES
 
 
-class TestMixin(object):
+class TestMixin:
 
     def setUp(self):
         cat = Category()
@@ -37,10 +35,10 @@ class TestMixin(object):
         self.art_id = art.id
 
     def assertInContent(self, member, resp, msg=None):
-        return super(TestMixin, self).assertIn(member, encoding.smart_text(resp.content), msg)
+        return super().assertIn(member, encoding.smart_text(resp.content), msg)
 
     def assertNotInContent(self, member, resp, msg=None):
-        return super(TestMixin, self).assertNotIn(member, encoding.smart_text(resp.content), msg)
+        return super().assertNotIn(member, encoding.smart_text(resp.content), msg)
 
     def assertHTMLInContent(self, html_tag, resp):
         find_html = parse_html(html_tag)
@@ -109,7 +107,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(AdminArticleTestCase, cls).setUpClass()
+        super().setUpClass()
         cls.user, _ = auth.models.User.objects.get_or_create(is_superuser=True, is_staff=True, username=cls.credentials['username'])
         cls.user.set_password(cls.credentials['password'])
         cls.user.save()

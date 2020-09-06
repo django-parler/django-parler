@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from django.utils import translation
 from parler.models import TranslationDoesNotExist
 from .utils import AppTestCase

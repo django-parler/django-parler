@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from django.contrib.admin import AdminSite
 from django.contrib.admin.utils import label_for_field
 

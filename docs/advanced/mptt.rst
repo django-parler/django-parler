@@ -26,11 +26,9 @@ Say we have a base ``Category`` model that needs to be translatable:
     from parler.models import TranslatableModel, TranslatedFields
     from parler.managers import TranslatableManager
     from mptt.models import MPTTModel
-    from six import python_2_unicode_compatible
     from .managers import CategoryManager
 
 
-    @python_2_unicode_compatible
     class Category(MPTTModel, TranslatableModel):
         # The shared base model. Either place translated fields here,
         # or place them at the subclasses (see note below).

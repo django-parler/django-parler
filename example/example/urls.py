@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.urls import include, path
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 
@@ -8,6 +8,6 @@ admin.autodiscover()
 # This is not mandatory, can also use a `django_language` cookie,
 # or custom middleware that calls `django.utils.translation.activate()`.
 urlpatterns = i18n_patterns(
-    url(r'^admin/', admin.site.urls),
-    url(r'', include('article.urls')),
+    path('admin/', admin.site.urls),
+    path('', include('article.urls')),
 )

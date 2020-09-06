@@ -1,5 +1,4 @@
 import inspect
-import six
 from django.template import Node, Library, TemplateSyntaxError
 from django.urls import reverse
 from django.utils.encoding import force_text
@@ -188,4 +187,4 @@ def _cleanup_urlpattern_kwargs(kwargs):
     # it's not a problem because the reverse() function just ignores them as there is no match.
     # However, for class values, an exception occurs because reverse() wants to force_text() them.
     # Hence, remove the kwargs to avoid internal server errors on some exotic views.
-    return dict((k, v) for k, v in six.iteritems(kwargs) if not inspect.isclass(v))
+    return dict((k, v) for k, v in kwargs.items() if not inspect.isclass(v))

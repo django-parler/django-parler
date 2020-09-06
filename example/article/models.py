@@ -1,12 +1,9 @@
-from __future__ import unicode_literals
 from django.db import models
 from django.urls import reverse
 from parler.models import TranslatableModel, TranslatedFields
 from parler.utils.context import switch_language
-from six import python_2_unicode_compatible
 
 
-@python_2_unicode_compatible
 class Article(TranslatableModel):
     """
     Example translatable model.
@@ -51,7 +48,6 @@ class Article(TranslatableModel):
         return dict(self.translations.values_list('language_code', 'slug'))
 
 
-@python_2_unicode_compatible
 class Category(models.Model):
     """
     Example model for inline edition of Articles

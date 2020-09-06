@@ -4,7 +4,7 @@ These widgets perform sorting on the choices within Python.
 This is useful when sorting is hard to due translated fields, for example:
 
 * the ORM can't sort it.
-* the ordering depends on ``ugettext()`` output.
+* the ordering depends on ``gettext()`` output.
 * the model ``__unicode__()`` value depends on translated fields.
 
 Use them like any regular form widget::
@@ -34,7 +34,7 @@ __all__ = (
 )
 
 
-class SortedChoiceIterator(object):
+class SortedChoiceIterator:
 
     def __init__(self, field):
         self.field = field
@@ -47,13 +47,13 @@ class SortedChoiceIterator(object):
         return iter(self.field._choices)
 
 
-class SortedSelectMixin(object):
+class SortedSelectMixin:
     """
     A mixin to have the choices sorted by (translated) title.
     """
 
     def __init__(self, attrs=None, choices=()):
-        super(SortedSelectMixin, self).__init__(attrs, choices=())
+        super().__init__(attrs, choices=())
         self._choices = choices   # super may set self.choices=()
         self._sorted = False
 

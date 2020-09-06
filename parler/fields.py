@@ -9,8 +9,6 @@ but may be added explicitly as well. This also allows to set the ``any_language`
 It's also useful for abstract models; add a :class:`TranslatedField` to
 indicate that the derived model is expected to provide that translatable field.
 """
-from __future__ import unicode_literals
-
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
@@ -52,14 +50,14 @@ class TranslationsForeignKey(models.ForeignKey):
     def contribute_to_related_class(self, cls, related):
         from parler.models import TranslatedFieldsModelMixin
 
-        super(TranslationsForeignKey, self).contribute_to_related_class(cls, related)
+        super().contribute_to_related_class(cls, related)
         _validate_master(self.model)
         if issubclass(self.model, TranslatedFieldsModelMixin):
             self.model.contribute_translations(cls)
 
 
 # TODO: inherit RelatedField?
-class TranslatedField(object):
+class TranslatedField:
     """
     Proxy field attached to a model.
 
@@ -95,7 +93,7 @@ class TranslatedField(object):
         self._meta = None
 
     def contribute_to_class(self, cls, name, **kwargs):
-        #super(TranslatedField, self).contribute_to_class(cls, name)
+        #super().contribute_to_class(cls, name)
         self.model = cls
         self.name = name
 
@@ -109,7 +107,7 @@ class TranslatedField(object):
         return self._meta
 
 
-class TranslatedFieldDescriptor(object):
+class TranslatedFieldDescriptor:
     """
     Descriptor for translated attributes.
 
@@ -185,7 +183,7 @@ class TranslatedFieldDescriptor(object):
         return field.verbose_name
 
 
-class LanguageCodeDescriptor(object):
+class LanguageCodeDescriptor:
     """
     This is the property to access the ``language_code`` in the ``TranslatableModel``.
     """

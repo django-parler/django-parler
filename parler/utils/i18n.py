@@ -3,7 +3,7 @@ Utils for translations
 """
 from django.conf import settings
 from django.conf.global_settings import LANGUAGES as ALL_LANGUAGES
-from django.utils.translation import ugettext_lazy as _, get_language as dj_get_language
+from django.utils.translation import gettext_lazy as _, get_language as dj_get_language
 
 
 __all__ = (

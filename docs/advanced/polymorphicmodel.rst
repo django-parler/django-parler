@@ -23,7 +23,6 @@ pattern works for a polymorphic Django model:
 	from parler.models import TranslatableModel, TranslatedFields
 	from parler.managers import TranslatableManager
 	from polymorphic import PolymorphicModel
-	from six import python_2_unicode_compatible
 	from .managers import BookManager
 	
 
@@ -34,7 +33,6 @@ pattern works for a polymorphic Django model:
 	    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
 
-	@python_2_unicode_compatible
 	class Book(Product, TranslatableModel):
 	    # Solution 1: use a custom manager that combines both.
 	    objects = BookManager()
@@ -48,7 +46,6 @@ pattern works for a polymorphic Django model:
 	        return force_text(self.code)
 
 
-	@python_2_unicode_compatible
 	class Pen(Product, TranslatableModel):
 	    # Solution 2: override the default manager.
 	    default_manager = TranslatableManager()

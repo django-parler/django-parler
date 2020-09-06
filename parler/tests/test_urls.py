@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from django.test import RequestFactory
 from django.test.utils import override_settings
 from django.urls import reverse, resolve, get_urlconf
@@ -15,7 +14,7 @@ class UrlTests(AppTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(UrlTests, cls).setUpClass()
+        super().setUpClass()
         article = ArticleSlugModel(_current_language=cls.conf_fallback, slug='default')
         article.set_current_language(cls.other_lang1)
         article.slug = 'lang1'

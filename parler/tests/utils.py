@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 
 from django.apps import apps
@@ -29,17 +28,17 @@ class override_parler_settings(override_settings):
     """
 
     def __init__(self, **kwargs):
-        super(override_parler_settings, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.old_values = {}
 
     def enable(self):
-        super(override_parler_settings, self).enable()
+        super().enable()
         for key, value in self.options.items():
             self.old_values[key] = getattr(appsettings, key)
             setattr(appsettings, key, value)
 
     def disable(self):
-        super(override_parler_settings, self).disable()
+        super().disable()
         for key in self.options.keys():
             setattr(appsettings, key, self.old_values[key])
 
@@ -54,12 +53,12 @@ class AppTestCase(TestCase):
     )
 
     def setUp(self):
-        super(AppTestCase, self).setUp()
+        super().setUp()
         cache.clear()
 
     @classmethod
     def setUpClass(cls):
-        super(AppTestCase, cls).setUpClass()
+        super().setUpClass()
 
         from django.template.loaders import app_directories  # late import, for django 1.7
         if cls.install_apps:

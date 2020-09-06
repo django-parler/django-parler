@@ -5,7 +5,6 @@ The configuration wrappers that are used for :ref:`PARLER_LANGUAGES`.
 import copy
 import sys
 
-import six
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from parler.utils.i18n import is_supported_django_language, get_null_language_error, get_language
@@ -70,7 +69,7 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     if not is_supported_django_language(defaults['code']):
         raise ImproperlyConfigured("The value for {0}['defaults']['code'] ('{1}') does not exist in LANGUAGES".format(var_name, defaults['code']))
 
-    for site_id, lang_choices in six.iteritems(languages_list):
+    for site_id, lang_choices in languages_list.items():
         if site_id == 'default':
             continue
 
@@ -81,7 +80,7 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
                 raise ImproperlyConfigured("{0}[{1}][{2}]['code'] does not exist in LANGUAGES".format(var_name, site_id, i))
 
             # Copy all items from the defaults, so you can provide new fields too.
-            for key, value in six.iteritems(defaults):
+            for key, value in defaults.items():
                 choice.setdefault(key, value)
 
     return languages_list
@@ -189,15 +188,10 @@ def get_parler_languages_from_django_cms(cms_languages=None):
     valid_keys = ['code', 'fallbacks', 'hide_untranslated',
                   'redirect_on_fallback']
     if cms_languages:
-        if sys.version_info < (3, 0, 0):
-            int_types = (int, long)
-        else:
-            int_types = int
-
         parler_languages = copy.deepcopy(cms_languages)
         for site_id, site_config in cms_languages.items():
             if site_id and (
-                    not isinstance(site_id, int_types) and
+                    not isinstance(site_id, int) and
                     site_id != 'default'
             ):
                 del parler_languages[site_id]

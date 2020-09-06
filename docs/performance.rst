@@ -50,6 +50,6 @@ When you display translated objects in a form, e.g. a select list, you can prefe
 
     class MyModelAdminForm(TranslatableModelForm):
         def __init__(self, *args, **kwargs):
-            super(MyModelAdminForm, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
             self.fields['some_field'].queryset = self.fields['some_field'].queryset.prefetch_related('translations')
 
