@@ -82,7 +82,7 @@ _language_media = Media(css={
 
 _language_prepopulated_media = _language_media + Media(js=(
     'admin/js/urlify.js',
-    'admin/js/prepopulate{}.js'.format('' if settings.DEBUG else '.min'),
+    'admin/js/prepopulate.js'
 ))
 
 _fakeRequest = HttpRequest()
