@@ -204,6 +204,21 @@ class ForeignKeyTranslationModel(TranslatableModel):
     shared = models.CharField(max_length=200)
 
 
+class ManyToManyOnlyFieldsTranslationModel(TranslatableModel):
+    translations = TranslatedFields(
+        translated_many_to_many = models.ManyToManyField('RegularModel'),
+    )
+    shared = models.CharField(max_length=200)
+
+
+class ManyToManyAndOtherFieldsTranslationModel(TranslatableModel):
+    translations = TranslatedFields(
+        tr_title = models.CharField("Translated Title", max_length=200),
+        translated_many_to_many = models.ManyToManyField('RegularModel'),
+    )
+    shared = models.CharField(max_length=200)
+
+
 class TranslationRelated(TranslatableModel):
     shared = models.CharField(max_length=200)
     translation_relations = TranslatedField()

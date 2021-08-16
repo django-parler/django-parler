@@ -5,7 +5,8 @@ from parler.forms import TranslatableModelForm
 from .utils import AppTestCase
 from .testapp.models import (SimpleModel, UniqueTogetherModel, ForeignKeyTranslationModel, RegularModel,
                              CleanFieldModel, UUIDPrimaryKeyModel, UUIDPrimaryKeyRelatedModel,
-                             IntegerPrimaryKeyModel, IntegerPrimaryKeyRelatedModel)
+                             IntegerPrimaryKeyModel, IntegerPrimaryKeyRelatedModel,
+                             ManyToManyAndOtherFieldsTranslationModel)
 
 
 class SimpleForm(TranslatableModelForm):
@@ -67,6 +68,13 @@ class OverrideMetaFieldForm(TranslatableModelForm):
             'shared': { 'max_length': 'error_message:shared' },
             'tr_title': { 'max_length': 'error_message:tr_title' },
         }
+
+
+class ManyToManyAndOtherFieldsTranslationModelForm(TranslatableModelForm):
+
+    class Meta:
+        model = ManyToManyAndOtherFieldsTranslationModel
+        fields = '__all__'
 
 
 class FormTests(AppTestCase):
@@ -202,6 +210,57 @@ class FormTests(AppTestCase):
         )
         self.assertEqual('error_message:shared', form_instance['shared'].errors[0])
         self.assertEqual('error_message:tr_title', form_instance['tr_title'].errors[0])
+
+    def test_many_to_many_fields(self):
+        regular_one = RegularModel.objects.create(original_field="One")
+        regular_two = RegularModel.objects.create(original_field="Two")
+
+        # Create object in English
+        form = ManyToManyAndOtherFieldsTranslationModelForm(data=dict(
+            shared='SHARED',
+            tr_title='TRANS',
+            translated_many_to_many=[regular_one.pk],
+        ))
+        form.language_code = 'en'
+        self.assertFalse(form.errors)
+
+        # Test cleaning
+        self.assertEqual(form.cleaned_data['shared'], 'SHARED')
+        self.assertEqual(form.cleaned_data['tr_title'], 'TRANS')
+        self.assertEqual(form.cleaned_data['translated_many_to_many'][0], regular_one)
+
+        # Save and check result
+        obj = form.save()
+        self.assertEqual(obj.shared, 'SHARED')
+        self.assertEqual(obj.tr_title, 'TRANS')
+        self.assertEqual(obj.translated_many_to_many.all()[0], regular_one)
+
+        # Translate the object to French
+        form = ManyToManyAndOtherFieldsTranslationModelForm(
+            instance=obj,
+            data=dict(
+            shared='SHARED',
+            tr_title='TRANSF',
+            translated_many_to_many=[regular_two.pk],
+        ))
+        form.language_code = 'fr'
+        self.assertFalse(form.errors)
+
+        # Test cleaning
+        self.assertEqual(form.cleaned_data['shared'], 'SHARED')
+        self.assertEqual(form.cleaned_data['tr_title'], 'TRANSF')
+        self.assertEqual(form.cleaned_data['translated_many_to_many'][0], regular_two)
+
+        # Save and check result
+        obj = form.save()
+        self.assertEqual(obj.shared, 'SHARED')
+        self.assertEqual(obj.tr_title, 'TRANSF')
+        self.assertEqual(obj.translated_many_to_many.all()[0], regular_two)
+
+        # Confirm English is unchanged after French translation
+        obj.set_current_language('en')
+        self.assertEqual(obj.tr_title, 'TRANS')
+        self.assertEqual(obj.translated_many_to_many.all()[0], regular_one)
 
 
 class InlineFormTests(AppTestCase):
