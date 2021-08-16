@@ -58,7 +58,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
 from django.db import models, router
 from django.db.models.base import ModelBase
-from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor, ManyToManyDescriptor
 from django.utils.encoding import force_text
 from django.utils.functional import lazy
 from django.utils.translation import gettext, gettext_lazy as _
@@ -269,7 +269,7 @@ class TranslatableModelMixin:
                 try:
                     setattr(translation, field, value)
                 except TypeError:
-                    # TypeError signals a many to many field. We can't store it like a normal field, so
+                    # TypeError signals a many to many field. We can't set it like the other attributes, so
                     # add to our own glued variable.
                     deferred_many_to_many = getattr(translation, "deferred_many_to_many", {})
                     deferred_many_to_many[field] = value
@@ -647,6 +647,7 @@ class TranslatableModelMixin:
         # Even worse: mptt 0.7 injects this parameter when it avoids updating the lft/rgt fields,
         # but that misses all the translated fields.
         kwargs.pop('update_fields', None)
+
         self.save_translations(*args, **kwargs)
 
     def delete(self, using=None):
