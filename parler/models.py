@@ -266,7 +266,14 @@ class TranslatableModelMixin:
         for parler_meta, model_fields in self._parler_meta._split_fields(**fields):
             translation = self._get_translated_model(language_code=language_code, auto_create=True, meta=parler_meta)
             for field, value in model_fields.items():
-                setattr(translation, field, value)
+                try:
+                    setattr(translation, field, value)
+                except TypeError:
+                    # TypeError signals a many to many field. We can't store it like a normal field, so
+                    # add to our own glued variable.
+                    deferred_many_to_many = getattr(translation, "deferred_many_to_many", {})
+                    deferred_many_to_many[field] = value
+                    setattr(translation, "deferred_many_to_many", deferred_many_to_many)
 
             objects.append(translation)
         return objects
@@ -721,6 +728,13 @@ class TranslatableModelMixin:
                 translation.master = self
             translation.save(*args, **kwargs)
 
+        # Save the many to many fields
+        deferred_many_to_many = getattr(translation, "deferred_many_to_many", {})
+        if deferred_many_to_many:
+            for fieldname, value in deferred_many_to_many.items():
+                getattr(translation, fieldname).set(value)
+            translation.save()
+
     def safe_translation_getter(self, field, default=None, language_code=None, any_language=False):
         """
         Fetch a translated property, and return a default value
@@ -917,8 +931,11 @@ class TranslatedFieldsModelMixin:
         return [getattr(self, field.get_attname()) for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
 
     @classmethod
-    def get_translated_fields(cls):
-        return [f.name for f in cls._meta.local_fields if f.name not in ('language_code', 'master', 'id')]
+    def get_translated_fields(cls, exclude_many_to_many=False):
+        res = [f.name for f in cls._meta.local_fields if f.name not in ('language_code', 'master', 'id')]
+        if not exclude_many_to_many:
+            res += [f.name for f in cls._meta.local_many_to_many if f.name not in ('language_code', 'master', 'id')]
+        return res
 
     @classmethod
     def contribute_translations(cls, shared_model):
@@ -1005,13 +1022,13 @@ class ParlerMeta:
         self.model = translations_model
         self.rel_name = related_name
 
-    def get_translated_fields(self):
+    def get_translated_fields(self, exclude_many_to_many=False):
         """
         Return the translated fields of this model.
         """
         # TODO: should be named get_fields() ?
         # root_model always points to the real model for extensions
-        return self.model.get_translated_fields()
+        return self.model.get_translated_fields(exclude_many_to_many=exclude_many_to_many)
 
     def __repr__(self):
         return "<ParlerMeta: {0}.{1} to {2}>".format(
@@ -1128,14 +1145,14 @@ class ParlerOptions:
         """
         return self._fields_to_model.items()
 
-    def get_translated_fields(self, related_name=None):
+    def get_translated_fields(self, related_name=None, exclude_many_to_many=False):
         """
         Return the translated fields of this model.
         By default, the top-level translation is required, unless ``related_name`` is provided.
         """
         # TODO: should be named get_fields() ?
         meta = self._get_extension_by_related_name(related_name)
-        return meta.get_translated_fields()
+        return meta.get_translated_fields(exclude_many_to_many=exclude_many_to_many)
 
     def get_model_by_field(self, name):
         """
