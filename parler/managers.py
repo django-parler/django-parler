@@ -62,8 +62,9 @@ class TranslatableQuerySet(QuerySet):
         """
         Set the language code to assign to objects retrieved using this QuerySet.
         """
+        from django.utils import translation
         if language_code is None:
-            language_code = appsettings.PARLER_LANGUAGES.get_default_language()
+            language_code = translation.get_language() or appsettings.PARLER_LANGUAGES.get_default_language()
 
         self._language = language_code
         return self
