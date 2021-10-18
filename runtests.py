@@ -74,7 +74,7 @@ if not settings.configured:
         ),
         ROOT_URLCONF = 'example.urls',
         TEST_RUNNER = 'django.test.runner.DiscoverRunner',
-
+        SECRET_KEY = "secret",
         SITE_ID = 4,
         LANGUAGE_CODE = 'en',
         LANGUAGES = (
