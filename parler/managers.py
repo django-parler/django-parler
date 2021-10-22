@@ -48,6 +48,16 @@ class TranslatableQuerySet(QuerySet):
         for field in instance._parler_meta._fields_to_model.keys():
             getattr(instance, field)
 
+    def _chain(self, **kwargs):
+        """
+        Return a copy of the current QuerySet that's ready for another
+        operation.
+        """
+        objs = super()._chain()
+        for obj in objs:
+            self.load_translations(obj)
+        return objs
+
     def _fetch_all(self):
         # Make sure the current language is assigned when Django fetches the data.
         # This low-level method is overwritten as that works better across Django versions.
