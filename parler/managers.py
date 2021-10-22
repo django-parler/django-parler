@@ -41,6 +41,10 @@ class TranslatableQuerySet(QuerySet):
         Args:
             instance: The instance to load the translations for.
         """
+        from parler.models import TranslatableModel
+        if not isinstance(instance, TranslatableModel):
+            return
+
         for field in instance._parler_meta.get_all_fields():
             getattr(instance, field)
 
