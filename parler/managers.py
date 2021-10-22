@@ -41,7 +41,7 @@ class TranslatableQuerySet(QuerySet):
         Args:
             instance: The instance to load the translations for.
         """
-        for field in instance._parler_meta._fields_to_model.keys():
+        for field in instance._parler_meta.get_all_fields():
             getattr(instance, field)
 
     def _chain(self, **kwargs):
