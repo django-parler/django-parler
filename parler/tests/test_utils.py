@@ -97,7 +97,7 @@ class UtilTestCase(TestCase):
         """Test get_language patch function, no fallback"""
 
         with override(None):
-            self.assertEquals(get_language(), None)
+            self.assertEqual(get_language(), None)
 
     @override_parler_settings(PARLER_DEFAULT_ACTIVATE=True)
     def test_get_language_with_fallback(self):
@@ -105,7 +105,7 @@ class UtilTestCase(TestCase):
         from parler import appsettings
 
         with override(None):
-            self.assertEquals(get_language(), appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
+            self.assertEqual(get_language(), appsettings.PARLER_DEFAULT_LANGUAGE_CODE)
 
     def test_url_qs(self):
         matches = [
