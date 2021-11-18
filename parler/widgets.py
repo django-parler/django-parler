@@ -1,4 +1,3 @@
-# encoding: utf-8
 """
 These widgets perform sorting on the choices within Python.
 This is useful when sorting is hard to due translated fields, for example:

@@ -22,7 +22,7 @@ class ObjectLanguageNode(Node):
         object = self.object_var.resolve(context)
         new_language = self.language_var.resolve(context) if self.language_var else get_language()
         if not isinstance(object, TranslatableModel):
-            raise TemplateSyntaxError("Object '{0}' is not an instance of TranslableModel".format(object))
+            raise TemplateSyntaxError(f"Object '{object}' is not an instance of TranslableModel")
 
         with switch_language(object, new_language):
             # Render contents inside
@@ -165,7 +165,7 @@ def get_translated_url(context, lang_code, object=None):
 
 def _url_qs(url, qs):
     if qs and '?' not in url:
-        return u'{0}?{1}'.format(force_str(url), force_str(qs))
+        return f'{force_str(url)}?{force_str(qs)}'
     else:
         return force_str(url)
 
@@ -187,4 +187,4 @@ def _cleanup_urlpattern_kwargs(kwargs):
     # it's not a problem because the reverse() function just ignores them as there is no match.
     # However, for class values, an exception occurs because reverse() wants to force_text() them.
     # Hence, remove the kwargs to avoid internal server errors on some exotic views.
-    return dict((k, v) for k, v in kwargs.items() if not inspect.isclass(v))
+    return {k: v for k, v in kwargs.items() if not inspect.isclass(v)}

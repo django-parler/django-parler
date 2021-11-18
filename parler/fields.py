@@ -20,7 +20,7 @@ def _validate_master(new_class):
     Check whether the 'master' field on a TranslatedFieldsModel is correctly configured.
     """
     if not new_class.master or not isinstance(new_class.master, ForwardManyToOneDescriptor):
-        raise ImproperlyConfigured("{0}.master should be a ForeignKey to the shared table.".format(new_class.__name__))
+        raise ImproperlyConfigured(f"{new_class.__name__}.master should be a ForeignKey to the shared table.")
 
     remote_field = new_class.master.field.remote_field
     shared_model = remote_field.model
@@ -32,13 +32,13 @@ def _validate_master(new_class):
     try:
         meta = shared_model._parler_meta
     except AttributeError:
-        raise TypeError("Translatable model {} does not appear to inherit from TranslatableModel".format(shared_model))
+        raise TypeError(f"Translatable model {shared_model} does not appear to inherit from TranslatableModel")
 
     if meta is not None:
         if meta._has_translations_model(new_class):
-            raise ImproperlyConfigured("The model '{0}' already has an associated translation table!".format(shared_model.__name__))
+            raise ImproperlyConfigured(f"The model '{shared_model.__name__}' already has an associated translation table!")
         if meta._has_translations_field(remote_field.related_name):
-            raise ImproperlyConfigured("The model '{0}' already has an associated translation field named '{1}'!".format(shared_model.__name__, remote_field.related_name))
+            raise ImproperlyConfigured(f"The model '{shared_model.__name__}' already has an associated translation field named '{remote_field.related_name}'!")
 
     return shared_model
 
@@ -137,14 +137,14 @@ class TranslatedFieldDescriptor:
 
             if translation is None:
                 # Improve error message
-                e.args = ("{1}\nAttempted to read attribute {0}.".format(self.field.name, e.args[0]),)
+                e.args = (f"{e.args[0]}\nAttempted to read attribute {self.field.name}.",)
                 raise
 
         return getattr(translation, self.field.name)
 
     def __set__(self, instance, value):
         if instance is None:
-            raise AttributeError("{0} must be accessed via instance".format(self.field.opts.object_name))
+            raise AttributeError(f"{self.field.opts.object_name} must be accessed via instance")
 
         # When assigning the property, assign to the current language.
         # No fallback is used in this case.
@@ -159,7 +159,7 @@ class TranslatedFieldDescriptor:
         delattr(translation, self.field.name)
 
     def __repr__(self):
-        return "<{0} for {1}.{2}>".format(self.__class__.__name__, self.field.model.__name__, self.field.name)
+        return f"<{self.__class__.__name__} for {self.field.model.__name__}.{self.field.name}>"
 
     @property
     def short_description(self):

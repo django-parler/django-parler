@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='articletranslation',
-            unique_together=set([('slug', 'language_code'), ('language_code', 'master')]),
+            unique_together={('slug', 'language_code'), ('language_code', 'master')},
         ),
         migrations.AddField(
             model_name='article',

@@ -35,7 +35,7 @@ class Article(TranslatableModel):
         # Fetching the title just works, as all
         # attributes are proxied to the translated model.
         # Fallbacks are handled as well.
-        return "{0}".format(self.title)
+        return f"{self.title}"
 
     def get_absolute_url(self):
         # The switch_language() is needed because we use the /##/ prefix by i18n_patterns()
@@ -63,7 +63,7 @@ class Category(models.Model):
         # Fetching the title just works, as all
         # attributes are proxied to the translated model.
         # Fallbacks are handled as well.
-        return "{0}".format(self.name)
+        return f"{self.name}"
 
 
 class StackedCategory(Category):

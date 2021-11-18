@@ -80,7 +80,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
         except LookupError:
             # Instead of raising a ValidationError
             raise ValueError(
-                "Translatable forms can't be initialized for the language '{0}', "
+                "Translatable forms can't be initialized for the language '{}', "
                 "that option does not exist in the 'LANGUAGES' setting.".format(self.language_code)
             )
 
@@ -143,7 +143,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
         translations = self.instance._set_translated_fields(**fields)
 
         # Perform full clean on models
-        non_translated_fields = set(('id', 'master_id', 'language_code'))
+        non_translated_fields = {'id', 'master_id', 'language_code'}
         for translation in translations:
             self._post_clean_translation(translation)
 
@@ -201,7 +201,7 @@ def _upgrade_boundfield_class(cls):
         return UPGRADED_CLASSES[cls]
     except KeyError:
         # Create once
-        new_cls = type('Translatable{0}'.format(cls.__name__), (cls, TranslatableBoundField), {})
+        new_cls = type(f'Translatable{cls.__name__}', (cls, TranslatableBoundField), {})
         UPGRADED_CLASSES[cls] = new_cls
         return new_cls
 

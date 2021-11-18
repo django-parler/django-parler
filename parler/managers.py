@@ -95,7 +95,7 @@ class TranslatableQuerySet(QuerySet):
             if field_name.startswith('master__'):
                 filters[field_name[8:]] = val  # avoid translations__master__ back and forth
             else:
-                filters["{0}__{1}".format(relname, field_name)] = val
+                filters[f"{relname}__{field_name}"] = val
 
         if len(language_codes) == 1:
             filters[relname + '__language_code'] = language_codes[0]
@@ -127,7 +127,7 @@ class TranslatableManager(models.Manager.from_queryset(TranslatableQuerySet)):
     def get_queryset(self):
         qs = super().get_queryset()
         if not isinstance(qs, TranslatableQuerySet):
-            raise ImproperlyConfigured("{0}._queryset_class does not inherit from TranslatableQuerySet".format(self.__class__.__name__))
+            raise ImproperlyConfigured(f"{self.__class__.__name__}._queryset_class does not inherit from TranslatableQuerySet")
         return qs
 
 # Export the names in django-hvad style too:

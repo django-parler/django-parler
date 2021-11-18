@@ -67,17 +67,17 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
         defaults['fallbacks'] = [appsettings.PARLER_DEFAULT_LANGUAGE_CODE]
 
     if not is_supported_django_language(defaults['code']):
-        raise ImproperlyConfigured("The value for {0}['defaults']['code'] ('{1}') does not exist in LANGUAGES".format(var_name, defaults['code']))
+        raise ImproperlyConfigured("The value for {}['defaults']['code'] ('{}') does not exist in LANGUAGES".format(var_name, defaults['code']))
 
     for site_id, lang_choices in languages_list.items():
         if site_id == 'default':
             continue
 
         if not isinstance(lang_choices, (list, tuple)):
-            raise ImproperlyConfigured("{0}[{1}] should be a tuple of language choices!".format(var_name, site_id))
+            raise ImproperlyConfigured(f"{var_name}[{site_id}] should be a tuple of language choices!")
         for i, choice in enumerate(lang_choices):
             if not is_supported_django_language(choice['code']):
-                raise ImproperlyConfigured("{0}[{1}][{2}]['code'] does not exist in LANGUAGES".format(var_name, site_id, i))
+                raise ImproperlyConfigured(f"{var_name}[{site_id}][{i}]['code'] does not exist in LANGUAGES")
 
             # Copy all items from the defaults, so you can provide new fields too.
             for key, value in defaults.items():

@@ -19,7 +19,7 @@ class ModelAttributeTests(AppTestCase):
             self.assertIsInstance(e, TranslationDoesNotExist)
             self.assertIsInstance(e, AttributeError)
         else:
-            self.fail("Expected exception from reading untranslated title, got {0}.".format(repr(value)))
+            self.fail(f"Expected exception from reading untranslated title, got {repr(value)}.")
 
         # Raising attribute error gives some additional benefits:
         self.assertEqual(getattr(SimpleModel(), 'tr_title', 'FOO'), 'FOO')

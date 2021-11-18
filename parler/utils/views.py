@@ -41,7 +41,7 @@ def get_language_tabs(request, current_language, available_languages, css_class=
         code = lang_dict['code']
         title = get_language_title(code)
         get['language'] = code
-        url = '?{0}'.format(get.urlencode())
+        url = f'?{get.urlencode()}'
 
         if code == current_language:
             status = 'current'
@@ -58,7 +58,7 @@ def get_language_tabs(request, current_language, available_languages, css_class=
         for code in available_languages:
             if code not in tab_languages:
                 get['language'] = code
-                url = '?{0}'.format(get.urlencode())
+                url = f'?{get.urlencode()}'
 
                 if code == current_language:
                     status = 'current'

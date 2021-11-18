@@ -149,7 +149,7 @@ class BaseTranslatableAdmin(BaseModelAdmin):
 
         if self._has_translatable_model():
             if not isinstance(qs, TranslatableQuerySet):
-                raise ImproperlyConfigured("{0} class does not inherit from TranslatableQuerySet".format(qs.__class__.__name__))
+                raise ImproperlyConfigured(f"{qs.__class__.__name__} class does not inherit from TranslatableQuerySet")
 
             # Apply a consistent language to all objects.
             qs_language = self.get_queryset_language(request)
@@ -236,14 +236,14 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 classes.append('current')
 
             info = opts.app_label, opts.model_name
-            admin_url = reverse('admin:{0}_{1}_change'.format(*info), args=(quote(object.pk),), current_app=self.admin_site.name)
+            admin_url = reverse('admin:{}_{}_change'.format(*info), args=(quote(object.pk),), current_app=self.admin_site.name)
             buttons.append('<a class="{classes}" href="{href}?language={language_code}">{title}</a>'.format(
                 language_code=code,
                 classes=' '.join(classes),
                 href=escape(admin_url),
                 title=conditional_escape(self.get_language_short_title(code))
            ))
-        return '<span class="language-buttons {0}">{1}</span>'.format(
+        return '<span class="language-buttons {}">{}</span>'.format(
             span_classes,
             ' '.join(buttons)
         )
@@ -313,7 +313,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             return [re_path(
                 r'^(.+)/change/delete-translation/(.+)/$',
                 self.admin_site.admin_view(self.delete_translation),
-                name='{0}_{1}_delete_translation'.format(*info)
+                name='{}_{}_delete_translation'.format(*info)
             )] + urlpatterns
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
@@ -328,7 +328,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             language_tabs = self.get_language_tabs(request, obj, available_languages)
             context['language_tabs'] = language_tabs
             if language_tabs:
-                context['title'] = '%s (%s)' % (context['title'], lang)
+                context['title'] = '{} ({})'.format(context['title'], lang)
             if not language_tabs.current_is_translated:
                 add = True  # lets prepopulated_fields_js work.
 
@@ -375,15 +375,15 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             continue_urls = (
                 uri,
                 "../add/",
-                reverse('admin:{0}_{1}_add'.format(*info), current_app=self.admin_site.name),
+                reverse('admin:{}_{}_add'.format(*info), current_app=self.admin_site.name),
                 "../change/",
-                reverse('admin:{0}_{1}_change'.format(*info), args=[obj.pk,], current_app=self.admin_site.name),
+                reverse('admin:{}_{}_change'.format(*info), args=[obj.pk,], current_app=self.admin_site.name),
             )
             redirect_parts = redirect['Location'].split('?')
             if redirect_parts[0] in continue_urls and self.query_language_key in request.GET:
                 # "Save and add another" / "Save and continue" URLs
                 delimiter = '&' if len(redirect_parts) > 1 else '?'
-                redirect['Location'] += "{0}{1}={2}".format(delimiter, self.query_language_key, language)
+                redirect['Location'] += f"{delimiter}{self.query_language_key}={language}"
         return redirect
 
     @csrf_protect_m
@@ -455,7 +455,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
             if self.has_change_permission(request, None):
                 info = opts.app_label, opts.model_name
-                return HttpResponseRedirect(reverse('admin:{0}_{1}_change'.format(*info), args=(object_id,), current_app=self.admin_site.name))
+                return HttpResponseRedirect(reverse('admin:{}_{}_change'.format(*info), args=(object_id,), current_app=self.admin_site.name))
             else:
                 return HttpResponseRedirect(reverse('admin:index', current_app=self.admin_site.name))
 
@@ -485,7 +485,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             })
 
         return render(request, self.delete_confirmation_template or [
-            "admin/%s/%s/delete_confirmation.html" % (opts.app_label, opts.object_name.lower()),
+            f"admin/{opts.app_label}/{opts.object_name.lower()}/delete_confirmation.html",
             "admin/%s/delete_confirmation.html" % opts.app_label,
             "admin/delete_confirmation.html"
         ], context)
@@ -553,7 +553,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 # This also resolves the fk_name if it's set.
                 fk = inline.get_formset(request, obj).fk
 
-                rel_name = 'master__{0}'.format(fk.name)
+                rel_name = f'master__{fk.name}'
                 filters = {
                     'language_code': language_code,
                     rel_name: obj
@@ -574,8 +574,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         opts = self.model._meta
         app_label = opts.app_label
         return select_template_name((
-            "admin/{0}/{1}/change_form.html".format(app_label, opts.object_name.lower()),
-            "admin/{0}/change_form.html".format(app_label),
+            f"admin/{app_label}/{opts.object_name.lower()}/change_form.html",
+            f"admin/{app_label}/change_form.html",
             "admin/change_form.html"
         ))
 
@@ -645,7 +645,7 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
             # Hence, not looking at obj.get_available_languages(), but see what languages
             # are used by the inline objects that point to it.
             filter = {
-                'master__{0}'.format(formset.fk.name): obj
+                f'master__{formset.fk.name}': obj
             }
             return self.model._parler_meta.root_model.objects.using(obj._state.db).filter(**filter) \
                    .values_list('language_code', flat=True).distinct().order_by('language_code')

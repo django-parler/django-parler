@@ -126,14 +126,14 @@ def create_translations_model(shared_model, related_name, meta, **fields):
 
     if shared_model._meta.abstract:
         # This can't be done, because `master = ForeignKey(shared_model)` would fail.
-        raise TypeError("Can't create TranslatedFieldsModel for abstract class {0}".format(shared_model.__name__))
+        raise TypeError(f"Can't create TranslatedFieldsModel for abstract class {shared_model.__name__}")
 
     # Define inner Meta class
     meta['app_label'] = shared_model._meta.app_label
     meta['db_tablespace'] = shared_model._meta.db_tablespace
     meta['managed'] = shared_model._meta.managed
     meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
-    meta.setdefault('db_table', '{0}_translation'.format(shared_model._meta.db_table))
+    meta.setdefault('db_table', f'{shared_model._meta.db_table}_translation')
     meta.setdefault('verbose_name', _lazy_verbose_name(shared_model))
 
     # Avoid creating permissions for the translated model, these are not used at all.
@@ -141,11 +141,11 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     meta.setdefault('default_permissions', ())
 
     # Define attributes for translation table
-    name = str('{0}Translation'.format(shared_model.__name__))  # makes it bytes, for type()
+    name = str(f'{shared_model.__name__}Translation')  # makes it bytes, for type()
 
     attrs = {}
     attrs.update(fields)
-    attrs['Meta'] = type(str('Meta'), (object,), meta)
+    attrs['Meta'] = type('Meta', (object,), meta)
     attrs['__module__'] = shared_model.__module__
     attrs['objects'] = models.Manager()
     attrs['master'] = TranslationsForeignKey(shared_model, related_name=related_name, editable=False, null=True,
@@ -293,7 +293,7 @@ class TranslatableModelMixin:
 
         meta = self._parler_meta
         if self._translations_cache[meta.root_model].get(language_code, None):  # MISSING evaluates to False too
-            raise ValueError("Translation already exists: {0}".format(language_code))
+            raise ValueError(f"Translation already exists: {language_code}")
 
         # Save all fields in the proper translated model.
         for translation in self._set_translated_fields(language_code, **fields):
@@ -337,7 +337,7 @@ class TranslatableModelMixin:
                 pass
 
         if not num_deleted:
-            raise ValueError("Translation does not exist: {0}".format(language_code))
+            raise ValueError(f"Translation does not exist: {language_code}")
 
         return num_deleted
 
@@ -550,7 +550,7 @@ class TranslatableModelMixin:
                 except meta.model.DoesNotExist:
                     pass
 
-            fallback_msg = " (tried fallbacks {0})".format(', '.join(lang_dict['fallbacks']))
+            fallback_msg = " (tried fallbacks {})".format(', '.join(lang_dict['fallbacks']))
 
         # None of the above, bail out!
         raise meta.model.DoesNotExist(
@@ -948,7 +948,7 @@ class TranslatedFieldsModelMixin:
         try:
             base = shared_model._parler_meta
         except AttributeError:
-            raise TypeError("Translatable model {} does not appear to inherit from TranslatableModel".format(shared_model))
+            raise TypeError(f"Translatable model {shared_model} does not appear to inherit from TranslatableModel")
 
         if base is not None and base[-1].shared_model is shared_model:
             # If a second translations model is added, register it in the same object level.
@@ -983,7 +983,7 @@ class TranslatedFieldsModelMixin:
                 # Currently not allowing to replace existing model fields with translatable fields.
                 # That would be a nice feature addition however.
                 if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)):
-                    raise TypeError("The model '{0}' already has a field named '{1}'".format(shared_model.__name__, name))
+                    raise TypeError(f"The model '{shared_model.__name__}' already has a field named '{name}'")
 
                 # When the descriptor was placed on an abstract model,
                 # it doesn't point to the real model that holds the translations_model
@@ -993,13 +993,13 @@ class TranslatedFieldsModelMixin:
 
         # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
-        cls.DoesNotExist = type(str('DoesNotExist'), (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
+        cls.DoesNotExist = type('DoesNotExist', (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
 
     def __str__(self):
         return force_str(get_language_title(self.language_code))
 
     def __repr__(self):
-        return "<{0}: #{1}, {2}, master: #{3}>".format(
+        return "<{}: #{}, {}, master: #{}>".format(
             self.__class__.__name__, self.pk, self.language_code, self.master_id
         )
 
@@ -1032,7 +1032,7 @@ class ParlerMeta:
         return self.model.get_translated_fields(include_m2m=include_m2m)
 
     def __repr__(self):
-        return "<ParlerMeta: {0}.{1} to {2}>".format(
+        return "<ParlerMeta: {}.{} to {}>".format(
             self.shared_model.__name__,
             self.rel_name,
             self.model.__name__
@@ -1090,11 +1090,11 @@ class ParlerOptions:
 
     def __repr__(self):
         root = self.root
-        return "<ParlerOptions: {0}.{1} to {2}{3}>".format(
+        return "<ParlerOptions: {}.{} to {}{}>".format(
             root.shared_model.__name__,
             root.rel_name,
             root.model.__name__,
-            '' if len(self._extensions) == 1 else ", {0} extensions".format(len(self._extensions))
+            '' if len(self._extensions) == 1 else f", {len(self._extensions)} extensions"
         )
 
     @property
@@ -1123,7 +1123,7 @@ class ParlerOptions:
             else:
                 return next(meta for meta in self._extensions if meta.model == item)
         except (StopIteration, IndexError, KeyError):
-            raise KeyError("Item '{0}' not found".format(item))
+            raise KeyError(f"Item '{item}' not found")
 
     def __len__(self):
         return len(self._extensions)
@@ -1162,7 +1162,7 @@ class ParlerOptions:
         try:
             return self._fields_to_model[name]
         except KeyError:
-            raise FieldError("Translated field does not exist: '{0}'".format(name))
+            raise FieldError(f"Translated field does not exist: '{name}'")
 
     def get_model_by_related_name(self, related_name):
         meta = self._get_extension_by_related_name(related_name)
@@ -1199,7 +1199,7 @@ class ParlerOptions:
             if meta.rel_name == related_name:
                 return meta
 
-        raise ValueError("No translated model of '{0}' has a reverse name of '{1}'".format(
+        raise ValueError("No translated model of '{}' has a reverse name of '{}'".format(
             self.root.shared_model.__name__, related_name
         ))
 

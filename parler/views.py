@@ -84,7 +84,7 @@ class ViewUrlMixin:
             # When i18n_patterns() is applied, that resolve() will fail.
             #
             # Hence, you need to provide a "view_url_name" as static configuration option.
-            raise ImproperlyConfigured("Missing `view_url_name` attribute on {0}".format(self.__class__.__name__))
+            raise ImproperlyConfigured(f"Missing `view_url_name` attribute on {self.__class__.__name__}")
 
         return reverse(self.view_url_name, args=self.args, kwargs=self.kwargs)
 
@@ -163,7 +163,7 @@ class TranslatableSlugMixin:
                 break
 
         if obj is None:
-            tried_msg = ", tried languages: {0}".format(", ".join(choices))
+            tried_msg = ", tried languages: {}".format(", ".join(choices))
             error_message = translation.gettext("No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
             raise Http404(error_message + tried_msg)
 
