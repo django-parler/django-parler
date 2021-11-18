@@ -1,5 +1,5 @@
-.. image:: https://github.com/django-parler/django-parler/actions/workflows/django.yml/badge.svg
-    :target: https://github.com/django-parler/django-parler/actions/workflows/django.yml
+.. image:: https://github.com/django-parler/django-parler/actions/workflows/tests.yaml/badge.svg
+    :target: https://github.com/django-parler/django-parler/actions/workflows/tests.yaml
 .. image:: https://readthedocs.org/projects/django-parler/badge/?version=stable
     :target: https://django-parler.readthedocs.io/en/stable/
 .. image:: https://img.shields.io/pypi/v/django-parler.svg
