@@ -932,9 +932,9 @@ class TranslatedFieldsModelMixin:
         return [getattr(self, field.get_attname()) for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
 
     @classmethod
-    def get_translated_fields(cls, exclude_many_to_many=False):
+    def get_translated_fields(cls, include_m2m=True):
         res = [f.name for f in cls._meta.local_fields if f.name not in ('language_code', 'master', 'id')]
-        if not exclude_many_to_many:
+        if include_m2m:
             res += [f.name for f in cls._meta.local_many_to_many if f.name not in ('language_code', 'master', 'id')]
         return res
 
@@ -1023,13 +1023,13 @@ class ParlerMeta:
         self.model = translations_model
         self.rel_name = related_name
 
-    def get_translated_fields(self, exclude_many_to_many=False):
+    def get_translated_fields(self, include_m2m=True):
         """
         Return the translated fields of this model.
         """
         # TODO: should be named get_fields() ?
         # root_model always points to the real model for extensions
-        return self.model.get_translated_fields(exclude_many_to_many=exclude_many_to_many)
+        return self.model.get_translated_fields(include_m2m=include_m2m)
 
     def __repr__(self):
         return "<ParlerMeta: {0}.{1} to {2}>".format(
@@ -1146,14 +1146,14 @@ class ParlerOptions:
         """
         return self._fields_to_model.items()
 
-    def get_translated_fields(self, related_name=None, exclude_many_to_many=False):
+    def get_translated_fields(self, related_name=None, include_m2m=True):
         """
         Return the translated fields of this model.
         By default, the top-level translation is required, unless ``related_name`` is provided.
         """
         # TODO: should be named get_fields() ?
         meta = self._get_extension_by_related_name(related_name)
-        return meta.get_translated_fields(exclude_many_to_many=exclude_many_to_many)
+        return meta.get_translated_fields(include_m2m=include_m2m)
 
     def get_model_by_field(self, name):
         """

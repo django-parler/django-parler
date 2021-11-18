@@ -149,7 +149,7 @@ def _cache_translation(translation, timeout=cache.default_timeout):
 
     # Cache a translation object.
     # For internal usage, object parameters are not suited for outside usage.
-    fields = translation.get_translated_fields(exclude_many_to_many=True)
+    fields = translation.get_translated_fields(include_m2m=False)
     values = {'id': translation.id}
     for name in fields:
         values[name] = getattr(translation, name)
