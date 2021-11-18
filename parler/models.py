@@ -59,7 +59,7 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldE
 from django.db import models, router
 from django.db.models.base import ModelBase
 from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor, ManyToManyDescriptor
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.functional import lazy
 from django.utils.translation import gettext, gettext_lazy as _
 from parler import signals
@@ -996,7 +996,7 @@ class TranslatedFieldsModelMixin:
         cls.DoesNotExist = type(str('DoesNotExist'), (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
 
     def __str__(self):
-        return force_text(get_language_title(self.language_code))
+        return force_str(get_language_title(self.language_code))
 
     def __repr__(self):
         return "<{0}: #{1}, {2}, master: #{3}>".format(

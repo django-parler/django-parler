@@ -48,7 +48,7 @@ from django.forms import Media
 from django.http import HttpResponseRedirect, Http404, HttpRequest
 from django.shortcuts import render
 from django.urls import re_path, reverse
-from django.utils.encoding import iri_to_uri, force_text
+from django.utils.encoding import iri_to_uri, force_str
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
@@ -445,12 +445,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if request.POST: # The user has already confirmed the deletion.
             if perms_needed:
                 raise PermissionDenied
-            obj_display = _('{0} translation of {1}').format(lang, force_text(translation))  # in hvad: (translation.master)
+            obj_display = _('{0} translation of {1}').format(lang, force_str(translation))  # in hvad: (translation.master)
 
             self.log_deletion(request, translation, obj_display)
             self.delete_model_translation(request, translation)
             self.message_user(request, _('The %(name)s "%(obj)s" was deleted successfully.') % dict(
-                name=force_text(opts.verbose_name), obj=force_text(obj_display)
+                name=force_str(opts.verbose_name), obj=force_str(obj_display)
             ))
 
             if self.has_change_permission(request, None):
@@ -459,7 +459,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             else:
                 return HttpResponseRedirect(reverse('admin:index', current_app=self.admin_site.name))
 
-        object_name = _('{0} Translation').format(force_text(opts.verbose_name))
+        object_name = _('{0} Translation').format(force_str(opts.verbose_name))
         if perms_needed or protected:
             title = _("Cannot delete %(name)s") % {"name": object_name}
         else:
@@ -501,7 +501,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             'opts': opts,
             'app_label': opts.app_label,
             'language_name': get_language_title(language_code),
-            'object_name': force_text(opts.verbose_name)
+            'object_name': force_str(opts.verbose_name)
         }
         return render(request, self.deletion_not_allowed_template, context)
 

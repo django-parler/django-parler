@@ -24,7 +24,7 @@ Use them like any regular form widget::
 """
 import copy
 from django import forms
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.text import slugify
 
 __all__ = (
@@ -102,7 +102,7 @@ def _choicesorter(choice):
     else:
         # Lowercase to have case insensitive sorting.
         # For country list, normalize the strings (e.g. Österreich / Oman)
-        return slugify(force_text(choice[1]))
+        return slugify(force_str(choice[1]))
 
 
 class SortedSelect(SortedSelectMixin, forms.Select):

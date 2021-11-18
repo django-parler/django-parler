@@ -4,7 +4,8 @@ import django
 from django.test.html import parse_html, Element
 from django.test.utils import override_settings
 from django.urls import reverse
-from django.utils import encoding, translation
+from django.utils import translation
+from django.utils.encoding import smart_str
 from django.test import TestCase
 from django.contrib import auth
 from .models import Article, Category
@@ -35,10 +36,10 @@ class TestMixin:
         self.art_id = art.id
 
     def assertInContent(self, member, resp, msg=None):
-        return super().assertIn(member, encoding.smart_text(resp.content), msg)
+        return super().assertIn(member, smart_str(resp.content), msg)
 
     def assertNotInContent(self, member, resp, msg=None):
-        return super().assertNotIn(member, encoding.smart_text(resp.content), msg)
+        return super().assertNotIn(member, smart_str(resp.content), msg)
 
     def assertHTMLInContent(self, html_tag, resp):
         find_html = parse_html(html_tag)
@@ -47,7 +48,7 @@ class TestMixin:
         tag_name = find_html.name
         find_attrs = dict(find_html.attributes)
 
-        html = parse_html(encoding.smart_text(resp.content))
+        html = parse_html(smart_str(resp.content))
         queue = deque()
         queue.extend(html.children)
         while queue:
@@ -129,7 +130,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
 
         resp = self.client.get(reverse('admin:article_article_add'))
         self.assertEqual(200, resp.status_code)
-        self.assertIn('<h1>Add Article (Dutch)</h1>', encoding.smart_text(resp.content))
+        self.assertIn('<h1>Add Article (Dutch)</h1>', smart_str(resp.content))
 
         translation.activate('fr')
         resp = self.client.get(reverse('admin:article_article_add'))

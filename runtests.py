@@ -24,6 +24,7 @@ if not settings.configured:
                 'NAME': ':memory:'
             }
         },
+        DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField',
         CACHES = {
             # By explicit since many tests also need the caching support
             'default': {
