@@ -1,19 +1,29 @@
 Changelog
 =========
 
+Changes in 2.3 (2021-11-18)
+---------------------------
+
+* Added Django 4.0 support.
+* Added M2M field support.
+* Added PARLER_CACHE_PREFIX for sites that share the same cache.
+
+
 Changes in 2.2.1 (2021-10-18)
 -----------------------------
-* Drop support for Python-3.6.
-* Add support for Django-3.2.
-* Add support for python-3.9.
-* Remove deprecated providing_args from Django Signals.
+
+* Added support for Django 3.2.
+* Added support for python 3.9.
+* Dropped support for Python 3.5.
+* Fixed deprecation warning for ``providing_args`` in Django Signals.
 
 
 Changes in 2.2 (2020-09-06)
 -----------------------------
-* Drop support for Python-2.7.
-* Drop support for Django-2.1 and lower.
-* Add support for Django-3.1.
+
+* Added support for Django 3.1.
+* Drop support for Python 2.7.
+* Drop support for Django 1.11, 2.0, 2.1.
 
 
 Changes in 2.1 (2020-08-05)
