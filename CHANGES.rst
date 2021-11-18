@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Changes in 2.2.1 (2021-10-18)
+-----------------------------
+* Drop support for Python-3.6.
+* Add support for Django-3.2.
+* Add support for python-3.9.
+* Remove deprecated providing_args from Django Signals.
+
+
 Changes in 2.2 (2020-09-06)
 -----------------------------
 * Drop support for Python-2.7.

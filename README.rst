@@ -1,5 +1,5 @@
-.. image:: https://img.shields.io/travis/django-parler/django-parler/master.svg?branch=master
-    :target: http://travis-ci.org/django-parler/django-parler
+.. image:: https://github.com/django-parler/django-parler/actions/workflows/django.yml/badge.svg
+    :target: https://github.com/django-parler/django-parler/actions/workflows/django.yml
 .. image:: https://readthedocs.org/projects/django-parler/badge/?version=stable
     :target: https://django-parler.readthedocs.io/en/stable/
 .. image:: https://img.shields.io/pypi/v/django-parler.svg
@@ -8,6 +8,7 @@
     :target: https://pypi.python.org/pypi/django-parler/
 .. image:: https://img.shields.io/codecov/c/github/django-parler/django-parler/master.svg
     :target: https://codecov.io/github/django-parler/django-parler?branch=master
+
 
 django-parler
 =============
