@@ -6,7 +6,7 @@
 import os
 
 # Display sane URLs in the docs:
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
 # Required by Django
 SECRET_KEY = "foo"

@@ -20,20 +20,20 @@ from django.urls import reverse
 from django.utils import translation
 from django.views import generic
 from django.views.generic.edit import ModelFormMixin
+
 from parler.forms import TranslatableModelForm
 from parler.models import TranslatableModelMixin
 from parler.utils import get_active_language_choices
 from parler.utils.context import switch_language
 from parler.utils.views import get_language_parameter, get_language_tabs
 
-
 __all__ = (
-    'ViewUrlMixin',
-    'TranslatableSlugMixin',
-    'LanguageChoiceMixin',
-    'TranslatableModelFormMixin',
-    'TranslatableCreateView',
-    'TranslatableUpdateView',
+    "ViewUrlMixin",
+    "TranslatableSlugMixin",
+    "LanguageChoiceMixin",
+    "TranslatableModelFormMixin",
+    "TranslatableCreateView",
+    "TranslatableUpdateView",
 )
 
 
@@ -65,6 +65,7 @@ class ViewUrlMixin:
                 with switch_language(self.object, get_language()):
                     return reverse(self.view_url_name, kwargs={'slug': self.object.slug})
     """
+
     #: The default view name used by :func:`get_view_url`, which
     #: should correspond with the view name in the URLConf.
     view_url_name = None
@@ -84,7 +85,9 @@ class ViewUrlMixin:
             # When i18n_patterns() is applied, that resolve() will fail.
             #
             # Hence, you need to provide a "view_url_name" as static configuration option.
-            raise ImproperlyConfigured(f"Missing `view_url_name` attribute on {self.__class__.__name__}")
+            raise ImproperlyConfigured(
+                f"Missing `view_url_name` attribute on {self.__class__.__name__}"
+            )
 
         return reverse(self.view_url_name, args=self.args, kwargs=self.kwargs)
 
@@ -112,9 +115,7 @@ class TranslatableSlugMixin:
         """
         Allow passing other filters for translated fields.
         """
-        return {
-            self.get_slug_field(): slug
-        }
+        return {self.get_slug_field(): slug}
 
     def get_language(self):
         """
@@ -164,7 +165,9 @@ class TranslatableSlugMixin:
 
         if obj is None:
             tried_msg = ", tried languages: {}".format(", ".join(choices))
-            error_message = translation.gettext("No %(verbose_name)s found matching the query") % {'verbose_name': queryset.model._meta.verbose_name}
+            error_message = translation.gettext("No %(verbose_name)s found matching the query") % {
+                "verbose_name": queryset.model._meta.verbose_name
+            }
             raise Http404(error_message + tried_msg)
 
         # Object found!
@@ -199,7 +202,8 @@ class LanguageChoiceMixin:
     Mixin to add language selection support to class based views, particularly create and update views.
     It adds support for the ``?language=..`` parameter in the query string, and tabs in the context.
     """
-    query_language_key = 'language'
+
+    query_language_key = "language"
 
     def get_object(self, queryset=None):
         """
@@ -214,7 +218,9 @@ class LanguageChoiceMixin:
         """
         Get the language parameter from the current request.
         """
-        return get_language_parameter(self.request, self.query_language_key, default=self.get_default_language(object=object))
+        return get_language_parameter(
+            self.request, self.query_language_key, default=self.get_default_language(object=object)
+        )
 
     def get_default_language(self, object=None):
         """
@@ -236,7 +242,7 @@ class LanguageChoiceMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['language_tabs'] = self.get_language_tabs()
+        context["language_tabs"] = self.get_language_tabs()
         return context
 
     def get_language_tabs(self):
@@ -271,7 +277,9 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
         """
         super_method = super().get_form_class
         # no "__func__" on the class level function in python 3
-        default_method = getattr(ModelFormMixin.get_form_class, '__func__', ModelFormMixin.get_form_class)
+        default_method = getattr(
+            ModelFormMixin.get_form_class, "__func__", ModelFormMixin.get_form_class
+        )
         if not (super_method.__func__ is default_method):
             # Don't get in your way, if you've overwritten stuff.
             return super_method()
@@ -294,7 +302,7 @@ class TranslatableModelFormMixin(LanguageChoiceMixin):
         kwargs = super().get_form_kwargs()
         # The TranslatableAdmin can set form.language_code, because the modeladmin always creates a fresh subclass.
         # If that would be done here, the original globally defined form class would be updated.
-        kwargs['_current_language'] = self.get_form_language()
+        kwargs["_current_language"] = self.get_form_language()
         return kwargs
 
     # Backwards compatibility
@@ -310,6 +318,7 @@ class TranslatableCreateView(TranslatableModelFormMixin, generic.CreateView):
     This is a mix of the :class:`TranslatableModelFormMixin`
     and Django's :class:`~django.views.generic.edit.CreateView`.
     """
+
     pass
 
 
@@ -319,6 +328,7 @@ class TranslatableUpdateView(TranslatableModelFormMixin, generic.UpdateView):
     This is a mix of the :class:`TranslatableModelFormMixin`
     and Django's :class:`~django.views.generic.edit.UpdateView`.
     """
+
     pass
 
 
@@ -326,7 +336,7 @@ def _get_view_model(self):
     if self.model is not None:
         # If a model has been explicitly provided, use it
         return self.model
-    elif hasattr(self, 'object') and self.object is not None:
+    elif hasattr(self, "object") and self.object is not None:
         # If this view is operating on a single object, use the class of that object
         return self.object.__class__
     else:

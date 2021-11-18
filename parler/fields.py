@@ -20,25 +20,33 @@ def _validate_master(new_class):
     Check whether the 'master' field on a TranslatedFieldsModel is correctly configured.
     """
     if not new_class.master or not isinstance(new_class.master, ForwardManyToOneDescriptor):
-        raise ImproperlyConfigured(f"{new_class.__name__}.master should be a ForeignKey to the shared table.")
+        raise ImproperlyConfigured(
+            f"{new_class.__name__}.master should be a ForeignKey to the shared table."
+        )
 
     remote_field = new_class.master.field.remote_field
     shared_model = remote_field.model
 
     # Skip checks in migration
-    if shared_model.__module__ == '__fake__':
+    if shared_model.__module__ == "__fake__":
         return shared_model
 
     try:
         meta = shared_model._parler_meta
     except AttributeError:
-        raise TypeError(f"Translatable model {shared_model} does not appear to inherit from TranslatableModel")
+        raise TypeError(
+            f"Translatable model {shared_model} does not appear to inherit from TranslatableModel"
+        )
 
     if meta is not None:
         if meta._has_translations_model(new_class):
-            raise ImproperlyConfigured(f"The model '{shared_model.__name__}' already has an associated translation table!")
+            raise ImproperlyConfigured(
+                f"The model '{shared_model.__name__}' already has an associated translation table!"
+            )
         if meta._has_translations_field(remote_field.related_name):
-            raise ImproperlyConfigured(f"The model '{shared_model.__name__}' already has an associated translation field named '{remote_field.related_name}'!")
+            raise ImproperlyConfigured(
+                f"The model '{shared_model.__name__}' already has an associated translation field named '{remote_field.related_name}'!"
+            )
 
     return shared_model
 
@@ -47,6 +55,7 @@ class TranslationsForeignKey(models.ForeignKey):
     """
     Foreign Key field that adds translations to the `to` model.
     """
+
     def contribute_to_related_class(self, cls, related):
         from parler.models import TranslatedFieldsModelMixin
 
@@ -93,7 +102,7 @@ class TranslatedField:
         self._meta = None
 
     def contribute_to_class(self, cls, name, **kwargs):
-        #super().contribute_to_class(cls, name)
+        # super().contribute_to_class(cls, name)
         self.model = cls
         self.name = name
 
@@ -133,7 +142,9 @@ class TranslatedFieldDescriptor:
             translation = instance._get_translated_model(use_fallback=True, meta=meta)
         except meta.model.DoesNotExist as e:
             if self.field.any_language:
-                translation = instance._get_any_translated_model(meta=meta)  # returns None on error.
+                translation = instance._get_any_translated_model(
+                    meta=meta
+                )  # returns None on error.
 
             if translation is None:
                 # Improve error message
@@ -148,7 +159,9 @@ class TranslatedFieldDescriptor:
 
         # When assigning the property, assign to the current language.
         # No fallback is used in this case.
-        translation = instance._get_translated_model(use_fallback=False, auto_create=True, meta=self.field.meta)
+        translation = instance._get_translated_model(
+            use_fallback=False, auto_create=True, meta=self.field.meta
+        )
         setattr(translation, self.field.name, value)
 
     def __delete__(self, instance):
@@ -195,7 +208,9 @@ class LanguageCodeDescriptor:
         return instance._current_language
 
     def __set__(self, instance, value):
-        raise AttributeError("The 'language_code' attribute cannot be changed directly! Use the set_current_language() method instead.")
+        raise AttributeError(
+            "The 'language_code' attribute cannot be changed directly! Use the set_current_language() method instead."
+        )
 
     def __delete__(self, instance):
         raise AttributeError("The 'language_code' attribute cannot be deleted!")

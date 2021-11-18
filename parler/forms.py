@@ -1,18 +1,17 @@
 from django import forms
 from django.core.exceptions import NON_FIELD_ERRORS, ObjectDoesNotExist, ValidationError
 from django.forms import BoundField
-from django.forms.models import ModelFormMetaclass, BaseInlineFormSet
+from django.forms.models import BaseInlineFormSet, ModelFormMetaclass
 from django.utils.functional import cached_property
 from django.utils.translation import get_language
 from django.utils.translation.trans_real import get_supported_language_variant
 
 from parler.models import TranslationDoesNotExist
 
-
 __all__ = (
-    'TranslatableModelForm',
-    'TranslatedField',
-    'BaseTranslatableModelForm',
+    "TranslatableModelForm",
+    "TranslatedField",
+    "BaseTranslatableModelForm",
     #'TranslatableModelFormMetaclass',
 )
 
@@ -41,14 +40,15 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
     """
     The base methods added to :class:`TranslatableModelForm` to fetch and store translated fields.
     """
-    language_code = None    # Set by TranslatableAdmin.get_form() on the constructed subclass.
+
+    language_code = None  # Set by TranslatableAdmin.get_form() on the constructed subclass.
 
     def __init__(self, *args, **kwargs):
-        current_language = kwargs.pop('_current_language', None)   # Used for TranslatableViewMixin
+        current_language = kwargs.pop("_current_language", None)  # Used for TranslatableViewMixin
         super().__init__(*args, **kwargs)
 
         # Load the initial values for the translated fields
-        instance = kwargs.get('instance', None)
+        instance = kwargs.get("instance", None)
         if instance:
             for meta in instance._parler_meta:
                 try:
@@ -62,7 +62,9 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                     for field in meta.get_translated_fields():
                         try:
                             model_field = translation._meta.get_field(field)
-                            self.initial.setdefault(field, model_field.value_from_object(translation))
+                            self.initial.setdefault(
+                                field, model_field.value_from_object(translation)
+                            )
                         except ObjectDoesNotExist:
                             # This occurs when a ForeignKey field is part of the translation,
                             # but it's value is still not yet, and the field has null=False.
@@ -85,9 +87,9 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
             )
 
     def _get_translation_validation_exclusions(self, translation):
-        exclude = ['master']
-        if 'language_code' not in self.fields:
-            exclude.append('language_code')
+        exclude = ["master"]
+        if "language_code" not in self.fields:
+            exclude.append("language_code")
 
         # This is the same logic as Django's _get_validation_exclusions(),
         # only using the translation model instead of the master instance.
@@ -111,7 +113,11 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                 form_field = self.fields[field_name]
                 model_field = translation._meta.get_field(field_name)
                 field_value = self.cleaned_data.get(field_name)
-                if not model_field.blank and not form_field.required and field_value in form_field.empty_values:
+                if (
+                    not model_field.blank
+                    and not form_field.required
+                    and field_value in form_field.empty_values
+                ):
                     exclude.append(field_name)
 
         return exclude
@@ -143,7 +149,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
         translations = self.instance._set_translated_fields(**fields)
 
         # Perform full clean on models
-        non_translated_fields = {'id', 'master_id', 'language_code'}
+        non_translated_fields = {"id", "master_id", "language_code"}
         for translation in translations:
             self._post_clean_translation(translation)
 
@@ -156,8 +162,7 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
     def _post_clean_translation(self, translation):
         exclude = self._get_translation_validation_exclusions(translation)
         try:
-            translation.full_clean(
-                exclude=exclude, validate_unique=False)
+            translation.full_clean(exclude=exclude, validate_unique=False)
         except ValidationError as e:
             self._update_errors(e)
 
@@ -201,7 +206,7 @@ def _upgrade_boundfield_class(cls):
         return UPGRADED_CLASSES[cls]
     except KeyError:
         # Create once
-        new_cls = type(f'Translatable{cls.__name__}', (cls, TranslatableBoundField), {})
+        new_cls = type(f"Translatable{cls.__name__}", (cls, TranslatableBoundField), {})
         UPGRADED_CLASSES[cls] = new_cls
         return new_cls
 
@@ -210,14 +215,17 @@ class TranslatableBoundField(BoundField):
     """
     Decorating the regular BoundField to distinguish translatable fields in the admin.
     """
+
     #: A tagging attribute, making it easy for templates to identify these fields
     is_translatable = True
 
-    def label_tag(self, contents=None, attrs=None, *args, **kwargs):  # extra args differ per Django version
+    def label_tag(
+        self, contents=None, attrs=None, *args, **kwargs
+    ):  # extra args differ per Django version
         if attrs is None:
             attrs = {}
 
-        attrs['class'] = (attrs.get('class', '') + " translatable-field").strip()
+        attrs["class"] = (attrs.get("class", "") + " translatable-field").strip()
         return super().label_tag(contents, attrs, *args, **kwargs)
 
     # The as_widget() won't be overwritten to add a 'class' attr,
@@ -228,10 +236,13 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
     """
     Meta class to add translated form fields to the form.
     """
+
     def __new__(mcs, name, bases, attrs):
         # Before constructing class, fetch attributes from bases list.
-        form_meta = _get_mro_attribute(bases, '_meta')
-        form_base_fields = _get_mro_attribute(bases, 'base_fields', {})  # set by previous class level.
+        form_meta = _get_mro_attribute(bases, "_meta")
+        form_base_fields = _get_mro_attribute(
+            bases, "base_fields", {}
+        )  # set by previous class level.
 
         if form_meta:
             # Not declaring the base class itself, this is a subclass.
@@ -239,12 +250,14 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
             # Read the model from the 'Meta' attribute. This even works in the admin,
             # as `modelform_factory()` includes a 'Meta' attribute.
             # The other options can be read from the base classes.
-            form_new_meta = attrs.get('Meta', form_meta)
+            form_new_meta = attrs.get("Meta", form_meta)
             form_model = form_new_meta.model if form_new_meta else form_meta.model
 
             # Detect all placeholders at this class level.
             placeholder_fields = [
-                f_name for f_name, attr_value in attrs.items() if isinstance(attr_value, TranslatedField)
+                f_name
+                for f_name, attr_value in attrs.items()
+                if isinstance(attr_value, TranslatedField)
             ]
 
             # Include the translated fields as attributes, pretend that these exist on the form.
@@ -252,44 +265,53 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
             # since the admin always uses modelform_factory() on the form class, and therefore triggering this metaclass.
             if form_model:
                 for translations_model in form_model._parler_meta.get_all_models():
-                    fields = getattr(form_new_meta, 'fields', form_meta.fields)
-                    exclude = getattr(form_new_meta, 'exclude', form_meta.exclude) or ()
-                    widgets = getattr(form_new_meta, 'widgets', form_meta.widgets) or ()
-                    labels = getattr(form_new_meta, 'labels', form_meta.labels) or ()
-                    help_texts = getattr(form_new_meta, 'help_texts', form_meta.help_texts) or ()
-                    error_messages = getattr(form_new_meta, 'error_messages', form_meta.error_messages) or ()
-                    formfield_callback = attrs.get('formfield_callback', None)
+                    fields = getattr(form_new_meta, "fields", form_meta.fields)
+                    exclude = getattr(form_new_meta, "exclude", form_meta.exclude) or ()
+                    widgets = getattr(form_new_meta, "widgets", form_meta.widgets) or ()
+                    labels = getattr(form_new_meta, "labels", form_meta.labels) or ()
+                    help_texts = getattr(form_new_meta, "help_texts", form_meta.help_texts) or ()
+                    error_messages = (
+                        getattr(form_new_meta, "error_messages", form_meta.error_messages) or ()
+                    )
+                    formfield_callback = attrs.get("formfield_callback", None)
 
-                    if fields == '__all__':
+                    if fields == "__all__":
                         fields = None
 
                     for f_name in translations_model.get_translated_fields():
                         # Add translated field if not already added, and respect exclude options.
                         if f_name in placeholder_fields:
                             # The TranslatedField placeholder can be replaced directly with actual field, so do that.
-                            attrs[f_name] = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **attrs[f_name].kwargs)
+                            attrs[f_name] = _get_model_form_field(
+                                translations_model,
+                                f_name,
+                                formfield_callback=formfield_callback,
+                                **attrs[f_name].kwargs,
+                            )
 
                         # The next code holds the same logic as fields_for_model()
                         # The f.editable check happens in _get_model_form_field()
-                        elif f_name not in form_base_fields \
-                         and (fields is None or f_name in fields) \
-                         and f_name not in exclude \
-                         and not f_name in attrs:
+                        elif (
+                            f_name not in form_base_fields
+                            and (fields is None or f_name in fields)
+                            and f_name not in exclude
+                            and not f_name in attrs
+                        ):
                             # Get declared widget kwargs
                             if f_name in widgets:
                                 # Not combined with declared fields (e.g. the TranslatedField placeholder)
-                                kwargs = {'widget': widgets[f_name]}
+                                kwargs = {"widget": widgets[f_name]}
                             else:
                                 kwargs = {}
 
                             if f_name in help_texts:
-                                kwargs['help_text'] = help_texts[f_name]
+                                kwargs["help_text"] = help_texts[f_name]
 
                             if f_name in labels:
-                                kwargs['label'] = labels[f_name]
+                                kwargs["label"] = labels[f_name]
 
                             if f_name in error_messages:
-                                kwargs['error_messages'] = error_messages[f_name]
+                                kwargs["error_messages"] = error_messages[f_name]
 
                             # See if this formfield was previously defined using a TranslatedField placeholder.
                             placeholder = _get_mro_attribute(bases, f_name)
@@ -297,7 +319,12 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                                 kwargs.update(placeholder.kwargs)
 
                             # Add the form field as attribute to the class.
-                            formfield = _get_model_form_field(translations_model, f_name, formfield_callback=formfield_callback, **kwargs)
+                            formfield = _get_model_form_field(
+                                translations_model,
+                                f_name,
+                                formfield_callback=formfield_callback,
+                                **kwargs,
+                            )
                             if formfield is not None:
                                 attrs[f_name] = formfield
 
@@ -327,14 +354,16 @@ def _get_model_form_field(model, name, formfield_callback=None, **kwargs):
     if formfield_callback is None:
         formfield = field.formfield(**kwargs)
     elif not callable(formfield_callback):
-        raise TypeError('formfield_callback must be a function or callable')
+        raise TypeError("formfield_callback must be a function or callable")
     else:
         formfield = formfield_callback(field, **kwargs)
 
     return formfield
 
 
-class TranslatableModelForm(BaseTranslatableModelForm, forms.ModelForm, metaclass=TranslatableModelFormMetaclass):
+class TranslatableModelForm(
+    BaseTranslatableModelForm, forms.ModelForm, metaclass=TranslatableModelFormMetaclass
+):
     """
     The model form to use for translated models.
     """
@@ -352,11 +381,12 @@ class TranslatableBaseInlineFormSet(BaseInlineFormSet):
     """
     The formset base for creating inlines with translatable models.
     """
+
     language_code = None
 
     def _construct_form(self, i, **kwargs):
         form = super()._construct_form(i, **kwargs)
-        form.language_code = self.language_code   # Pass the language code for new objects!
+        form.language_code = self.language_code  # Pass the language code for new objects!
         return form
 
     def save_new(self, form, commit=True):

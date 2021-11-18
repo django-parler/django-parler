@@ -1,17 +1,17 @@
 import inspect
-from django.template import Node, Library, TemplateSyntaxError
+
+from django.template import Library, Node, TemplateSyntaxError
 from django.urls import reverse
 from django.utils.encoding import force_str
 from django.utils.translation import get_language
-from parler.models import TranslatableModel, TranslationDoesNotExist
-from parler.utils.context import switch_language, smart_override
 
+from parler.models import TranslatableModel, TranslationDoesNotExist
+from parler.utils.context import smart_override, switch_language
 
 register = Library()
 
 
 class ObjectLanguageNode(Node):
-
     def __init__(self, nodelist, object_var, language_var=None):
         self.nodelist = nodelist  # This name is special in the Node baseclass
         self.object_var = object_var
@@ -55,9 +55,11 @@ def objectlanguage(parser, token):
         object_var = parser.compile_filter(bits[1])
         language_var = parser.compile_filter(bits[2])
     else:
-        raise TemplateSyntaxError("'%s' takes one argument (object) and has one optional argument (language)" % bits[0])
+        raise TemplateSyntaxError(
+            "'%s' takes one argument (object) and has one optional argument (language)" % bits[0]
+        )
 
-    nodelist = parser.parse(('endobjectlanguage',))
+    nodelist = parser.parse(("endobjectlanguage",))
     parser.delete_first_token()
     return ObjectLanguageNode(nodelist, object_var, language_var)
 
@@ -95,31 +97,33 @@ def get_translated_url(context, lang_code, object=None):
     In such situation, *django-parler* assumes that the object may point to a completely different page,
     hence to query string is added.
     """
-    view = context.get('view', None)
-    request = context['request']
+    view = context.get("view", None)
+    request = context["request"]
 
     if object is not None:
         # Cannot reliable determine whether the current page is being translated,
         # or the template code provides a custom object to translate.
         # Hence, not passing the querystring of the current page
-        qs = ''
+        qs = ""
     else:
         # Try a few common object variables, the SingleObjectMixin object,
         # The Django CMS "current_page" variable, or the "page" from django-fluent-pages and Mezzanine.
         # This makes this tag work with most CMSes out of the box.
-        object = context.get('object', None) \
-              or context.get('current_page', None) \
-              or context.get('page', None)
+        object = (
+            context.get("object", None)
+            or context.get("current_page", None)
+            or context.get("page", None)
+        )
 
         # Assuming current page, preserve query string filters.
-        qs = request.META.get('QUERY_STRING', '')
+        qs = request.META.get("QUERY_STRING", "")
 
     try:
         if view is not None:
             # Allow a view to specify what the URL should be.
             # This handles situations where the slug might be translated,
             # and gives you complete control over the results of this template tag.
-            get_view_url = getattr(view, 'get_view_url', None)
+            get_view_url = getattr(view, "get_view_url", None)
             if get_view_url:
                 with smart_override(lang_code):
                     return _url_qs(view.get_view_url(), qs)
@@ -127,9 +131,9 @@ def get_translated_url(context, lang_code, object=None):
             # Now, the "best effort" part starts.
             # See if it's a DetailView that exposes the object.
             if object is None:
-                object = getattr(view, 'object', None)
+                object = getattr(view, "object", None)
 
-        if object is not None and hasattr(object, 'get_absolute_url'):
+        if object is not None and hasattr(object, "get_absolute_url"):
             # There is an object, get the URL in the different language.
             # NOTE: this *assumes* that there is a detail view, not some edit view.
             # In such case, a language menu would redirect a user from the edit page
@@ -148,7 +152,7 @@ def get_translated_url(context, lang_code, object=None):
     except TranslationDoesNotExist:
         # Typically projects have a fallback language, so even unknown languages will return something.
         # This either means fallbacks are disabled, or the fallback language is not found!
-        return ''
+        return ""
 
     # Just reverse the current URL again in a new language, and see where we end up.
     # This doesn't handle translated slugs, but will resolve to the proper view name.
@@ -156,16 +160,24 @@ def get_translated_url(context, lang_code, object=None):
     if resolver_match is None:
         # Can't resolve the page itself, the page is apparently a 404.
         # This can also happen for the homepage in an i18n_patterns situation.
-        return ''
+        return ""
 
     with smart_override(lang_code):
         clean_kwargs = _cleanup_urlpattern_kwargs(resolver_match.kwargs)
-        return _url_qs(reverse(resolver_match.view_name, args=resolver_match.args, kwargs=clean_kwargs, current_app=resolver_match.app_name), qs)
+        return _url_qs(
+            reverse(
+                resolver_match.view_name,
+                args=resolver_match.args,
+                kwargs=clean_kwargs,
+                current_app=resolver_match.app_name,
+            ),
+            qs,
+        )
 
 
 def _url_qs(url, qs):
-    if qs and '?' not in url:
-        return f'{force_str(url)}?{force_str(qs)}'
+    if qs and "?" not in url:
+        return f"{force_str(url)}?{force_str(qs)}"
     else:
         return force_str(url)
 

@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+
 from parler.models import TranslatableModel, TranslatedFields
 from parler.utils.context import switch_language
 
@@ -11,16 +12,13 @@ class Article(TranslatableModel):
 
     # The translated fields:
     translations = TranslatedFields(
-        title = models.CharField("Title", max_length=200),
-        slug = models.SlugField("Slug"),
-        content = models.TextField(),
-
+        title=models.CharField("Title", max_length=200),
+        slug=models.SlugField("Slug"),
+        content=models.TextField(),
         # Make slug unique per language
         meta={
-            'unique_together': (
-                ('slug', 'language_code'),
-            ),
-        }
+            "unique_together": (("slug", "language_code"),),
+        },
     )
 
     # Regular fields
@@ -41,11 +39,11 @@ class Article(TranslatableModel):
         # The switch_language() is needed because we use the /##/ prefix by i18n_patterns()
         # If the language is part of the URL parameters, you can pass it directly off course.
         with switch_language(self):
-            return reverse('article-details', kwargs={'slug': self.slug})
+            return reverse("article-details", kwargs={"slug": self.slug})
 
     def get_all_slugs(self):
         # Example illustration, how to fetch all slugs in a single query:
-        return dict(self.translations.values_list('language_code', 'slug'))
+        return dict(self.translations.values_list("language_code", "slug"))
 
 
 class Category(models.Model):

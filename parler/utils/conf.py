@@ -7,10 +7,11 @@ import sys
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from parler.utils.i18n import is_supported_django_language, get_null_language_error, get_language
+
+from parler.utils.i18n import get_language, get_null_language_error, is_supported_django_language
 
 
-def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', **extra_defaults):
+def add_default_language_settings(languages_list, var_name="PARLER_LANGUAGES", **extra_defaults):
     """
     Apply extra defaults to the language settings.
     This function can also be used by other packages to
@@ -42,16 +43,18 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     """
     languages_list = LanguagesSetting(languages_list)
 
-    languages_list.setdefault('default', {})
-    defaults = languages_list['default']
-    defaults.setdefault('hide_untranslated', False)   # Whether queries with .active_translations() may or may not return the fallback language.
+    languages_list.setdefault("default", {})
+    defaults = languages_list["default"]
+    defaults.setdefault(
+        "hide_untranslated", False
+    )  # Whether queries with .active_translations() may or may not return the fallback language.
 
-    if 'fallback' in defaults:
-        #warnings.warn("Please use 'fallbacks' instead of 'fallback' in the 'defaults' section of {0}".format(var_name), DeprecationWarning)
-        defaults['fallbacks'] = [defaults.pop('fallback')]
-    if 'fallback' in extra_defaults:
-        #warnings.warn("Please use 'fallbacks' instead of 'fallback' in parameters for {0} = add_default_language_settings(..)".format(var_name), DeprecationWarning)
-        extra_defaults['fallbacks'] = [extra_defaults.pop('fallback')]
+    if "fallback" in defaults:
+        # warnings.warn("Please use 'fallbacks' instead of 'fallback' in the 'defaults' section of {0}".format(var_name), DeprecationWarning)
+        defaults["fallbacks"] = [defaults.pop("fallback")]
+    if "fallback" in extra_defaults:
+        # warnings.warn("Please use 'fallbacks' instead of 'fallback' in parameters for {0} = add_default_language_settings(..)".format(var_name), DeprecationWarning)
+        extra_defaults["fallbacks"] = [extra_defaults.pop("fallback")]
 
     defaults.update(extra_defaults)  # Also allow to override code and fallback this way.
 
@@ -59,25 +62,35 @@ def add_default_language_settings(languages_list, var_name='PARLER_LANGUAGES', *
     # However, this module is a more logical place for this function. To avoid circular import problems,
     # the 'code' and 'fallback' parameters are always passed by the appsettings module.
     # In case these are missing, default to the original behavior for backwards compatibility.
-    if 'code' not in defaults:
+    if "code" not in defaults:
         from parler import appsettings
-        defaults['code'] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
-    if 'fallbacks' not in defaults:
-        from parler import appsettings
-        defaults['fallbacks'] = [appsettings.PARLER_DEFAULT_LANGUAGE_CODE]
 
-    if not is_supported_django_language(defaults['code']):
-        raise ImproperlyConfigured("The value for {}['defaults']['code'] ('{}') does not exist in LANGUAGES".format(var_name, defaults['code']))
+        defaults["code"] = appsettings.PARLER_DEFAULT_LANGUAGE_CODE
+    if "fallbacks" not in defaults:
+        from parler import appsettings
+
+        defaults["fallbacks"] = [appsettings.PARLER_DEFAULT_LANGUAGE_CODE]
+
+    if not is_supported_django_language(defaults["code"]):
+        raise ImproperlyConfigured(
+            "The value for {}['defaults']['code'] ('{}') does not exist in LANGUAGES".format(
+                var_name, defaults["code"]
+            )
+        )
 
     for site_id, lang_choices in languages_list.items():
-        if site_id == 'default':
+        if site_id == "default":
             continue
 
         if not isinstance(lang_choices, (list, tuple)):
-            raise ImproperlyConfigured(f"{var_name}[{site_id}] should be a tuple of language choices!")
+            raise ImproperlyConfigured(
+                f"{var_name}[{site_id}] should be a tuple of language choices!"
+            )
         for i, choice in enumerate(lang_choices):
-            if not is_supported_django_language(choice['code']):
-                raise ImproperlyConfigured(f"{var_name}[{site_id}][{i}]['code'] does not exist in LANGUAGES")
+            if not is_supported_django_language(choice["code"]):
+                raise ImproperlyConfigured(
+                    f"{var_name}[{site_id}][{i}]['code'] does not exist in LANGUAGES"
+                )
 
             # Copy all items from the defaults, so you can provide new fields too.
             for key, value in defaults.items():
@@ -104,18 +117,18 @@ class LanguagesSetting(dict):
             raise ValueError(get_null_language_error())
 
         if site_id is None:
-            site_id = getattr(settings, 'SITE_ID', None)
+            site_id = getattr(settings, "SITE_ID", None)
 
         for lang_dict in self.get(site_id, ()):
-            if lang_dict['code'] == language_code:
+            if lang_dict["code"] == language_code:
                 return lang_dict
 
         # no language match, search for variant: fr-ca falls back to fr
         for lang_dict in self.get(site_id, ()):
-            if lang_dict['code'].split('-')[0] == language_code.split('-')[0]:
+            if lang_dict["code"].split("-")[0] == language_code.split("-")[0]:
                 return lang_dict
 
-        return self['default']
+        return self["default"]
 
     def get_active_choices(self, language_code=None, site_id=None):
         """
@@ -127,8 +140,10 @@ class LanguagesSetting(dict):
             language_code = get_language()
 
         lang_dict = self.get_language(language_code, site_id=site_id)
-        if not lang_dict['hide_untranslated']:
-            return [language_code] + [lang for lang in lang_dict['fallbacks'] if lang != language_code]
+        if not lang_dict["hide_untranslated"]:
+            return [language_code] + [
+                lang for lang in lang_dict["fallbacks"] if lang != language_code
+            ]
         else:
             return [language_code]
 
@@ -161,7 +176,7 @@ class LanguagesSetting(dict):
         """
         Return the default language.
         """
-        return self['default']['code']
+        return self["default"]["code"]
 
     def get_first_language(self, site_id=None):
         """
@@ -169,14 +184,14 @@ class LanguagesSetting(dict):
         This can be used for user interfaces, where the languages are displayed in tabs.
         """
         if site_id is None:
-            site_id = getattr(settings, 'SITE_ID', None)
+            site_id = getattr(settings, "SITE_ID", None)
 
         try:
-            return self[site_id][0]['code']
+            return self[site_id][0]["code"]
         except (KeyError, IndexError):
             # No configuration, always fallback to default language.
             # This is essentially a non-multilingual configuration.
-            return self['default']['code']
+            return self["default"]["code"]
 
 
 def get_parler_languages_from_django_cms(cms_languages=None):
@@ -185,22 +200,18 @@ def get_parler_languages_from_django_cms(cms_languages=None):
     CMS_LANGUAGES is a strict superset of PARLER_LANGUAGES, we do a bit of
     cleansing to remove irrelevant items.
     """
-    valid_keys = ['code', 'fallbacks', 'hide_untranslated',
-                  'redirect_on_fallback']
+    valid_keys = ["code", "fallbacks", "hide_untranslated", "redirect_on_fallback"]
     if cms_languages:
         parler_languages = copy.deepcopy(cms_languages)
         for site_id, site_config in cms_languages.items():
-            if site_id and (
-                    not isinstance(site_id, int) and
-                    site_id != 'default'
-            ):
+            if site_id and (not isinstance(site_id, int) and site_id != "default"):
                 del parler_languages[site_id]
                 continue
 
-            if site_id == 'default':
+            if site_id == "default":
                 for key, value in site_config.items():
                     if key not in valid_keys:
-                        del parler_languages['default'][key]
+                        del parler_languages["default"][key]
             else:
                 for i, lang_config in enumerate(site_config):
                     for key, value in lang_config.items():

@@ -22,19 +22,19 @@ Use them like any regular form widget::
 
 """
 import copy
+
 from django import forms
 from django.utils.encoding import force_str
 from django.utils.text import slugify
 
 __all__ = (
-    'SortedSelect',
-    'SortedSelectMultiple',
-    'SortedCheckboxSelectMultiple',
+    "SortedSelect",
+    "SortedSelectMultiple",
+    "SortedCheckboxSelectMultiple",
 )
 
 
 class SortedChoiceIterator:
-
     def __init__(self, field):
         self.field = field
 
@@ -53,7 +53,7 @@ class SortedSelectMixin:
 
     def __init__(self, attrs=None, choices=()):
         super().__init__(attrs, choices=())
-        self._choices = choices   # super may set self.choices=()
+        self._choices = choices  # super may set self.choices=()
         self._sorted = False
 
     @property
@@ -108,6 +108,7 @@ class SortedSelect(SortedSelectMixin, forms.Select):
     """
     A select box which sorts it's options.
     """
+
     pass
 
 
@@ -115,6 +116,7 @@ class SortedSelectMultiple(SortedSelectMixin, forms.SelectMultiple):
     """
     A multiple-select box which sorts it's options.
     """
+
     pass
 
 
@@ -122,4 +124,5 @@ class SortedCheckboxSelectMultiple(SortedSelectMixin, forms.CheckboxSelectMultip
     """
     A checkbox group with sorted choices.
     """
+
     pass

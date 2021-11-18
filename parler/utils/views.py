@@ -2,11 +2,12 @@
 Internal DRY functions.
 """
 from django.conf import settings
+
 from parler import appsettings
-from parler.utils import normalize_language_code, is_multilingual_project, get_language_title
+from parler.utils import get_language_title, is_multilingual_project, normalize_language_code
 
 
-def get_language_parameter(request, query_language_key='language', object=None, default=None):
+def get_language_parameter(request, query_language_key="language", object=None, default=None):
     """
     Get the language parameter from the current request.
     """
@@ -36,19 +37,19 @@ def get_language_tabs(request, current_language, available_languages, css_class=
     get = request.GET.copy()  # QueryDict object
     tab_languages = []
 
-    site_id = getattr(settings, 'SITE_ID', None)
+    site_id = getattr(settings, "SITE_ID", None)
     for lang_dict in appsettings.PARLER_LANGUAGES.get(site_id, ()):
-        code = lang_dict['code']
+        code = lang_dict["code"]
         title = get_language_title(code)
-        get['language'] = code
-        url = f'?{get.urlencode()}'
+        get["language"] = code
+        url = f"?{get.urlencode()}"
 
         if code == current_language:
-            status = 'current'
+            status = "current"
         elif code in available_languages:
-            status = 'available'
+            status = "available"
         else:
-            status = 'empty'
+            status = "empty"
 
         tabs.append((url, title, code, status))
         tab_languages.append(code)
@@ -57,13 +58,13 @@ def get_language_tabs(request, current_language, available_languages, css_class=
     if appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS:
         for code in available_languages:
             if code not in tab_languages:
-                get['language'] = code
-                url = f'?{get.urlencode()}'
+                get["language"] = code
+                url = f"?{get.urlencode()}"
 
                 if code == current_language:
-                    status = 'current'
+                    status = "current"
                 else:
-                    status = 'available'
+                    status = "available"
 
                 tabs.append((url, get_language_title(code), code, status))
 
@@ -73,7 +74,6 @@ def get_language_tabs(request, current_language, available_languages, css_class=
 
 
 class TabsList(list):
-
     def __init__(self, seq=(), css_class=None):
         self.css_class = css_class
         self.current_is_translated = False

@@ -3,9 +3,7 @@ Django compatibility features
 """
 from django.db import models
 
-__all__ = (
-    'HideChoicesCharField',
-)
+__all__ = ("HideChoicesCharField",)
 
 
 class HideChoicesCharField(models.CharField):
@@ -15,10 +13,10 @@ class HideChoicesCharField(models.CharField):
         name, path, args, kwargs = models.CharField.deconstruct(self)
 
         # Hide the fact this model was used.
-        if path == __name__ + '.HideChoicesCharField':
-            path = 'django.db.models.CharField'
+        if path == __name__ + ".HideChoicesCharField":
+            path = "django.db.models.CharField"
         try:
-            del kwargs['choices']
+            del kwargs["choices"]
         except KeyError:
             pass
 

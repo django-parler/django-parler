@@ -1,7 +1,9 @@
 from django.utils.translation import get_language
-from django.views.generic import ListView, DetailView
-from .models import Article
+from django.views.generic import DetailView, ListView
+
 from parler.views import TranslatableSlugMixin
+
+from .models import Article
 
 
 class BaseArticleMixin:
@@ -13,7 +15,7 @@ class BaseArticleMixin:
 
 class ArticleListView(BaseArticleMixin, ListView):
     model = Article
-    template_name = 'article/list.html'
+    template_name = "article/list.html"
 
     def get_queryset(self):
         # Only show objects translated in the current language.
@@ -23,4 +25,4 @@ class ArticleListView(BaseArticleMixin, ListView):
 
 class ArticleDetailView(BaseArticleMixin, TranslatableSlugMixin, DetailView):
     model = Article
-    template_name = 'article/details.html'  # This works as expected
+    template_name = "article/details.html"  # This works as expected

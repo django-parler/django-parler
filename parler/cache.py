@@ -6,6 +6,7 @@ Since all calls to the translation table are routed through our model descriptor
 cache access and expiry is rather simple to implement.
 """
 from django.core.cache import cache
+
 from parler import appsettings
 from parler.utils import get_language_settings
 
@@ -18,6 +19,7 @@ class IsMissing:
 
     def __repr__(self):
         return "<IsMissing>"
+
 
 MISSING = IsMissing()  # sentinel value
 
@@ -55,7 +57,7 @@ def get_translation_cache_key(translated_model, master_id, language_code):
     # Always cache the entire object, as this already produces
     # a lot of queries. Don't go for caching individual fields.
     prefix = f"{appsettings.PARLER_CACHE_PREFIX}." if appsettings.PARLER_CACHE_PREFIX else ""
-    return f'{prefix}parler.{translated_model._meta.app_label}.{translated_model.__name__}.{master_id}.{language_code}'
+    return f"{prefix}parler.{translated_model._meta.app_label}.{translated_model.__name__}.{master_id}.{language_code}"
 
 
 def get_cached_translation(instance, language_code=None, related_name=None, use_fallback=False):
@@ -116,7 +118,7 @@ def _get_cached_values(instance, translated_model, language_code, use_fallback=F
         return None
 
     # Check for a stored fallback marker
-    if values.get('__FALLBACK__', False):
+    if values.get("__FALLBACK__", False):
         # Internal trick, already set the fallback marker, so no query will be performed.
         instance._translations_cache[translated_model][language_code] = MISSING
 
@@ -125,16 +127,15 @@ def _get_cached_values(instance, translated_model, language_code, use_fallback=F
             lang_dict = get_language_settings(language_code)
             # iterate over list of fallback languages, which should be already
             # in proper order
-            for fallback_lang in lang_dict['fallbacks']:
+            for fallback_lang in lang_dict["fallbacks"]:
                 if fallback_lang != language_code:
                     return _get_cached_values(
-                        instance, translated_model, fallback_lang,
-                        use_fallback=False
+                        instance, translated_model, fallback_lang, use_fallback=False
                     )
         return None
 
-    values['master'] = instance
-    values['language_code'] = language_code
+    values["master"] = instance
+    values["language_code"] = language_code
     return values
 
 
@@ -151,15 +152,19 @@ def _cache_translation(translation, timeout=cache.default_timeout):
     # Cache a translation object.
     # For internal usage, object parameters are not suited for outside usage.
     fields = translation.get_translated_fields(include_m2m=False)
-    values = {'id': translation.id}
+    values = {"id": translation.id}
     for name in fields:
         values[name] = getattr(translation, name)
 
-    key = get_translation_cache_key(translation.__class__, translation.master_id, translation.language_code)
+    key = get_translation_cache_key(
+        translation.__class__, translation.master_id, translation.language_code
+    )
     cache.set(key, values, timeout=timeout)
 
 
-def _cache_translation_needs_fallback(instance, language_code, related_name, timeout=cache.default_timeout):
+def _cache_translation_needs_fallback(
+    instance, language_code, related_name, timeout=cache.default_timeout
+):
     """
     Store the fact that a translation doesn't exist, and the fallback should be used.
     """
@@ -168,7 +173,7 @@ def _cache_translation_needs_fallback(instance, language_code, related_name, tim
 
     tr_model = instance._parler_meta.get_model_by_related_name(related_name)
     key = get_translation_cache_key(tr_model, instance.pk, language_code)
-    cache.set(key, {'__FALLBACK__': True}, timeout=timeout)
+    cache.set(key, {"__FALLBACK__": True}, timeout=timeout)
 
 
 def _delete_cached_translations(shared_model):
@@ -181,5 +186,7 @@ def _delete_cached_translation(translation):
 
     # Delete a cached translation
     # For internal usage, object parameters are not suited for outside usage.
-    key = get_translation_cache_key(translation.__class__, translation.master_id, translation.language_code)
+    key = get_translation_cache_key(
+        translation.__class__, translation.master_id, translation.language_code
+    )
     cache.delete(key)

@@ -53,32 +53,63 @@ the :func:`~django.db.models.Model.save` method, or add new methods yourself.
 The translated model is compatible with django-hvad, making the transition between both projects relatively easy.
 The manager and queryset objects of django-parler can work together with django-mptt and django-polymorphic.
 """
-from collections import defaultdict, OrderedDict
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured, ValidationError, FieldError, ObjectDoesNotExist
-from django.db import models, router
-from django.db.models.base import ModelBase
-from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor, ManyToManyDescriptor
-from django.utils.encoding import force_str
-from django.utils.functional import lazy
-from django.utils.translation import gettext, gettext_lazy as _
-from parler import signals
-from parler.cache import MISSING, _cache_translation, _cache_translation_needs_fallback, _delete_cached_translation, get_cached_translation, _delete_cached_translations, get_cached_translated_field, is_missing
-from parler.fields import TranslatedField, LanguageCodeDescriptor, TranslatedFieldDescriptor, TranslationsForeignKey, _validate_master
-from parler.managers import TranslatableManager
-from parler.utils import compat
-from parler.utils.i18n import (normalize_language_code, get_language, get_language_settings, get_language_title,
-                               get_null_language_error)
 import sys
 import warnings
+from collections import OrderedDict, defaultdict
+
+from django.conf import settings
+from django.core.exceptions import (
+    FieldError,
+    ImproperlyConfigured,
+    ObjectDoesNotExist,
+    ValidationError,
+)
+from django.db import models, router
+from django.db.models.base import ModelBase
+from django.db.models.fields.related_descriptors import (
+    ForwardManyToOneDescriptor,
+    ManyToManyDescriptor,
+)
+from django.utils.encoding import force_str
+from django.utils.functional import lazy
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
+
+from parler import signals
+from parler.cache import (
+    MISSING,
+    _cache_translation,
+    _cache_translation_needs_fallback,
+    _delete_cached_translation,
+    _delete_cached_translations,
+    get_cached_translated_field,
+    get_cached_translation,
+    is_missing,
+)
+from parler.fields import (
+    LanguageCodeDescriptor,
+    TranslatedField,
+    TranslatedFieldDescriptor,
+    TranslationsForeignKey,
+    _validate_master,
+)
+from parler.managers import TranslatableManager
+from parler.utils import compat
+from parler.utils.i18n import (
+    get_language,
+    get_language_settings,
+    get_language_title,
+    get_null_language_error,
+    normalize_language_code,
+)
 
 __all__ = (
-    'TranslatableModelMixin',
-    'TranslatableModel',
-    'TranslatedFields',
-    'TranslatedFieldsModel',
-    'TranslatedFieldsModelBase',
-    'TranslationDoesNotExist',
+    "TranslatableModelMixin",
+    "TranslatableModel",
+    "TranslatedFields",
+    "TranslatedFieldsModel",
+    "TranslatedFieldsModelBase",
+    "TranslationDoesNotExist",
     #'create_translations_model',
 )
 
@@ -99,6 +130,7 @@ class TranslationDoesNotExist(AttributeError, ObjectDoesNotExist):
 
     This makes sure that the regular code flow is decently handled by existing exception handlers.
     """
+
     pass
 
 
@@ -126,30 +158,37 @@ def create_translations_model(shared_model, related_name, meta, **fields):
 
     if shared_model._meta.abstract:
         # This can't be done, because `master = ForeignKey(shared_model)` would fail.
-        raise TypeError(f"Can't create TranslatedFieldsModel for abstract class {shared_model.__name__}")
+        raise TypeError(
+            f"Can't create TranslatedFieldsModel for abstract class {shared_model.__name__}"
+        )
 
     # Define inner Meta class
-    meta['app_label'] = shared_model._meta.app_label
-    meta['db_tablespace'] = shared_model._meta.db_tablespace
-    meta['managed'] = shared_model._meta.managed
-    meta['unique_together'] = list(meta.get('unique_together', [])) + [('language_code', 'master')]
-    meta.setdefault('db_table', f'{shared_model._meta.db_table}_translation')
-    meta.setdefault('verbose_name', _lazy_verbose_name(shared_model))
+    meta["app_label"] = shared_model._meta.app_label
+    meta["db_tablespace"] = shared_model._meta.db_tablespace
+    meta["managed"] = shared_model._meta.managed
+    meta["unique_together"] = list(meta.get("unique_together", [])) + [("language_code", "master")]
+    meta.setdefault("db_table", f"{shared_model._meta.db_table}_translation")
+    meta.setdefault("verbose_name", _lazy_verbose_name(shared_model))
 
     # Avoid creating permissions for the translated model, these are not used at all.
     # This also avoids creating lengthy permission names above 50 chars.
-    meta.setdefault('default_permissions', ())
+    meta.setdefault("default_permissions", ())
 
     # Define attributes for translation table
-    name = str(f'{shared_model.__name__}Translation')  # makes it bytes, for type()
+    name = str(f"{shared_model.__name__}Translation")  # makes it bytes, for type()
 
     attrs = {}
     attrs.update(fields)
-    attrs['Meta'] = type('Meta', (object,), meta)
-    attrs['__module__'] = shared_model.__module__
-    attrs['objects'] = models.Manager()
-    attrs['master'] = TranslationsForeignKey(shared_model, related_name=related_name, editable=False, null=True,
-                                             on_delete=models.CASCADE)
+    attrs["Meta"] = type("Meta", (object,), meta)
+    attrs["__module__"] = shared_model.__module__
+    attrs["objects"] = models.Manager()
+    attrs["master"] = TranslationsForeignKey(
+        shared_model,
+        related_name=related_name,
+        editable=False,
+        null=True,
+        on_delete=models.CASCADE,
+    )
 
     # Create and return the new model
     translations_model = TranslatedFieldsModelBase(name, (TranslatedFieldsModel,), attrs)
@@ -223,6 +262,7 @@ class TranslatableModelMixin:
 
     All translatable fields will appear on this model, proxying the calls to the :class:`TranslatedFieldsModel`.
     """
+
     #: Access to the metadata of the translatable model
     #: :type: ParlerOptions
     _parler_meta = None  # type: ParlerOptions
@@ -235,7 +275,7 @@ class TranslatableModelMixin:
         translated_kwargs = {}
         current_language = None
         if kwargs:
-            current_language = kwargs.pop('_current_language', None)
+            current_language = kwargs.pop("_current_language", None)
             for field in self._parler_meta.get_all_fields():
                 try:
                     translated_kwargs[field] = kwargs.pop(field)
@@ -253,7 +293,9 @@ class TranslatableModelMixin:
 
         # Assign translated args manually.
         self._translations_cache = defaultdict(dict)
-        self._current_language = normalize_language_code(current_language or get_language())  # What you used to fetch the object is what you get.
+        self._current_language = normalize_language_code(
+            current_language or get_language()
+        )  # What you used to fetch the object is what you get.
 
         if translated_kwargs:
             self._set_translated_fields(self._current_language, **translated_kwargs)
@@ -264,7 +306,9 @@ class TranslatableModelMixin:
         """
         objects = []  # no generator, make sure objects are all filled first
         for parler_meta, model_fields in self._parler_meta._split_fields(**fields):
-            translation = self._get_translated_model(language_code=language_code, auto_create=True, meta=parler_meta)
+            translation = self._get_translated_model(
+                language_code=language_code, auto_create=True, meta=parler_meta
+            )
             for field, value in model_fields.items():
                 try:
                     setattr(translation, field, value)
@@ -292,7 +336,9 @@ class TranslatableModelMixin:
             raise ValueError(get_null_language_error())
 
         meta = self._parler_meta
-        if self._translations_cache[meta.root_model].get(language_code, None):  # MISSING evaluates to False too
+        if self._translations_cache[meta.root_model].get(
+            language_code, None
+        ):  # MISSING evaluates to False too
             raise ValueError(f"Translation already exists: {language_code}")
 
         # Save all fields in the proper translated model.
@@ -372,7 +418,7 @@ class TranslatableModelMixin:
         which are used in case there is no translation for the currently active language.
         """
         lang_dict = get_language_settings(self._current_language)
-        fallbacks = [lang for lang in lang_dict['fallbacks'] if lang != self._current_language]
+        fallbacks = [lang for lang in lang_dict["fallbacks"] if lang != self._current_language]
         return fallbacks or []
 
     def has_translation(self, language_code=None, related_name=None):
@@ -403,13 +449,17 @@ class TranslatableModelMixin:
 
             # Try to fetch from the cache first.
             # If the cache returns the fallback, it means the original does not exist.
-            object = get_cached_translation(self, language_code, related_name=related_name, use_fallback=True)
+            object = get_cached_translation(
+                self, language_code, related_name=related_name, use_fallback=True
+            )
             if object is not None:
                 return object.language_code == language_code
 
             try:
                 # Fetch from DB, fill the cache.
-                self._get_translated_model(language_code, use_fallback=False, auto_create=False, meta=meta)
+                self._get_translated_model(
+                    language_code, use_fallback=False, auto_create=False, meta=meta
+                )
             except meta.model.DoesNotExist:
                 return False
             else:
@@ -429,10 +479,12 @@ class TranslatableModelMixin:
             db_languages = sorted(obj.language_code for obj in prefetch)
         else:
             qs = self._get_translated_queryset(meta=meta)
-            db_languages = qs.values_list('language_code', flat=True).order_by('language_code')
+            db_languages = qs.values_list("language_code", flat=True).order_by("language_code")
 
         if include_unsaved:
-            local_languages = (k for k, v in self._translations_cache[meta.model].items() if not is_missing(v))
+            local_languages = (
+                k for k, v in self._translations_cache[meta.model].items() if not is_missing(v)
+            )
             return list(set(db_languages) | set(local_languages))
         else:
             return db_languages
@@ -444,14 +496,18 @@ class TranslatableModelMixin:
         meta = self._parler_meta._get_extension_by_related_name(related_name)
         return self._get_translated_model(language_code, meta=meta)
 
-    def _get_translated_model(self, language_code=None, use_fallback=False, auto_create=False, meta=None):
+    def _get_translated_model(
+        self, language_code=None, use_fallback=False, auto_create=False, meta=None
+    ):
         """
         Fetch the translated fields model.
         """
         if self._parler_meta is None:
             raise ImproperlyConfigured("No translation is assigned to the current model!")
         if self._translations_cache is None:
-            raise RuntimeError("Accessing translated fields before super.__init__() is not possible.")
+            raise RuntimeError(
+                "Accessing translated fields before super.__init__() is not possible."
+            )
 
         if not language_code:
             language_code = self._current_language
@@ -486,7 +542,9 @@ class TranslatableModelMixin:
                             return object
                 else:
                     # 2.2, fetch from memcached
-                    object = get_cached_translation(self, language_code, related_name=meta.rel_name, use_fallback=use_fallback)
+                    object = get_cached_translation(
+                        self, language_code, related_name=meta.rel_name, use_fallback=use_fallback
+                    )
                     if object is not None:
                         # Track in local cache
                         if object.language_code != language_code:
@@ -500,7 +558,9 @@ class TranslatableModelMixin:
                     else:
                         # 2.3, fetch from database
                         try:
-                            object = self._get_translated_queryset(meta).get(language_code=language_code)
+                            object = self._get_translated_queryset(meta).get(
+                                language_code=language_code
+                            )
                         except meta.model.DoesNotExist:
                             pass
                         else:
@@ -515,11 +575,11 @@ class TranslatableModelMixin:
         if auto_create:
             # Auto create policy first (e.g. a __set__ call)
             kwargs = {
-                'language_code': language_code,
+                "language_code": language_code,
             }
             if self.pk and not self._state.adding:
                 # ID might be None at this point, and Django does not allow that.
-                kwargs['master'] = self
+                kwargs["master"] = self
 
             object = meta.model(**kwargs)
             local_cache[language_code] = object
@@ -537,26 +597,32 @@ class TranslatableModelMixin:
             if not self._state.adding or self.pk is not None:
                 _cache_translation_needs_fallback(self, language_code, related_name=meta.rel_name)
 
-        fallback_choices = [lang_dict['code']] + list(lang_dict['fallbacks'])
+        fallback_choices = [lang_dict["code"]] + list(lang_dict["fallbacks"])
         if use_fallback and fallback_choices:
             # Jump to fallback language, return directly.
             # Don't cache under this language_code
             for fallback_lang in fallback_choices:
-                if fallback_lang == language_code:  # Skip the current language, could also be fallback 1 of 2 choices
+                if (
+                    fallback_lang == language_code
+                ):  # Skip the current language, could also be fallback 1 of 2 choices
                     continue
 
                 try:
-                    return self._get_translated_model(fallback_lang, use_fallback=False, auto_create=auto_create, meta=meta)
+                    return self._get_translated_model(
+                        fallback_lang, use_fallback=False, auto_create=auto_create, meta=meta
+                    )
                 except meta.model.DoesNotExist:
                     pass
 
-            fallback_msg = " (tried fallbacks {})".format(', '.join(lang_dict['fallbacks']))
+            fallback_msg = " (tried fallbacks {})".format(", ".join(lang_dict["fallbacks"]))
 
         # None of the above, bail out!
         raise meta.model.DoesNotExist(
             "{0} does not have a translation for the current language!\n"
-            "{0} ID #{1}, language={2}{3}".format(self._meta.verbose_name, self.pk, language_code, fallback_msg or ''
-        ))
+            "{0} ID #{1}, language={2}{3}".format(
+                self._meta.verbose_name, self.pk, language_code, fallback_msg or ""
+            )
+        )
 
     def _get_any_translated_model(self, meta=None):
         """
@@ -646,7 +712,7 @@ class TranslatableModelMixin:
         # Makes no sense to add these for translated model
         # Even worse: mptt 0.7 injects this parameter when it avoids updating the lft/rgt fields,
         # but that misses all the translated fields.
-        kwargs.pop('update_fields', None)
+        kwargs.pop("update_fields", None)
 
         self.save_translations(*args, **kwargs)
 
@@ -783,6 +849,7 @@ class TranslatableModelMixin:
         super().refresh_from_db(*args, **kwargs)
         _delete_cached_translations(self)
         self._translations_cache.clear()
+
     refresh_from_db.alters_data = True
 
 
@@ -792,6 +859,7 @@ class TranslatableModel(TranslatableModelMixin, models.Model):
 
     All translatable fields will appear on this model, proxying the calls to the :class:`TranslatedFieldsModel`.
     """
+
     class Meta:
         abstract = True
 
@@ -811,6 +879,7 @@ class TranslatedFieldsModelBase(ModelBase):
     * It tells the original model to use this model for translations.
     * It adds the proxy attributes to the shared model.
     """
+
     def __new__(mcs, name, bases, attrs):
 
         new_class = super().__new__(mcs, name, bases, attrs)
@@ -821,10 +890,11 @@ class TranslatedFieldsModelBase(ModelBase):
         if new_class._meta.abstract or new_class._meta.proxy:
             return new_class
 
-        if not isinstance(getattr(new_class.master, 'field'), TranslationsForeignKey):
+        if not isinstance(getattr(new_class.master, "field"), TranslationsForeignKey):
             warnings.warn(
                 "Please change {}.master to a parler.fields.TranslationsForeignKey field to support translations in "
-                "data migrations.".format(new_class._meta.model_name), DeprecationWarning,
+                "data migrations.".format(new_class._meta.model_name),
+                DeprecationWarning,
             )
 
             # Validate a manually configured class.
@@ -840,8 +910,9 @@ class TranslatedFieldsModelMixin:
     """
     Base class for the model that holds the translated fields.
     """
+
     #: The mandatory Foreign key field to the shared model.
-    master = None   # FK to shared model.
+    master = None  # FK to shared model.
 
     def __init__(self, *args, **kwargs):
         signals.pre_translation_init.send(sender=self.__class__, args=args, kwargs=kwargs)
@@ -885,17 +956,18 @@ class TranslatedFieldsModelMixin:
         #
         # Either use translation.activate() first, or pass the language code explicitly via
         # MyModel.objects.language('en').create(..)
-        assert self.language_code is not None, ""\
-            "No language is set or detected for this TranslatableModelMixin.\n" \
+        assert self.language_code is not None, (
+            ""
+            "No language is set or detected for this TranslatableModelMixin.\n"
             "Is the translations system initialized?"
+        )
 
         # Send the pre_save signal
         using = using or router.db_for_write(self.__class__, instance=self)
         record_exists = self.pk is not None  # Ignoring force_insert/force_update for now.
         if not self._meta.auto_created:
             signals.pre_translation_save.send(
-                sender=self.shared_model, instance=self,
-                raw=raw, using=using
+                sender=self.shared_model, instance=self, raw=raw, using=using
             )
 
         # Perform save
@@ -906,36 +978,59 @@ class TranslatedFieldsModelMixin:
         # Send the post_save signal
         if not self._meta.auto_created:
             signals.post_translation_save.send(
-                sender=self.shared_model, instance=self, created=(not record_exists),
-                raw=raw, using=using
+                sender=self.shared_model,
+                instance=self,
+                created=(not record_exists),
+                raw=raw,
+                using=using,
             )
 
     def delete(self, using=None):
         # Send pre-delete signal
         using = using or router.db_for_write(self.__class__, instance=self)
         if not self._meta.auto_created:
-            signals.pre_translation_delete.send(sender=self.shared_model, instance=self, using=using)
+            signals.pre_translation_delete.send(
+                sender=self.shared_model, instance=self, using=using
+            )
 
         super().delete(using=using)
         _delete_cached_translation(self)
 
         # Send post-delete signal
         if not self._meta.auto_created:
-            signals.post_translation_delete.send(sender=self.shared_model, instance=self, using=using)
+            signals.post_translation_delete.send(
+                sender=self.shared_model, instance=self, using=using
+            )
 
     def _get_field_names(self):
         # Use the new Model._meta API.
-        return [field.get_attname() for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
+        return [
+            field.get_attname()
+            for field in self._meta.get_fields()
+            if not field.is_relation or field.many_to_one
+        ]
 
     def _get_field_values(self):
         # Use the new Model._meta API.
-        return [getattr(self, field.get_attname()) for field in self._meta.get_fields() if not field.is_relation or field.many_to_one]
+        return [
+            getattr(self, field.get_attname())
+            for field in self._meta.get_fields()
+            if not field.is_relation or field.many_to_one
+        ]
 
     @classmethod
     def get_translated_fields(cls, include_m2m=True):
-        res = [f.name for f in cls._meta.local_fields if f.name not in ('language_code', 'master', 'id')]
+        res = [
+            f.name
+            for f in cls._meta.local_fields
+            if f.name not in ("language_code", "master", "id")
+        ]
         if include_m2m:
-            res += [f.name for f in cls._meta.local_many_to_many if f.name not in ('language_code', 'master', 'id')]
+            res += [
+                f.name
+                for f in cls._meta.local_many_to_many
+                if f.name not in ("language_code", "master", "id")
+            ]
         return res
 
     @classmethod
@@ -948,15 +1043,19 @@ class TranslatedFieldsModelMixin:
         try:
             base = shared_model._parler_meta
         except AttributeError:
-            raise TypeError(f"Translatable model {shared_model} does not appear to inherit from TranslatableModel")
+            raise TypeError(
+                f"Translatable model {shared_model} does not appear to inherit from TranslatableModel"
+            )
 
         if base is not None and base[-1].shared_model is shared_model:
             # If a second translations model is added, register it in the same object level.
-            base.add_meta(ParlerMeta(
-                shared_model=shared_model,
-                translations_model=cls,
-                related_name=cls.master.field.remote_field.related_name
-            ))
+            base.add_meta(
+                ParlerMeta(
+                    shared_model=shared_model,
+                    translations_model=cls,
+                    related_name=cls.master.field.remote_field.related_name,
+                )
+            )
         else:
             # Place a new _parler_meta at the current inheritance level.
             # It links to the previous base.
@@ -964,7 +1063,7 @@ class TranslatedFieldsModelMixin:
                 base,
                 shared_model=shared_model,
                 translations_model=cls,
-                related_name=cls.master.field.remote_field.related_name
+                related_name=cls.master.field.remote_field.related_name,
             )
 
         # Assign the proxy fields
@@ -983,17 +1082,29 @@ class TranslatedFieldsModelMixin:
                 # Currently not allowing to replace existing model fields with translatable fields.
                 # That would be a nice feature addition however.
                 if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)):
-                    raise TypeError(f"The model '{shared_model.__name__}' already has a field named '{name}'")
+                    raise TypeError(
+                        f"The model '{shared_model.__name__}' already has a field named '{name}'"
+                    )
 
                 # When the descriptor was placed on an abstract model,
                 # it doesn't point to the real model that holds the translations_model
                 # "Upgrade" the descriptor on the class
                 if shared_field.field.model is not shared_model:
-                    TranslatedField(any_language=shared_field.field.any_language).contribute_to_class(shared_model, name)
+                    TranslatedField(
+                        any_language=shared_field.field.any_language
+                    ).contribute_to_class(shared_model, name)
 
         # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
-        cls.DoesNotExist = type('DoesNotExist', (TranslationDoesNotExist, shared_model.DoesNotExist, cls.DoesNotExist,), {})
+        cls.DoesNotExist = type(
+            "DoesNotExist",
+            (
+                TranslationDoesNotExist,
+                shared_model.DoesNotExist,
+                cls.DoesNotExist,
+            ),
+            {},
+        )
 
     def __str__(self):
         return force_str(get_language_title(self.language_code))
@@ -1004,8 +1115,12 @@ class TranslatedFieldsModelMixin:
         )
 
 
-class TranslatedFieldsModel(TranslatedFieldsModelMixin, models.Model, metaclass=TranslatedFieldsModelBase):
-    language_code = compat.HideChoicesCharField(_("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True)
+class TranslatedFieldsModel(
+    TranslatedFieldsModelMixin, models.Model, metaclass=TranslatedFieldsModelBase
+):
+    language_code = compat.HideChoicesCharField(
+        _("Language"), choices=settings.LANGUAGES, max_length=15, db_index=True
+    )
 
     class Meta:
         abstract = True
@@ -1033,9 +1148,7 @@ class ParlerMeta:
 
     def __repr__(self):
         return "<ParlerMeta: {}.{} to {}>".format(
-            self.shared_model.__name__,
-            self.rel_name,
-            self.model.__name__
+            self.shared_model.__name__, self.rel_name, self.model.__name__
         )
 
 
@@ -1079,7 +1192,9 @@ class ParlerOptions:
 
     def add_meta(self, meta):
         if self.inherited:
-            raise RuntimeError("Adding translations afterwards to an already inherited model is not supported yet.")
+            raise RuntimeError(
+                "Adding translations afterwards to an already inherited model is not supported yet."
+            )
 
         self._extensions.append(meta)
 
@@ -1094,7 +1209,7 @@ class ParlerOptions:
             root.shared_model.__name__,
             root.rel_name,
             root.model.__name__,
-            '' if len(self._extensions) == 1 else f", {len(self._extensions)} extensions"
+            "" if len(self._extensions) == 1 else f", {len(self._extensions)} extensions",
         )
 
     @property
@@ -1199,9 +1314,11 @@ class ParlerOptions:
             if meta.rel_name == related_name:
                 return meta
 
-        raise ValueError("No translated model of '{}' has a reverse name of '{}'".format(
-            self.root.shared_model.__name__, related_name
-        ))
+        raise ValueError(
+            "No translated model of '{}' has a reverse name of '{}'".format(
+                self.root.shared_model.__name__, related_name
+            )
+        )
 
     def _split_fields(self, **fields):
         # Split fields over their translated models.

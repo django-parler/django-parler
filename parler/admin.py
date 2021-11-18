@@ -39,51 +39,48 @@ See the :ref:`admin compatibility page <admin-compat>` for details.
 import django
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.admin.options import csrf_protect_m, BaseModelAdmin, InlineModelAdmin
-from django.contrib.admin.utils import get_deleted_objects, quote, unquote
+from django.contrib.admin.options import BaseModelAdmin, InlineModelAdmin, csrf_protect_m
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
-from django.core.exceptions import PermissionDenied, ImproperlyConfigured
+from django.contrib.admin.utils import get_deleted_objects, quote, unquote
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.db import router, transaction
 from django.forms import Media
-from django.http import HttpResponseRedirect, Http404, HttpRequest
+from django.http import Http404, HttpRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import re_path, reverse
-from django.utils.encoding import iri_to_uri, force_str
+from django.utils.encoding import force_str, iri_to_uri
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
-from django.utils.translation import gettext_lazy as _, get_language
+from django.utils.translation import get_language
+from django.utils.translation import gettext_lazy as _
+
 from parler import appsettings
-from parler.forms import TranslatableModelForm, TranslatableBaseInlineFormSet
+from parler.forms import TranslatableBaseInlineFormSet, TranslatableModelForm
 from parler.managers import TranslatableQuerySet
 from parler.models import TranslatableModelMixin
 from parler.utils.i18n import get_language_title, is_multilingual_project
-from parler.utils.views import get_language_parameter, get_language_tabs
 from parler.utils.template import select_template_name
+from parler.utils.views import get_language_parameter, get_language_tabs
 
 # Code partially taken from django-hvad
 # which is (c) 2011, Jonas Obrist, BSD licensed
 
 __all__ = (
-    'BaseTranslatableAdmin',
-    'TranslatableAdmin',
-    'TranslatableInlineModelAdmin',
-    'TranslatableStackedInline',
-    'TranslatableTabularInline',
-    'SortedRelatedFieldListFilter',
+    "BaseTranslatableAdmin",
+    "TranslatableAdmin",
+    "TranslatableInlineModelAdmin",
+    "TranslatableStackedInline",
+    "TranslatableTabularInline",
+    "SortedRelatedFieldListFilter",
 )
 
-_language_media = Media(css={
-    'all': (
-        'parler/admin/parler_admin.css',
-    )
-})
+_language_media = Media(css={"all": ("parler/admin/parler_admin.css",)})
 
-_language_prepopulated_media = _language_media + Media(js=(
-    'admin/js/urlify.js',
-    'admin/js/prepopulate.js'
-))
+_language_prepopulated_media = _language_media + Media(
+    js=("admin/js/urlify.js", "admin/js/prepopulate.js")
+)
 
 _fakeRequest = HttpRequest()
 
@@ -92,11 +89,12 @@ class BaseTranslatableAdmin(BaseModelAdmin):
     """
     The shared code between the regular model admin and inline classes.
     """
+
     #: The form to use for the model.
     form = TranslatableModelForm
 
     #: The URL parameter for the language value.
-    query_language_key = 'language'
+    query_language_key = "language"
 
     @property
     def media(self):
@@ -149,7 +147,9 @@ class BaseTranslatableAdmin(BaseModelAdmin):
 
         if self._has_translatable_model():
             if not isinstance(qs, TranslatableQuerySet):
-                raise ImproperlyConfigured(f"{qs.__class__.__name__} class does not inherit from TranslatableQuerySet")
+                raise ImproperlyConfigured(
+                    f"{qs.__class__.__name__} class does not inherit from TranslatableQuerySet"
+                )
 
             # Apply a consistent language to all objects.
             qs_language = self.get_queryset_language(request)
@@ -163,7 +163,9 @@ class BaseTranslatableAdmin(BaseModelAdmin):
         Determine the language tabs to show.
         """
         current_language = self.get_form_language(request, obj)
-        return get_language_tabs(request, current_language, available_languages, css_class=css_class)
+        return get_language_tabs(
+            request, current_language, available_languages, css_class=css_class
+        )
 
 
 class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
@@ -174,10 +176,11 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
     When using this class with a non-TranslatableModel,
     all operations effectively become a NO-OP.
     """
+
     #: Whether the translations should be prefetched when displaying the 'language_column' in the list.
     prefetch_language_column = True
 
-    deletion_not_allowed_template = 'admin/parler/deletion_not_allowed.html'
+    deletion_not_allowed_template = "admin/parler/deletion_not_allowed.html"
 
     #: Whether translations of inlines should also be deleted when deleting a translation.
     delete_inline_translations = True
@@ -192,17 +195,18 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if self._has_translatable_model():
             # While this breaks the admin template name detection,
             # the get_change_form_base_template() makes sure it inherits from your template.
-            return 'admin/parler/change_form.html'
+            return "admin/parler/change_form.html"
         else:
-            return None # get default admin selection
+            return None  # get default admin selection
 
     def language_column(self, object):
         """
         The language column which can be included in the ``list_display``.
         """
         return mark_safe(
-            self._languages_column(object, span_classes='available-languages')
+            self._languages_column(object, span_classes="available-languages")
         )  # span class for backwards compatibility
+
     language_column.short_description = _("Languages")
 
     def all_languages_column(self, object):
@@ -212,13 +216,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         all_languages = [code for code, __ in settings.LANGUAGES]
         return mark_safe(
-            self._languages_column(
-                object, all_languages, span_classes='all-languages'
-            )
+            self._languages_column(object, all_languages, span_classes="all-languages")
         )
+
     all_languages_column.short_description = _("Languages")
 
-    def _languages_column(self, object, all_languages=None, span_classes=''):
+    def _languages_column(self, object, all_languages=None, span_classes=""):
         active_languages = self.get_available_languages(object)
         if all_languages is None:
             all_languages = active_languages
@@ -226,26 +229,31 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         current_language = object.get_current_language()
         buttons = []
         opts = self.opts
-        for code in (all_languages or active_languages):
-            classes = ['lang-code']
+        for code in all_languages or active_languages:
+            classes = ["lang-code"]
             if code in active_languages:
-                classes.append('active')
+                classes.append("active")
             else:
-                classes.append('untranslated')
+                classes.append("untranslated")
             if code == current_language:
-                classes.append('current')
+                classes.append("current")
 
             info = opts.app_label, opts.model_name
-            admin_url = reverse('admin:{}_{}_change'.format(*info), args=(quote(object.pk),), current_app=self.admin_site.name)
-            buttons.append('<a class="{classes}" href="{href}?language={language_code}">{title}</a>'.format(
-                language_code=code,
-                classes=' '.join(classes),
-                href=escape(admin_url),
-                title=conditional_escape(self.get_language_short_title(code))
-           ))
+            admin_url = reverse(
+                "admin:{}_{}_change".format(*info),
+                args=(quote(object.pk),),
+                current_app=self.admin_site.name,
+            )
+            buttons.append(
+                '<a class="{classes}" href="{href}?language={language_code}">{title}</a>'.format(
+                    language_code=code,
+                    classes=" ".join(classes),
+                    href=escape(admin_url),
+                    title=conditional_escape(self.get_language_short_title(code)),
+                )
+            )
         return '<span class="language-buttons {}">{}</span>'.format(
-            span_classes,
-            ' '.join(buttons)
+            span_classes, " ".join(buttons)
         )
 
     def get_language_short_title(self, language_code):
@@ -274,7 +282,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             # When the available languages are shown in the listing, prefetch available languages.
             # This avoids an N-query issue because each row needs the available languages.
             list_display = self.get_list_display(request)
-            if 'language_column' in list_display or 'all_languages_column' in list_display:
+            if "language_column" in list_display or "all_languages_column" in list_display:
                 qs = qs.prefetch_related(self.model._parler_meta.root_rel_name)
 
         return qs
@@ -310,13 +318,15 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         else:
             opts = self.model._meta
             info = opts.app_label, opts.model_name
-            return [re_path(
-                r'^(.+)/change/delete-translation/(.+)/$',
-                self.admin_site.admin_view(self.delete_translation),
-                name='{}_{}_delete_translation'.format(*info)
-            )] + urlpatterns
+            return [
+                re_path(
+                    r"^(.+)/change/delete-translation/(.+)/$",
+                    self.admin_site.admin_view(self.delete_translation),
+                    name="{}_{}_delete_translation".format(*info),
+                )
+            ] + urlpatterns
 
-    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+    def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
         """
         Insert the language tabs.
         """
@@ -326,9 +336,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
 
             available_languages = self.get_available_languages(obj)
             language_tabs = self.get_language_tabs(request, obj, available_languages)
-            context['language_tabs'] = language_tabs
+            context["language_tabs"] = language_tabs
             if language_tabs:
-                context['title'] = '{} ({})'.format(context['title'], lang)
+                context["title"] = "{} ({})".format(context["title"], lang)
             if not language_tabs.current_is_translated:
                 add = True  # lets prepopulated_fields_js work.
 
@@ -338,17 +348,16 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             # list causing the wrong translation to be changed.
 
             params = request.GET.dict()
-            params['language'] = lang_code
-            form_url = add_preserved_filters({
-                'preserved_filters': urlencode(params),
-                'opts': self.model._meta
-            }, form_url)
+            params["language"] = lang_code
+            form_url = add_preserved_filters(
+                {"preserved_filters": urlencode(params), "opts": self.model._meta}, form_url
+            )
 
         # django-fluent-pages uses the same technique
-        if 'default_change_form_template' not in context:
-            context['default_change_form_template'] = self.default_change_form_template
+        if "default_change_form_template" not in context:
+            context["default_change_form_template"] = self.default_change_form_template
 
-        #context['base_template'] = self.get_change_form_base_template()
+        # context['base_template'] = self.get_change_form_base_template()
         return super().render_change_form(request, context, add, change, form_url, obj)
 
     def response_add(self, request, obj, post_url_continue=None):
@@ -375,15 +384,21 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             continue_urls = (
                 uri,
                 "../add/",
-                reverse('admin:{}_{}_add'.format(*info), current_app=self.admin_site.name),
+                reverse("admin:{}_{}_add".format(*info), current_app=self.admin_site.name),
                 "../change/",
-                reverse('admin:{}_{}_change'.format(*info), args=[obj.pk,], current_app=self.admin_site.name),
+                reverse(
+                    "admin:{}_{}_change".format(*info),
+                    args=[
+                        obj.pk,
+                    ],
+                    current_app=self.admin_site.name,
+                ),
             )
-            redirect_parts = redirect['Location'].split('?')
+            redirect_parts = redirect["Location"].split("?")
             if redirect_parts[0] in continue_urls and self.query_language_key in request.GET:
                 # "Save and add another" / "Save and continue" URLs
-                delimiter = '&' if len(redirect_parts) > 1 else '?'
-                redirect['Location'] += f"{delimiter}{self.query_language_key}={language}"
+                delimiter = "&" if len(redirect_parts) > 1 else "?"
+                redirect["Location"] += f"{delimiter}{self.query_language_key}={language}"
         return redirect
 
     @csrf_protect_m
@@ -426,7 +441,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         protected = []
 
         # Extend deleted objects with the inlines.
-        for qs in self.get_translation_objects(request, translation.language_code, obj=shared_obj, inlines=self.delete_inline_translations):
+        for qs in self.get_translation_objects(
+            request,
+            translation.language_code,
+            obj=shared_obj,
+            inlines=self.delete_inline_translations,
+        ):
             if isinstance(qs, (list, tuple)):
                 qs_opts = qs[0]._meta
             else:
@@ -435,31 +455,45 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             if django.VERSION >= (2, 1):
                 deleted_result = get_deleted_objects(qs, request, self.admin_site)
             else:
-                deleted_result = get_deleted_objects(qs, qs_opts, request.user, self.admin_site, using)
+                deleted_result = get_deleted_objects(
+                    qs, qs_opts, request.user, self.admin_site, using
+                )
             (del2, model_counts, perms2, protected2) = deleted_result
 
             deleted_objects += del2
             perms_needed = perms_needed or perms2
             protected += protected2
 
-        if request.POST: # The user has already confirmed the deletion.
+        if request.POST:  # The user has already confirmed the deletion.
             if perms_needed:
                 raise PermissionDenied
-            obj_display = _('{0} translation of {1}').format(lang, force_str(translation))  # in hvad: (translation.master)
+            obj_display = _("{0} translation of {1}").format(
+                lang, force_str(translation)
+            )  # in hvad: (translation.master)
 
             self.log_deletion(request, translation, obj_display)
             self.delete_model_translation(request, translation)
-            self.message_user(request, _('The %(name)s "%(obj)s" was deleted successfully.') % dict(
-                name=force_str(opts.verbose_name), obj=force_str(obj_display)
-            ))
+            self.message_user(
+                request,
+                _('The %(name)s "%(obj)s" was deleted successfully.')
+                % dict(name=force_str(opts.verbose_name), obj=force_str(obj_display)),
+            )
 
             if self.has_change_permission(request, None):
                 info = opts.app_label, opts.model_name
-                return HttpResponseRedirect(reverse('admin:{}_{}_change'.format(*info), args=(object_id,), current_app=self.admin_site.name))
+                return HttpResponseRedirect(
+                    reverse(
+                        "admin:{}_{}_change".format(*info),
+                        args=(object_id,),
+                        current_app=self.admin_site.name,
+                    )
+                )
             else:
-                return HttpResponseRedirect(reverse('admin:index', current_app=self.admin_site.name))
+                return HttpResponseRedirect(
+                    reverse("admin:index", current_app=self.admin_site.name)
+                )
 
-        object_name = _('{0} Translation').format(force_str(opts.verbose_name))
+        object_name = _("{0} Translation").format(force_str(opts.verbose_name))
         if perms_needed or protected:
             title = _("Cannot delete %(name)s") % {"name": object_name}
         else:
@@ -479,16 +513,23 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         # Small hack for django-polymorphic-tree.
         # This makes sure the breadcrumb renders correctly,
         # and avoids errors when the child model is not registered in the admin.
-        if hasattr(self, 'base_model'):
-            context.update({
-                'base_opts': self.base_model._meta,
-            })
+        if hasattr(self, "base_model"):
+            context.update(
+                {
+                    "base_opts": self.base_model._meta,
+                }
+            )
 
-        return render(request, self.delete_confirmation_template or [
-            f"admin/{opts.app_label}/{opts.object_name.lower()}/delete_confirmation.html",
-            "admin/%s/delete_confirmation.html" % opts.app_label,
-            "admin/delete_confirmation.html"
-        ], context)
+        return render(
+            request,
+            self.delete_confirmation_template
+            or [
+                f"admin/{opts.app_label}/{opts.object_name.lower()}/delete_confirmation.html",
+                "admin/%s/delete_confirmation.html" % opts.app_label,
+                "admin/delete_confirmation.html",
+            ],
+            context,
+        )
 
     def deletion_not_allowed(self, request, obj, language_code):
         """
@@ -496,12 +537,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         opts = self.model._meta
         context = {
-            'object': obj.master,
-            'language_code': language_code,
-            'opts': opts,
-            'app_label': opts.app_label,
-            'language_name': get_language_title(language_code),
-            'object_name': force_str(opts.verbose_name)
+            "object": obj.master,
+            "language_code": language_code,
+            "opts": opts,
+            "app_label": opts.app_label,
+            "language_name": get_language_title(language_code),
+            "object_name": force_str(opts.verbose_name),
         }
         return render(request, self.deletion_not_allowed_template, context)
 
@@ -512,7 +553,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         By default, that includes the translations for inline objects.
         """
         master = translation.master
-        for qs in self.get_translation_objects(request, translation.language_code, obj=master, inlines=self.delete_inline_translations):
+        for qs in self.get_translation_objects(
+            request, translation.language_code, obj=master, inlines=self.delete_inline_translations
+        ):
             if isinstance(qs, (tuple, list)):
                 # The objects are deleted one by one.
                 # This triggers the post_delete signals and such.
@@ -533,7 +576,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             # Return them all.
             for translations_model in obj._parler_meta.get_all_models():
                 try:
-                    translation = translations_model.objects.get(master=obj, language_code=language_code)
+                    translation = translations_model.objects.get(
+                        master=obj, language_code=language_code
+                    )
                 except translations_model.DoesNotExist:
                     continue
                 yield [translation]
@@ -553,11 +598,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 # This also resolves the fk_name if it's set.
                 fk = inline.get_formset(request, obj).fk
 
-                rel_name = f'master__{fk.name}'
-                filters = {
-                    'language_code': language_code,
-                    rel_name: obj
-                }
+                rel_name = f"master__{fk.name}"
+                filters = {"language_code": language_code, rel_name: obj}
 
                 for translations_model in inline.model._parler_meta.get_all_models():
                     qs = translations_model.objects.filter(**filters)
@@ -573,17 +615,20 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         """
         opts = self.model._meta
         app_label = opts.app_label
-        return select_template_name((
-            f"admin/{app_label}/{opts.object_name.lower()}/change_form.html",
-            f"admin/{app_label}/change_form.html",
-            "admin/change_form.html"
-        ))
+        return select_template_name(
+            (
+                f"admin/{app_label}/{opts.object_name.lower()}/change_form.html",
+                f"admin/{app_label}/change_form.html",
+                "admin/change_form.html",
+            )
+        )
 
 
 class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
     """
     Base class for inline models.
     """
+
     #: The form to use.
     form = TranslatableModelForm
     #: The formset to use.
@@ -621,8 +666,12 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
         if self.inline_tabs:
             # Need to pass information to the template, this can only happen via the FormSet object.
             available_languages = self.get_available_languages(obj, FormSet)
-            FormSet.language_tabs = self.get_language_tabs(request, obj, available_languages, css_class='parler-inline-language-tabs')
-            FormSet.language_tabs.allow_deletion = self._has_translatable_parent_model()   # Views not available otherwise.
+            FormSet.language_tabs = self.get_language_tabs(
+                request, obj, available_languages, css_class="parler-inline-language-tabs"
+            )
+            FormSet.language_tabs.allow_deletion = (
+                self._has_translatable_parent_model()
+            )  # Views not available otherwise.
 
         return FormSet
 
@@ -644,11 +693,14 @@ class TranslatableInlineModelAdmin(BaseTranslatableAdmin, InlineModelAdmin):
             # Inlines dictate language code, not the parent model.
             # Hence, not looking at obj.get_available_languages(), but see what languages
             # are used by the inline objects that point to it.
-            filter = {
-                f'master__{formset.fk.name}': obj
-            }
-            return self.model._parler_meta.root_model.objects.using(obj._state.db).filter(**filter) \
-                   .values_list('language_code', flat=True).distinct().order_by('language_code')
+            filter = {f"master__{formset.fk.name}": obj}
+            return (
+                self.model._parler_meta.root_model.objects.using(obj._state.db)
+                .filter(**filter)
+                .values_list("language_code", flat=True)
+                .distinct()
+                .order_by("language_code")
+            )
         else:
             return self.model._parler_meta.root_model.objects.none()
 
@@ -657,26 +709,28 @@ class TranslatableStackedInline(TranslatableInlineModelAdmin):
     """
     The inline class for stacked layout.
     """
+
     @property
     def template(self):
         if self.inline_tabs:
-            return 'admin/parler/edit_inline/stacked_tabs.html'
+            return "admin/parler/edit_inline/stacked_tabs.html"
         else:
             # Admin default
-            return 'admin/edit_inline/stacked.html'
+            return "admin/edit_inline/stacked.html"
 
 
 class TranslatableTabularInline(TranslatableInlineModelAdmin):
     """
     The inline class for tabular layout.
     """
+
     @property
     def template(self):
         if self.inline_tabs:
-            return 'admin/parler/edit_inline/tabular_tabs.html'
+            return "admin/parler/edit_inline/tabular_tabs.html"
         else:
             # Admin default
-            return 'admin/edit_inline/tabular.html'
+            return "admin/edit_inline/tabular.html"
 
 
 class SortedRelatedFieldListFilter(admin.RelatedFieldListFilter):

@@ -6,6 +6,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.translation import get_language
+
 from parler import appsettings
 from parler.utils import get_active_language_choices
 
@@ -31,7 +32,7 @@ class TranslatableQuerySet(QuerySet):
         # Pass language setting to the object, as people start assuming things
         # like .language('xx').create(..) which is a nice API after all.
         if self._language:
-            kwargs['_current_language'] = self._language
+            kwargs["_current_language"] = self._language
         return super().create(**kwargs)
 
     def _fetch_all(self):
@@ -39,7 +40,11 @@ class TranslatableQuerySet(QuerySet):
         # This low-level method is overwritten as that works better across Django versions.
         # Alternatives includes hacking the _iterable_class, which breaks django-polymorphic
         super()._fetch_all()
-        if self._language is not None and self._result_cache and isinstance(self._result_cache[0], models.Model):
+        if (
+            self._language is not None
+            and self._result_cache
+            and isinstance(self._result_cache[0], models.Model)
+        ):
             for obj in self._result_cache:
                 obj.set_current_language(self._language)
 
@@ -92,16 +97,16 @@ class TranslatableQuerySet(QuerySet):
 
         filters = {}
         for field_name, val in translated_fields.items():
-            if field_name.startswith('master__'):
+            if field_name.startswith("master__"):
                 filters[field_name[8:]] = val  # avoid translations__master__ back and forth
             else:
                 filters[f"{relname}__{field_name}"] = val
 
         if len(language_codes) == 1:
-            filters[relname + '__language_code'] = language_codes[0]
+            filters[relname + "__language_code"] = language_codes[0]
             return self.filter(**filters)
         else:
-            filters[relname + '__language_code__in'] = language_codes
+            filters[relname + "__language_code__in"] = language_codes
             return self.filter(**filters).distinct()
 
     def active_translations(self, language_code=None, **translated_fields):
@@ -127,8 +132,11 @@ class TranslatableManager(models.Manager.from_queryset(TranslatableQuerySet)):
     def get_queryset(self):
         qs = super().get_queryset()
         if not isinstance(qs, TranslatableQuerySet):
-            raise ImproperlyConfigured(f"{self.__class__.__name__}._queryset_class does not inherit from TranslatableQuerySet")
+            raise ImproperlyConfigured(
+                f"{self.__class__.__name__}._queryset_class does not inherit from TranslatableQuerySet"
+            )
         return qs
+
 
 # Export the names in django-hvad style too:
 TranslationQueryset = TranslatableQuerySet

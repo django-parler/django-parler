@@ -3,16 +3,16 @@ Utils for translations
 """
 from django.conf import settings
 from django.conf.global_settings import LANGUAGES as ALL_LANGUAGES
-from django.utils.translation import gettext_lazy as _, get_language as dj_get_language
-
+from django.utils.translation import get_language as dj_get_language
+from django.utils.translation import gettext_lazy as _
 
 __all__ = (
-    'normalize_language_code',
-    'is_supported_django_language',
-    'get_language_title',
-    'get_language_settings',
-    'get_active_language_choices',
-    'is_multilingual_project',
+    "normalize_language_code",
+    "is_supported_django_language",
+    "get_language_title",
+    "get_language_settings",
+    "get_active_language_choices",
+    "is_multilingual_project",
 )
 
 
@@ -30,14 +30,14 @@ def normalize_language_code(code):
     if code is None:
         return None
     else:
-        return code.lower().replace('_', '-')
+        return code.lower().replace("_", "-")
 
 
 def is_supported_django_language(language_code):
     """
     Return whether a language code is supported.
     """
-    language_code2 = language_code.split('-')[0] # e.g. if fr-ca is not supported fallback to fr
+    language_code2 = language_code.split("-")[0]  # e.g. if fr-ca is not supported fallback to fr
     return language_code in LANGUAGES_DICT or language_code2 in LANGUAGES_DICT
 
 
@@ -48,6 +48,7 @@ def get_language_title(language_code):
     Fallback to language_code if language is not found in settings.
     """
     from parler import appsettings
+
     # Avoid weird lookup errors.
     if not language_code:
         raise ValueError("Missing language_code in get_language_title()")
@@ -62,7 +63,9 @@ def get_language_title(language_code):
     try:
         return _(languages[language_code])
     except KeyError:
-        language_code = language_code.split('-')[0]  # e.g. if fr-ca is not supported fallback to fr
+        language_code = language_code.split("-")[
+            0
+        ]  # e.g. if fr-ca is not supported fallback to fr
         language_title = languages.get(language_code, None)
         if language_title is not None:
             return _(language_title)
@@ -78,6 +81,7 @@ def get_language_settings(language_code, site_id=None):
     # the body is part of the settings, to allow third party packages
     # to have their own variation of the settings with this method functionality included.
     from parler import appsettings
+
     return appsettings.PARLER_LANGUAGES.get_language(language_code, site_id)
 
 
@@ -88,6 +92,7 @@ def get_active_language_choices(language_code=None):
     or a tuple with the current language + fallback language.
     """
     from parler import appsettings
+
     return appsettings.PARLER_LANGUAGES.get_active_choices(language_code)
 
 
@@ -96,9 +101,12 @@ def is_multilingual_project(site_id=None):
     Whether the current Django project is configured for multilingual support.
     """
     from parler import appsettings
+
     if site_id is None:
-        site_id = getattr(settings, 'SITE_ID', None)
-    return appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS or site_id in appsettings.PARLER_LANGUAGES
+        site_id = getattr(settings, "SITE_ID", None)
+    return (
+        appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS or site_id in appsettings.PARLER_LANGUAGES
+    )
 
 
 def get_null_language_error():
@@ -118,6 +126,7 @@ def get_language():
     Here we patch this behavior e.g. for back-end functionality requiring access to translated fields
     """
     from parler import appsettings
+
     language = dj_get_language()
     if language is None and appsettings.PARLER_DEFAULT_ACTIVATE:
         return appsettings.PARLER_DEFAULT_LANGUAGE_CODE

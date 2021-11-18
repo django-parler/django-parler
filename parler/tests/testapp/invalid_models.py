@@ -1,4 +1,5 @@
 from django.db import models
+
 from parler.models import TranslatableModel, TranslatedFields
 from parler.tests.testapp.models import RegularModel
 

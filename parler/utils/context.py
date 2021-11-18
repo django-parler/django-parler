@@ -1,11 +1,11 @@
 """
 Context managers for temporary switching the language.
 """
-from django.utils.translation import get_language, activate
+from django.utils.translation import activate, get_language
 
 __all__ = (
-    'smart_override',
-    'switch_language',
+    "smart_override",
+    "switch_language",
 )
 
 
