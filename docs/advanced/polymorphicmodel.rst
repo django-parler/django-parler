@@ -75,7 +75,7 @@ with both *django-parler* and django-polymorphic_ use.
 .. code-block:: python
 
         from parler.managers import TranslatableManager, TranslatableQuerySet
-        from polymorphic import PolymorphicManager
+        from polymorphic.managers import PolymorphicManager
         from polymorphic.query import PolymorphicQuerySet
 
 
