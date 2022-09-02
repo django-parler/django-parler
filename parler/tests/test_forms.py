@@ -188,10 +188,10 @@ class FormTests(AppTestCase):
         r1 = RegularModel.objects.create(original_field="r1")
         a = ForeignKeyTranslationModel.objects.create(translated_foreign=r1, shared="EN")
 
-        # same way as TranslatableAdmin.get_object() inicializing translation, when user switch to new translation language
+        # same way as TranslatableAdmin.get_object() initializing translation, when user switch to new translation language
         a.set_current_language("fr", initialize=True)
 
-        # inicialize form
+        # initialize form
         form = ForeignKeyTranslationModelForm(instance=a)
 
         self.assertTrue(True)
@@ -203,7 +203,7 @@ class FormTests(AppTestCase):
         self.assertEqual("label:shared", form_instance["shared"].label)
         self.assertEqual("label:tr_title", form_instance["tr_title"].label)
 
-        # Override error messsages
+        # Override error messages
         form_instance = OverrideMetaFieldForm(
             _current_language="fr-FR",
             data={
