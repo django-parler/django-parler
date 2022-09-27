@@ -1040,12 +1040,11 @@ class TranslatedFieldsModelMixin:
         """
         # Instance at previous inheritance level, if set.
         # This is checked for None as some migration files don't use bases=TranslatableModel instead
+
         try:
             base = shared_model._parler_meta
         except AttributeError:
-            raise TypeError(
-                f"Translatable model {shared_model} does not appear to inherit from TranslatableModel"
-            )
+            base = None
 
         if base is not None and base[-1].shared_model is shared_model:
             # If a second translations model is added, register it in the same object level.
@@ -1071,10 +1070,10 @@ class TranslatedFieldsModelMixin:
             try:
                 # Check if an attribute already exists.
                 # Note that the descriptor even proxies this request, so it should return our field.
-                #
-                # A model field might not be added yet, as this all happens in the contribute_to_class() loop.
-                # Hence, only checking attributes here. The real fields are checked for in the _prepare() code.
-                shared_field = getattr(shared_model, name)
+                try: # for Django 3.x.x
+                    shared_field = getattr(shared_model, name).field
+                except:
+                    shared_field = getattr(shared_model, name)
             except AttributeError:
                 # Add the proxy field for the shared field.
                 TranslatedField().contribute_to_class(shared_model, name)
@@ -1089,10 +1088,16 @@ class TranslatedFieldsModelMixin:
                 # When the descriptor was placed on an abstract model,
                 # it doesn't point to the real model that holds the translations_model
                 # "Upgrade" the descriptor on the class
-                if shared_field.field.model is not shared_model:
-                    TranslatedField(
-                        any_language=shared_field.field.any_language
-                    ).contribute_to_class(shared_model, name)
+                try:
+                    if shared_field.field.model is not shared_model:
+                        TranslatedField(
+                            any_language=shared_field.field.any_language
+                        ).contribute_to_class(shared_model, name)
+                except:
+                    if shared_field.model is not shared_model:
+                        TranslatedField(
+                            any_language=shared_field.field.any_language
+                        ).contribute_to_class(shared_model, name)
 
         # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
