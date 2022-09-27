@@ -1072,7 +1072,7 @@ class TranslatedFieldsModelMixin:
                 # Check if an attribute already exists.
                 # Note that the descriptor even proxies this request, so it should return our field.
                 import django
-                if django.VERSION[0] == 3 and django.VERSION[1] > 0:
+                if django.VERSION[0] > 2 and django.VERSION[1] > 0:
                     shared_field = getattr(shared_model, name).field
                 else:
                     shared_field = getattr(shared_model, name)
