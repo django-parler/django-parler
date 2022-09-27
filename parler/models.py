@@ -1041,7 +1041,10 @@ class TranslatedFieldsModelMixin:
         # Instance at previous inheritance level, if set.
         # This is checked for None as some migration files don't use bases=TranslatableModel instead
 
-        base = None
+        try:
+            base = shared_model._parler_meta
+        except AttributeError:
+            base = None
 
         if base is not None and base[-1].shared_model is shared_model:
             # If a second translations model is added, register it in the same object level.
