@@ -1089,10 +1089,16 @@ class TranslatedFieldsModelMixin:
                 # When the descriptor was placed on an abstract model,
                 # it doesn't point to the real model that holds the translations_model
                 # "Upgrade" the descriptor on the class
-                if shared_field.field.model is not shared_model:
-                    TranslatedField(
-                        any_language=shared_field.field.any_language
-                    ).contribute_to_class(shared_model, name)
+                try:
+                    if shared_field.field.model is not shared_model:
+                        TranslatedField(
+                            any_language=shared_field.field.any_language
+                        ).contribute_to_class(shared_model, name)
+                except:
+                    if shared_field.model is not shared_model:
+                        TranslatedField(
+                            any_language=shared_field.field.any_language
+                        ).contribute_to_class(shared_model, name)
 
         # Make sure the DoesNotExist error can be detected als shared_model.DoesNotExist too,
         # and by inheriting from AttributeError it makes sure (admin) templates can handle the missing attribute.
