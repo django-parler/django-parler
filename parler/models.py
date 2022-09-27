@@ -1071,10 +1071,11 @@ class TranslatedFieldsModelMixin:
             try:
                 # Check if an attribute already exists.
                 # Note that the descriptor even proxies this request, so it should return our field.
-                #
-                # A model field might not be added yet, as this all happens in the contribute_to_class() loop.
-                # Hence, only checking attributes here. The real fields are checked for in the _prepare() code.
-                shared_field = getattr(shared_model, name)
+                import django
+                if django.VERSION[0] == 3 and django.VERSION[1] > 0:
+                    shared_field = getattr(shared_model, name).field
+                else:
+                    shared_field = getattr(shared_model, name)
             except AttributeError:
                 # Add the proxy field for the shared field.
                 TranslatedField().contribute_to_class(shared_model, name)
