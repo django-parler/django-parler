@@ -76,6 +76,7 @@ from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 from parler import signals
+from parler import appsettings
 from parler.cache import (
     MISSING,
     _cache_translation,
@@ -276,7 +277,16 @@ class TranslatableModelMixin:
         current_language = None
         if kwargs:
             current_language = kwargs.pop("_current_language", None)
+            model_fields = [field.name for field in self._meta.get_fields()]
+            
             for field in self._parler_meta.get_all_fields():
+                
+                # Write to the existing field and translation model in `PARLER_PERMIT_FIELD_NAME_CONFLICTS`
+                ignore_existing_fields = appsettings.PARLER_PERMIT_FIELD_NAME_CONFLICTS
+                is_existing_field = field in model_fields
+                if ignore_existing_fields and is_existing_field:
+                    continue
+
                 try:
                     translated_kwargs[field] = kwargs.pop(field)
                 except KeyError:
@@ -1079,11 +1089,17 @@ class TranslatedFieldsModelMixin:
                 # Add the proxy field for the shared field.
                 TranslatedField().contribute_to_class(shared_model, name)
             else:
-                # Currently not allowing to replace existing model fields with translatable fields.
-                # That would be a nice feature addition however.
-                if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)):
-                    raise TypeError(
-                        f"The model '{shared_model.__name__}' already has a field named '{name}'"
+                if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)): 
+                    # To ensure data integrity of existing fields, an error is raised if the proxy field is going to  
+                    # replace an existing fields. However, there are scenarios (eg. making existing fields translatable) 
+                    # that require the existing field to exist with the translations model.
+                    msg = f"The model '{shared_model.__name__}' already has a field named '{name}'"
+
+                    if not appsettings.PARLER_PERMIT_FIELD_NAME_CONFLICTS:
+                        raise TypeError(msg)
+
+                    warnings.warn(
+                        f"{msg}, but is non-fatal due to 'PARLER_PERMIT_FIELD_NAME_CONFLICTS' flag."
                     )
 
                 # When the descriptor was placed on an abstract model,
