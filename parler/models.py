@@ -1085,6 +1085,9 @@ class TranslatedFieldsModelMixin:
                 # A model field might not be added yet, as this all happens in the contribute_to_class() loop.
                 # Hence, only checking attributes here. The real fields are checked for in the _prepare() code.
                 shared_field = getattr(shared_model, name)
+                
+                # Other libraries/plugins may manage the field, such as `model_utils.FieldTracker`, therefore, attempt to bypass this.
+                shared_field = shared_field.descirptor if hasattr(shared_field, "descriptor") else shared_field
             except AttributeError:
                 # Add the proxy field for the shared field.
                 TranslatedField().contribute_to_class(shared_model, name)
