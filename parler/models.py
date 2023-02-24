@@ -730,30 +730,6 @@ class TranslatableModelMixin:
         _delete_cached_translations(self)
         return super().delete(using)
 
-    def validate_unique(self, exclude=None):
-        """
-        Also validate the unique_together of the translated model.
-        """
-        # This is called from ModelForm._post_clean() or Model.full_clean()
-        errors = {}
-        try:
-            super().validate_unique(exclude=exclude)
-        except ValidationError as e:
-            errors = e.error_dict
-
-        for local_cache in self._translations_cache.values():
-            for translation in local_cache.values():
-                if is_missing(translation):  # Skip fallback markers
-                    continue
-
-                try:
-                    translation.validate_unique(exclude=exclude)
-                except ValidationError as e:
-                    errors.update(e.error_dict)
-
-        if errors:
-            raise ValidationError(errors)
-
     def save_translations(self, *args, **kwargs):
         """
         The method to save all translations.
