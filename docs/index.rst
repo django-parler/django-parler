@@ -1,7 +1,7 @@
 Welcome to django-parler's documentation!
 =========================================
 
-    "Easily translate "cheese omelet" into "omelette du fromage".
+    "Easily translate "cheese omelet" into "omelette au fromage".
 
 django-parler provides Django model translations without nasty hacks.
 
