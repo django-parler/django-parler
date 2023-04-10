@@ -177,7 +177,12 @@ def _cache_translation_needs_fallback(
 
 
 def _delete_cached_translations(shared_model):
-    cache.delete_many(get_object_cache_keys(shared_model))
+    if not appsettings.PARLER_ENABLE_CACHING:
+        return
+    
+    keys = get_object_cache_keys(shared_model)
+    if keys:
+        cache.delete_many(keys)
 
 
 def _delete_cached_translation(translation):
@@ -189,4 +194,5 @@ def _delete_cached_translation(translation):
     key = get_translation_cache_key(
         translation.__class__, translation.master_id, translation.language_code
     )
-    cache.delete(key)
+    if key:
+        cache.delete(key)
