@@ -6,6 +6,7 @@ from django.utils.timezone import now
 
 from parler import appsettings
 from parler.cache import get_translation_cache_key
+from parler.cache import _cache_translation_needs_fallback
 
 from .testapp.models import DateTimeModel, SimpleModel
 from .utils import AppTestCase, override_parler_settings
@@ -125,3 +126,16 @@ class QueryCountTests(AppTestCase):
             field = model.translations.first()
             key = get_translation_cache_key(field.__class__, 1, "en")
         self.assertEqual(key, "mysite.parler.testapp.SimpleModelTranslation.1.en")
+
+    def test_get_translation_not_in_cache(self):
+        """
+        The default "missing" behaviour was modified as we saw translations being cached as 
+        missing when they didn't miss.
+        """
+        cache.clear()
+
+        with override_parler_settings(PARLER_ENABLE_CACHING=True):
+            model = SimpleModel.objects.first()
+            _cache_translation_needs_fallback(model, model.get_current_language(), model._parler_meta.root.rel_name)
+            str(model.tr_title)
+

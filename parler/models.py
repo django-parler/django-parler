@@ -76,6 +76,7 @@ from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 from parler import signals
+from parler import appsettings
 from parler.cache import (
     MISSING,
     _cache_translation,
@@ -276,7 +277,16 @@ class TranslatableModelMixin:
         current_language = None
         if kwargs:
             current_language = kwargs.pop("_current_language", None)
+            model_fields = [field.name for field in self._meta.get_fields()]
+            
             for field in self._parler_meta.get_all_fields():
+                
+                # Write to the existing field and translation model in `PARLER_PERMIT_FIELD_NAME_CONFLICTS`
+                ignore_existing_fields = appsettings.PARLER_PERMIT_FIELD_NAME_CONFLICTS
+                is_existing_field = field in model_fields
+                if ignore_existing_fields and is_existing_field:
+                    continue
+
                 try:
                     translated_kwargs[field] = kwargs.pop(field)
                 except KeyError:
@@ -551,11 +561,9 @@ class TranslatableModelMixin:
                             local_cache[language_code] = MISSING  # Set fallback marker
                         local_cache[object.language_code] = object
                         return object
-                    elif is_missing(local_cache.get(language_code, None)):
-                        # If get_cached_translation() explicitly set the "does not exist" marker,
-                        # there is no need to try a database query.
-                        pass
                     else:
+                        model_is_missing = is_missing(local_cache.get(language_code, None))
+
                         # 2.3, fetch from database
                         try:
                             object = self._get_translated_queryset(meta).get(
@@ -566,6 +574,15 @@ class TranslatableModelMixin:
                         else:
                             local_cache[language_code] = object
                             _cache_translation(object)  # Store in memcached
+
+                            if model_is_missing:
+                                msg = f"""
+                                    {self._meta.verbose_name} ID {self.pk} was cached as missing but
+                                    existed in the database. This was corrected but introduced an
+                                    additional query.
+                                """
+                                warnings.warn(msg)
+
                             return object
 
         # Not in cache, or default.
@@ -719,30 +736,6 @@ class TranslatableModelMixin:
     def delete(self, using=None):
         _delete_cached_translations(self)
         return super().delete(using)
-
-    def validate_unique(self, exclude=None):
-        """
-        Also validate the unique_together of the translated model.
-        """
-        # This is called from ModelForm._post_clean() or Model.full_clean()
-        errors = {}
-        try:
-            super().validate_unique(exclude=exclude)
-        except ValidationError as e:
-            errors = e.error_dict
-
-        for local_cache in self._translations_cache.values():
-            for translation in local_cache.values():
-                if is_missing(translation):  # Skip fallback markers
-                    continue
-
-                try:
-                    translation.validate_unique(exclude=exclude)
-                except ValidationError as e:
-                    errors.update(e.error_dict)
-
-        if errors:
-            raise ValidationError(errors)
 
     def save_translations(self, *args, **kwargs):
         """
@@ -1075,15 +1068,24 @@ class TranslatedFieldsModelMixin:
                 # A model field might not be added yet, as this all happens in the contribute_to_class() loop.
                 # Hence, only checking attributes here. The real fields are checked for in the _prepare() code.
                 shared_field = getattr(shared_model, name)
+
+                # Other libraries/plugins may manage the field, such as `model_utils.FieldTracker`, therefore, attempt to bypass this.
+                shared_field = shared_field.descriptor if hasattr(shared_field, "descriptor") else shared_field
             except AttributeError:
                 # Add the proxy field for the shared field.
                 TranslatedField().contribute_to_class(shared_model, name)
             else:
-                # Currently not allowing to replace existing model fields with translatable fields.
-                # That would be a nice feature addition however.
-                if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)):
-                    raise TypeError(
-                        f"The model '{shared_model.__name__}' already has a field named '{name}'"
+                if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)): 
+                    # To ensure data integrity of existing fields, an error is raised if the proxy field is going to  
+                    # replace an existing fields. However, there are scenarios (eg. making existing fields translatable) 
+                    # that require the existing field to exist with the translations model.
+                    msg = f"The model '{shared_model.__name__}' already has a field named '{name}'"
+
+                    if not appsettings.PARLER_PERMIT_FIELD_NAME_CONFLICTS:
+                        raise TypeError(msg)
+
+                    warnings.warn(
+                        f"{msg}, but is non-fatal due to 'PARLER_PERMIT_FIELD_NAME_CONFLICTS' flag."
                     )
 
                 # When the descriptor was placed on an abstract model,

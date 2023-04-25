@@ -61,6 +61,13 @@ class TranslationsForeignKey(models.ForeignKey):
 
         super().contribute_to_related_class(cls, related)
         _validate_master(self.model)
+
+        # Skip contributing proxy fields to the shared model 
+        # during `migrate` or `makemigration` as historical models
+        # may not have the `TranslatedModel` base.
+        if cls.__module__ == "__fake__":
+            return
+
         if issubclass(self.model, TranslatedFieldsModelMixin):
             self.model.contribute_translations(cls)
 

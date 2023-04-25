@@ -1,9 +1,8 @@
 from django.utils import translation
-
 from parler.models import TranslationDoesNotExist
 
 from .testapp.models import AnyLanguageModel, EmptyModel, NotRequiredModel, SimpleModel
-from .utils import AppTestCase
+from .utils import AppTestCase, override_parler_settings
 
 
 class ModelAttributeTests(AppTestCase):
@@ -340,3 +339,31 @@ class ModelAttributeTests(AppTestCase):
         self.assertTrue(created)
         self.assertEqual(y.get_current_language(), "nl")
         self.assertEqual(y.tr_title, "TRANS_TITLE")
+
+    def test_throw_conflicting_field_names_error(self):
+        """
+        tests that a model cannot be constructed if field names conflict
+        """
+        with self.assertRaises(TypeError):
+            from parler.models import TranslatableModel, TranslatedFields
+            from django.db import models
+
+            class IneligibleConflictedModel(TranslatableModel):
+                tr_title = models.CharField("Translated Title", max_length=200)
+                translations = TranslatedFields(tr_title=models.CharField("Translated Title", max_length=200))
+
+
+    def test_bypass_conflicting_field_names_error(self):
+        """
+        tests a model can be constructed if in permit confict mode
+        """
+        with override_parler_settings(PARLER_PERMIT_FIELD_NAME_CONFLICTS=True):
+            from parler.models import TranslatableModel, TranslatedFields
+            from django.db import models
+
+            class EligibleConflictedModel(TranslatableModel):
+                tr_title = models.CharField("Translated Title", max_length=200)
+                translations = TranslatedFields(tr_title=models.CharField("Translated Title", max_length=200),)
+
+            x = EligibleConflictedModel(tr_title="abc")
+            assert x.tr_title == "abc"
