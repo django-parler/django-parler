@@ -561,11 +561,9 @@ class TranslatableModelMixin:
                             local_cache[language_code] = MISSING  # Set fallback marker
                         local_cache[object.language_code] = object
                         return object
-                    elif is_missing(local_cache.get(language_code, None)):
-                        # If get_cached_translation() explicitly set the "does not exist" marker,
-                        # there is no need to try a database query.
-                        pass
                     else:
+                        model_is_missing = is_missing(local_cache.get(language_code, None))
+
                         # 2.3, fetch from database
                         try:
                             object = self._get_translated_queryset(meta).get(
@@ -576,6 +574,15 @@ class TranslatableModelMixin:
                         else:
                             local_cache[language_code] = object
                             _cache_translation(object)  # Store in memcached
+
+                            if model_is_missing:
+                                msg = f"""
+                                    {self._meta.verbose_name} ID {self.pk} was cached as missing but
+                                    existed in the database. This was corrected but introduced an
+                                    additional query.
+                                """
+                                warnings.warn(msg)
+
                             return object
 
         # Not in cache, or default.
