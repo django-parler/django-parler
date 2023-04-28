@@ -147,14 +147,34 @@ class TranslatedFieldDescriptor:
         meta = self.field.meta
         try:
             translation = instance._get_translated_model(use_fallback=True, meta=meta)
+            value = getattr(translation, self.field.name)
+
+            # Let's check fallback models if the langauge requested returns a
+            # "None" value, and "any_language" is specified.
+            if value is None and self.field.any_language:
+                # TODO: There might be multiple fallback languages. This only checks
+                # the first returned.
+                try:
+                    translation = instance._get_fallback_translated_model(
+                        meta=meta,
+                    )
+
+                    # Return the fallback value!
+                    if fallback_value := getattr(translation, self.field.name):
+                        return fallback_value
+                except meta.model.DoesNotExist as e:
+                    # There was no suitable translation fallback. Return
+                    # that empty value.
+                    pass
+                    
+            return value
         except meta.model.DoesNotExist as e:
             if self.field.any_language:
                 translation = instance._get_any_translated_model(
                     meta=meta
-                )  # returns None on error.
+                )
 
             if translation is None:
-                # Improve error message
                 e.args = (f"{e.args[0]}\nAttempted to read attribute {self.field.name}.",)
                 raise
 

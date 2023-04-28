@@ -506,6 +506,18 @@ class TranslatableModelMixin:
         meta = self._parler_meta._get_extension_by_related_name(related_name)
         return self._get_translated_model(language_code, meta=meta)
 
+    def _get_fallback_translated_model(self, exclude_language_code=[], meta=None):
+        check_languages = self.get_fallback_languages()
+
+        try:
+            for fallback_lang in check_languages:
+                if trans := self._get_translated_model(fallback_lang, use_fallback=True, meta=meta):
+                    return trans
+        except StopIteration:
+            pass
+    
+        raise meta.model.DoesNotExist("Ruh roh")
+
     def _get_translated_model(
         self, language_code=None, use_fallback=False, auto_create=False, meta=None
     ):
