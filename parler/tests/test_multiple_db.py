@@ -2,20 +2,51 @@ from pprint import pprint
 
 from django.db import connections
 from django.utils import translation
-from django.utils.translation import get_language
-from django.test.utils import override_settings
 from .testapp.models import SimpleModel
 from .utils import AppTestCase, override_parler_settings
 from ..utils.conf import add_default_language_settings
 
 
 # forcing DEBUG to True is required to have the SQL statement traced to the console for investigation
-# (provided the LOGGING setting is configured in runtest.py (see note there).
+# (provided the LOGGING setting is configured in runtest.py, see note there).
 # @override_settings(DEBUG=True)
 class MultipleDbTTest(AppTestCase):
     """
     Test model construction and retrieval in non-default database. Every test is run twice: with and without
-    translation cache.
+    translation cache. When this test set was added to v2.3, the following tests failed:
+        test_save_retrieve_en_translations_with_cache
+        test_safe_getter_with_cache
+        test_fall_back_translation_untranslated_not_hidden_with_cache
+    All problems are traced back to translation cache management: since it is common to all databases,
+    cache acquired in one DB is used in the other, with expected results.
+    Considered solution:
+        a) Include the database name in the cache key, to have separate cache for each DB, which requires
+           an additional parameter to get_translation_cache_key(), to be provided by every user (5 of them,
+           all in cache.py module, + a couple of tests)
+        b) Leave the key unchanged, but use a separate cache for each DB. This requires:
+            - Configuring a CACHE for each DATABASE (in the settings)
+            - Adding a check at startup to make sure configuration fulfills the above constraint.
+            - Adapting the 5 methods actually interacting with the cache: cache.... becomes caches[db_alias]....
+
+        Both solutions make it necessary to associate a db alias to each model, which is actually already
+        available in any <model_instance>._state.db.
+        Solution a) was selected since it is 100% transparent to the users while solution b) would force an update
+        on the cache configuration.
+
+        # TODO: review my previous diagnostic on StackOverflow
+        # TODO: check the behaviour when retrieving from 1 DB, saving in another. Is the
+
+Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/multi-db/)
+                      "If you don’t specify using, the save() method will save into the default database
+                      allocated by the routers."
+                and   "By default, a call to delete an existing object will be executed on the same database
+                      that was used to retrieve the object in the first place."
+            After checking the code, and testing: delete() and save() BOTH determine the database to use
+            as `using = using or router.db_for_write(self.__class__, instance=self)`.
+            which finally gives, when instance is not None, instance._state.db.
+            save() and delete() both use as default db, the db from which the object was retrieved and the
+            statement by the save() documentation is only valid if the object was never saved into a db
+            before.
     """
     databases = {"default", "other_db_1", "other_db_2"}
 
@@ -128,22 +159,6 @@ class MultipleDbTTest(AppTestCase):
 
         # 2. other DB 1 (with using() BEFORE translated())
         obj_a = SimpleModel.objects.using("other_db_1").translated(tr_title=self.A_TRANS_EN_OTHER_DB_1).first()
-        # ERROR HERE: The query is done in 'other_db_1' with the right WHERE clause:
-        # WHERE ("testapp_simplemodel_translation"."language_code" = 'en' AND
-        #    "testapp_simplemodel_translation"."tr_title" = 'Object A translation_en_other_db_1')
-        # yet tr_title is 'Object A translation_en_default' while this value is not
-        # present in db 'other_db_1'
-        # The problem sometimes appears at the next step, querying 'another_db_2' and
-        # still having value ''Object A translation_en_another_db_1'
-        # This test fails when translation cache is not disabled.
-        #
-        # Using a new variable does change anything. Cache must be invalidated!
-        # Solution idea:
-        #   - Disable cache manually for instance ?
-        #     See also https://github.com/django-parler/django-parler/issues/188 for
-        #     an example of how to invalidate cache on single object.
-        #   - include alias in cache id when more than one db is used? or always?
-        # TODO: review my previous diagnostic on StackOverflow
         self.assertEqual(obj_a.tr_title, self.A_TRANS_EN_OTHER_DB_1)
         obj_a = SimpleModel.objects.using("other_db_1").get(pk=self.A_COMMON_PK)
         self.assertEqual(obj_a.tr_title, self.A_TRANS_EN_OTHER_DB_1)
@@ -173,10 +188,10 @@ class MultipleDbTTest(AppTestCase):
             self.assertEqual(obj.tr_title, self.A_TRANS_EN_DEFAULT, " (default DB)")
             obj = SimpleModel.objects.using("other_db_1"). \
                 active_translations(tr_title=self.A_TRANS_EN_OTHER_DB_1).first()
-            self.assertEqual(obj.tr_title, self.A_TRANS_EN_DEFAULT, " (other_db_1)")
+            self.assertEqual(obj.tr_title, self.A_TRANS_EN_OTHER_DB_1, " (other_db_1)")
             obj = SimpleModel.objects.using("other_db_2") \
                 .active_translations(tr_title=self.A_TRANS_EN_OTHER_DB_2).first()
-            self.assertEqual(obj.tr_title, self.A_TRANS_EN_DEFAULT, " (other_db_2)")
+            self.assertEqual(obj.tr_title, self.A_TRANS_EN_OTHER_DB_2, " (other_db_2)")
 
     @override_parler_settings(PARLER_ENABLE_CACHING=False)
     def test_fallback_translation_w_existing_fallback_untranslated_hidden_no_cache(self):
@@ -263,14 +278,20 @@ class MultipleDbTTest(AppTestCase):
         """ Retrieve from non-default db and save change implicitly in the same base.
             Run this test with cache disabled to make sure the value is actually checked in the db."""
         # self.print_db_content("Before updating object A in other_db_1 with implicit save()")
-        obj = SimpleModel.objects.using("other_db_1").get(pk=self.A_COMMON_PK)
-        obj.tr_title = "changed in other_db_1"
-        obj.save()  # Should save in 'other_db_1'
+        obj_1 = SimpleModel.objects.using("other_db_1").get(pk=self.A_COMMON_PK)
+        obj_1.tr_title = "changed in other_db_1"
+        obj_2 = SimpleModel.objects.using("other_db_2").get(pk=self.A_COMMON_PK)
+        obj_2.tr_title = "changed in other_db_2"
+        obj_1.save()  # Should save in 'other_db_1'
+        obj_2.save()  # Should save in 'other_db_2'
         # self.print_db_content("After updating object A in other_db_1 with implicit save()")
 
         objs = SimpleModel.objects.using("other_db_1").translated(tr_title="changed in other_db_1")
         self.assertEqual(len(objs), 1)
         self.assertEqual(objs[0].tr_title, "changed in other_db_1")
+        objs = SimpleModel.objects.using("other_db_2").translated(tr_title="changed in other_db_2")
+        self.assertEqual(len(objs), 1)
+        self.assertEqual(objs[0].tr_title, "changed in other_db_2")
 
     @override_parler_settings(PARLER_ENABLE_CACHING=False)
     def test_create_retrieve_no_cache(self):
