@@ -1,5 +1,7 @@
 from pprint import pprint
 
+from django.core.cache import cache
+from django.test import override_settings
 from django.db import connections
 from django.utils import translation
 from .testapp.models import SimpleModel
@@ -9,7 +11,7 @@ from ..utils.conf import add_default_language_settings
 
 # forcing DEBUG to True is required to have the SQL statement traced to the console for investigation
 # (provided the LOGGING setting is configured in runtest.py, see note there).
-# @override_settings(DEBUG=True)
+@override_settings(DEBUG=True)
 class MultipleDbTTest(AppTestCase):
     """
     Test model construction and retrieval in non-default database. Every test is run twice: with and without
@@ -17,8 +19,10 @@ class MultipleDbTTest(AppTestCase):
         test_save_retrieve_en_translations_with_cache
         test_safe_getter_with_cache
         test_fall_back_translation_untranslated_not_hidden_with_cache
-    All problems are traced back to translation cache management: since it is common to all databases,
-    cache acquired in one DB is used in the other, with expected results.
+        test_copy_to_other_db_active_translation_only_with_cache
+        test_copy_to_other_db_active_translation_only_no_cache
+    First 3 problems are traced back to translation cache management: since it is common to all databases,
+    cache acquired in one DB is used in the other, with the expected disasters.
     Considered solution:
         a) Include the database name in the cache key, to have separate cache for each DB, which requires
            an additional parameter to get_translation_cache_key(), to be provided by every user (5 of them,
@@ -33,8 +37,14 @@ class MultipleDbTTest(AppTestCase):
         Solution a) was selected since it is 100% transparent to the users while solution b) would force an update
         on the cache configuration.
 
+    The last 2 problems are different, and kept happening after fixing the cache overlap, and also happen
+    when caching is disabled. It appears because of the models local caches (model._translations_cache)
+    which are explored, found and not modified: they should have been invalidated by the change of database.
+
+
         # TODO: review my previous diagnostic on StackOverflow
-        # TODO: check the behaviour when retrieving from 1 DB, saving in another. Is the
+        # TODO: check the behaviour when retrieving from 1 DB, saving in another.
+        # TODO: test create_translation/delete_translation methods in non-default database.
 
 Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/multi-db/)
                       "If you don’t specify using, the save() method will save into the default database
@@ -74,26 +84,29 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
                translations.
             b) Object B in 3 DB, same pk, B_COMMON_PK, translation in FR only (no fallback)
             c) Object C, in other_db_1 only, with translations in EN and FR
-            NB: The database is empty, so pk conflicts are not possible.
+            NB: 1) The database is empty, so pk conflicts are not possible.
+                2) Saving an instance saves ALL translations.
         """
         # cls.print_db_content("Before setUpData()")
         with translation.override('en'):
             obj_a = SimpleModel(pk=cls.A_COMMON_PK, tr_title=cls.A_TRANS_EN_DEFAULT)
-            obj_a.save()
-            obj_a.tr_title = cls.A_TRANS_EN_OTHER_DB_1
-            obj_a.save(using="other_db_1")
-            obj_a.tr_title = cls.A_TRANS_EN_OTHER_DB_2
-            obj_a.save(using="other_db_2")
-
-        # cls.print_db_content("After configuring 'en' for obj A")
         obj_a.set_current_language('fr')
         obj_a.tr_title = cls.A_TRANS_FR_DEFAULT
-        obj_a.save(using="default")
+        obj_a.save()
+
+        obj_a.set_current_language('en')
+        obj_a.tr_title = cls.A_TRANS_EN_OTHER_DB_1
+        obj_a.set_current_language('fr')
         obj_a.tr_title = cls.A_TRANS_FR_OTHER_DB_1
         obj_a.save(using="other_db_1")
+
+        obj_a.set_current_language('en')
+        obj_a.tr_title = cls.A_TRANS_EN_OTHER_DB_2
+        obj_a.set_current_language('fr')
         obj_a.tr_title = cls.A_TRANS_FR_OTHER_DB_2
         obj_a.save(using="other_db_2")
-        # cls.print_db_content("After configuring 'FR' for obj A")
+
+        cls.print_db_content("After configuring 'en' + 'fr' for obj A in 3 db.")
 
         with translation.override('fr'):
             obj_b = SimpleModel(pk=cls.B_COMMON_PK, tr_title=cls.B_TRANS_FR_DEFAULT)
@@ -102,19 +115,20 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
             obj_b.save(using="other_db_1")
             obj_b.tr_title = cls.B_TRANS_FR_OTHER_DB_2
             obj_b.save(using="other_db_2")
-            # cls.print_db_content("After configuring 'FR' for obj B")
+            cls.print_db_content("After configuring 'FR' for obj B")
 
         obj_c = SimpleModel(pk=cls.C_PK, tr_title=cls.C_TRANS_EN)
         obj_c.save(using='other_db_1')
         obj_c.set_current_language('fr')
         obj_c.tr_title = cls.C_TRANS_FR
         obj_c.save()
-        # cls.print_db_content("After configuring 'FR' and 'EN' for obj C in 'other_db_1")
+        cls.print_db_content("After configuring 'FR' and 'EN' for obj C in 'other_db_1")
 
     @classmethod
     def print_db_content(cls, label: str):
         """ Print the raw content of the simple_objects and translations tables,
-            for diagnostic."""
+            for diagnostic.
+            :param label: A string to print as title to identify the significance of the dump. """
         print(f"{label}: content of databases:")
         for alias in ("default", "other_db_1", "other_db_2"):
             print(f"--------- Database: '{alias}' ------------")
@@ -129,14 +143,20 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
         print("--------------------------------")
 
     @classmethod
-    def get_num_translations(cls, pk: int, alias: str) -> int:
+    def get_num_translations(cls, pk: int, using: str) -> int:
         """ Count how many translation rows exist in database with provided alias,
             for SimpleModel with given pk.
+            :param pk: The id of the SimpleModel instance to consider.
+            :param using: The database alias to use.
         """
-        with connections[alias].cursor() as cursor:
+        with connections[using].cursor() as cursor:
             table = SimpleModel._meta.db_table + "_translation"
             cursor.execute(f"SELECT COUNT(*) from {table} WHERE master_id={pk}")
             return cursor.fetchone()[0]
+
+    def setUp(self):
+        """ Clear the translation cache before each test to guarantee tests idempotency."""
+        cache.clear()
 
     @override_parler_settings(PARLER_ENABLE_CACHING=False)
     def test_save_retrieve_en_translations_no_cache(self):
@@ -182,6 +202,7 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
             NB: hide_untranslated is False (default value) in the settings defined by runtest.py.
         """
         # Fallback should work for obj A
+        self.print_db_content("Before retrieving object A in 'de'")
         with translation.override('de'):
             obj = SimpleModel.objects.using("default"). \
                 active_translations(tr_title=self.A_TRANS_EN_DEFAULT).first()
@@ -309,40 +330,37 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
             self.assertEqual(objs[0].tr_title, "de_created_in_other_db_1")
 
     @override_parler_settings(PARLER_ENABLE_CACHING=False)
-    def test_copy_to_other_db_active_translation_only_no_cache(self):
-        self.check_copy_to_other_db_active_translation_only()
+    def test_save_copy_to_other_db_no_cache(self):
+        self.check_save_copy_to_other_db()
 
-    def test_copy_to_other_db_active_translation_only_with_cache(self):
-        self.check_copy_to_other_db_active_translation_only()
+    def  test_save_copy_to_other_db_with_cache(self):
+        self.check_save_copy_to_other_db()
 
-    def check_copy_to_other_db_active_translation_only(self):
+    def check_save_copy_to_other_db(self):
         """ Retrieve model from one DB and save in another one. Using the usual save() method should
             only save the active language.
         """
         # retrieve object C with FR translation from other_db_1
         # self.print_db_content(f"Before retrieving obj C (pk={self.C_PK}) in FR from other_db_1")
         with translation.override('fr'):
+            self.print_db_content(f"Before saving obj C (pk={self.C_PK}) in FR to other_db_2")
             obj = SimpleModel.objects.using('other_db_1').get(pk=self.C_PK)
 
             # TODO: Investigate why this fails  while the above works???
             #       obj = SimpleModel.objects.get(pk=self.C_PK).using('other_db_1')
             #       Ditto for obtaining retrieved_obj
-            # do not clear PK, to avoid forcing insertion because of pk absence.
-            obj.tr_title += "_TMP_EDIT_TO_FORCE_TRANSLATION_INSERTION"
-            # TODO BUG: without the previous line no translation is inserted in other_db_2 by the
-            #           next save. Fix, remove line above and change assert below.
-            #           Fails with and without cache !
+            # Clear PK, to force insertion.
+            obj.pk = None
             obj.save(using='other_db_2')
-            # self.print_db_content(f"After saving obj C (pk={self.C_PK}) in FR to other_db_2")
+            self.print_db_content(f"After saving obj C (pk={self.C_PK}) in FR to other_db_2")
 
             retrieved_obj = SimpleModel.objects.using('other_db_2').get(pk=self.C_PK)
             self.assertEqual(self.get_num_translations(self.C_PK, 'other_db_2'),
-                             1, "Should have found one translations")
-            self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR + "_TMP_EDIT_TO_FORCE_TRANSLATION_INSERTION")
+                             2, "Should have found Two translations")
+            self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR)
 
-        # check there is no 'en' translation
-        objs = SimpleModel.objects.using('other_db_2').translated(pk=self.C_PK)
-        self.assertEqual(len(objs), 0)
+
+    # TODO test copy_update_to_other_db
 
     def test_copy_all_translations_to_other_db(self):
         # TODO: This will require an additional method on the translatable model. TBC
