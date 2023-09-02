@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Changes in 2.x (date TBD)
+-------------------------
+
+* Added support for multiple database:
+    - Cache key now includes the database alias
+
+    - Added methods xxxxx
+    - Added doc section about Multiple Database support and use.
+
+
 Changes in 2.3 (2021-11-18)
 ---------------------------
 
