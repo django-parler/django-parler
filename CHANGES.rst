@@ -4,11 +4,11 @@ Changelog
 Changes in 2.x (date TBD)
 -------------------------
 
-* Added support for multiple database:
-    - Cache key now includes the database alias
+Added support for multiple databases:
 
-    - Added methods xxxxx
-    - Added doc section about Multiple Database support and use.
+- Fixed cache overlap issue when using multiple database: cache key now includes the database alias.
+- Now properly support multiple databases and translatable models duplication (fully documented on page `Duplicating instances, using multiple databases and more...`).
+- Now clearly identify some marginal case django-parler does not support, and raise an exception instead of silently failing and possibly corrupting the database.
 
 
 Changes in 2.3 (2021-11-18)

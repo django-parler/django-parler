@@ -2,7 +2,7 @@ from pprint import pprint
 
 from django.core.cache import cache
 from django.test import override_settings
-from django.db import connections
+from django.db import connections, ProgrammingError
 from django.utils import translation
 from .testapp.models import SimpleModel
 from .utils import AppTestCase, override_parler_settings
@@ -11,52 +11,37 @@ from ..utils.conf import add_default_language_settings
 
 # forcing DEBUG to True is required to have the SQL statement traced to the console for investigation
 # (provided the LOGGING setting is configured in runtest.py, see note there).
-@override_settings(DEBUG=True)
-class MultipleDbTTest(AppTestCase):
+# @override_settings(DEBUG=True)
+class MultipleDbTest(AppTestCase):
     """
-    Test model construction and retrieval in non-default database. Every test is run twice: with and without
-    translation cache. When this test set was added to v2.3, the following tests failed:
+    Test model construction and retrieval in non-default database. Most tests are run twice: with and without
+    translation cache. When this test set was first added to v2.3, the following tests failed:
         test_save_retrieve_en_translations_with_cache
         test_safe_getter_with_cache
         test_fall_back_translation_untranslated_not_hidden_with_cache
-        test_copy_to_other_db_active_translation_only_with_cache
-        test_copy_to_other_db_active_translation_only_no_cache
-    First 3 problems are traced back to translation cache management: since it is common to all databases,
-    cache acquired in one DB is used in the other, with the expected disasters.
-    Considered solution:
-        a) Include the database name in the cache key, to have separate cache for each DB, which requires
-           an additional parameter to get_translation_cache_key(), to be provided by every user (5 of them,
-           all in cache.py module, + a couple of tests)
-        b) Leave the key unchanged, but use a separate cache for each DB. This requires:
-            - Configuring a CACHE for each DATABASE (in the settings)
-            - Adding a check at startup to make sure configuration fulfills the above constraint.
-            - Adapting the 5 methods actually interacting with the cache: cache.... becomes caches[db_alias]....
+        Any attempt to retrieve a model from one DB and save to another, with or without cache:
 
-        Both solutions make it necessary to associate a db alias to each model, which is actually already
-        available in any <model_instance>._state.db.
-        Solution a) was selected since it is 100% transparent to the users while solution b) would force an update
-        on the cache configuration.
+        test_duplicate_into_other_db_with_cache
+        test_duplicate_into_other_db_no_cache
+        test_duplicate_within_same_db_with_cache
+        test_duplicate_within_same_db_no_cache
 
-    The last 2 problems are different, and kept happening after fixing the cache overlap, and also happen
-    when caching is disabled. It appears because of the models local caches (model._translations_cache)
-    which are explored, found and not modified: they should have been invalidated by the change of database.
+        test_save_preconditions
 
+    First group of failures was traced back to translation cache management: since it is common to all
+    databases,  cache acquired in one DB is used in the other, with the expected disasters (see doc on
+    Caching.rst and caching_design.rst).
 
-        # TODO: review my previous diagnostic on StackOverflow
-        # TODO: check the behaviour when retrieving from 1 DB, saving in another.
-        # TODO: test create_translation/delete_translation methods in non-default database.
+    The second group of failures kept happening after fixing the cache overlap, and also happen
+    when caching is disabled. It appeared because of the models local caches (model._translations_cache)
+    which are explored, found and not modified: they should have been forcibly saved because of the change
+    of database.
+    A specific handling of save() when it involves duplicating the model has been added.
 
-Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/multi-db/)
-                      "If you don’t specify using, the save() method will save into the default database
-                      allocated by the routers."
-                and   "By default, a call to delete an existing object will be executed on the same database
-                      that was used to retrieve the object in the first place."
-            After checking the code, and testing: delete() and save() BOTH determine the database to use
-            as `using = using or router.db_for_write(self.__class__, instance=self)`.
-            which finally gives, when instance is not None, instance._state.db.
-            save() and delete() both use as default db, the db from which the object was retrieved and the
-            statement by the save() documentation is only valid if the object was never saved into a db
-            before.
+    Finally, when saving after changing pk to the pk of another existing model, data sometimes ended
+    corrupted in the database with models missing or sharing translations.
+    This was "fixed" by raising an exception when detecting this particular condition.
+
     """
     databases = {"default", "other_db_1", "other_db_2"}
 
@@ -106,7 +91,7 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
         obj_a.tr_title = cls.A_TRANS_FR_OTHER_DB_2
         obj_a.save(using="other_db_2")
 
-        cls.print_db_content("After configuring 'en' + 'fr' for obj A in 3 db.")
+        # cls.print_db_content("After configuring 'en' + 'fr' for obj A in 3 db.")
 
         with translation.override('fr'):
             obj_b = SimpleModel(pk=cls.B_COMMON_PK, tr_title=cls.B_TRANS_FR_DEFAULT)
@@ -115,14 +100,14 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
             obj_b.save(using="other_db_1")
             obj_b.tr_title = cls.B_TRANS_FR_OTHER_DB_2
             obj_b.save(using="other_db_2")
-            cls.print_db_content("After configuring 'FR' for obj B")
+            # cls.print_db_content("After configuring 'FR' for obj B")
 
         obj_c = SimpleModel(pk=cls.C_PK, tr_title=cls.C_TRANS_EN)
         obj_c.save(using='other_db_1')
         obj_c.set_current_language('fr')
         obj_c.tr_title = cls.C_TRANS_FR
         obj_c.save()
-        cls.print_db_content("After configuring 'FR' and 'EN' for obj C in 'other_db_1")
+        # cls.print_db_content("After setUpTestData()")
 
     @classmethod
     def print_db_content(cls, label: str):
@@ -143,15 +128,19 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
         print("--------------------------------")
 
     @classmethod
-    def get_num_translations(cls, pk: int, using: str) -> int:
+    def get_num_translations(cls, pk: int | None, using: str) -> int:
         """ Count how many translation rows exist in database with provided alias,
             for SimpleModel with given pk.
-            :param pk: The id of the SimpleModel instance to consider.
+            :param pk: The id of the SimpleModel instance to consider. if None, all translations are counted.
             :param using: The database alias to use.
         """
         with connections[using].cursor() as cursor:
             table = SimpleModel._meta.db_table + "_translation"
-            cursor.execute(f"SELECT COUNT(*) from {table} WHERE master_id={pk}")
+            if pk is not None:
+                where_clause = f" WHERE master_id={pk}"
+            else:
+                where_clause = ""
+            cursor.execute(f"SELECT COUNT(*) from {table} {where_clause}")
             return cursor.fetchone()[0]
 
     def setUp(self):
@@ -202,7 +191,7 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
             NB: hide_untranslated is False (default value) in the settings defined by runtest.py.
         """
         # Fallback should work for obj A
-        self.print_db_content("Before retrieving object A in 'de'")
+        # self.print_db_content("Before retrieving object A in 'de'")
         with translation.override('de'):
             obj = SimpleModel.objects.using("default"). \
                 active_translations(tr_title=self.A_TRANS_EN_DEFAULT).first()
@@ -330,41 +319,123 @@ Note:       Django doc says: (https://docs.djangoproject.com/en/4.2/topics/db/mu
             self.assertEqual(objs[0].tr_title, "de_created_in_other_db_1")
 
     @override_parler_settings(PARLER_ENABLE_CACHING=False)
-    def test_save_copy_to_other_db_no_cache(self):
-        self.check_save_copy_to_other_db()
+    def test_duplicate_into_other_db_no_cache(self):
+        self.check_duplicate_into_other_db()
 
-    def  test_save_copy_to_other_db_with_cache(self):
-        self.check_save_copy_to_other_db()
+    def test_duplicate_into_other_db_with_cache(self):
+        self.check_duplicate_into_other_db()
 
-    def check_save_copy_to_other_db(self):
-        """ Retrieve model from one DB and save in another one. Using the usual save() method should
-            only save the active language.
+    def check_duplicate_into_other_db(self):
+        """ Retrieve model from one DB and save in another one. All translations should be saved,
+            and unsaved changes should be saved as well.
         """
-        # retrieve object C with FR translation from other_db_1
-        # self.print_db_content(f"Before retrieving obj C (pk={self.C_PK}) in FR from other_db_1")
         with translation.override('fr'):
-            self.print_db_content(f"Before saving obj C (pk={self.C_PK}) in FR to other_db_2")
+            # retrieve object C with FR translation from other_db_1
+            # self.print_db_content(f"Before retrieving obj C (pk={self.C_PK}) in FR from other_db_1")
             obj = SimpleModel.objects.using('other_db_1').get(pk=self.C_PK)
+            obj.tr_title += "_CHANGE_1"
 
-            # TODO: Investigate why this fails  while the above works???
-            #       obj = SimpleModel.objects.get(pk=self.C_PK).using('other_db_1')
-            #       Ditto for obtaining retrieved_obj
-            # Clear PK, to force insertion.
+            # Do not clear PK for duplication (but it will be regenerated in new DB).
+            original_num_translations_db_2 = self.get_num_translations(None, 'other_db_2')
+            obj._duplicate(using='other_db_2')
+            # self.print_db_content(f"After duplicating obj C (pk={self.C_PK}) into other_db_2")
+            self.assertEqual(obj._state.db, 'other_db_2')
+            self.assertNotEquals(obj.pk, self.C_PK)
+
+            retrieved_obj = SimpleModel.objects.using('other_db_2').get(pk=obj.pk)
+            self.assertEqual(self.get_num_translations(obj.pk, 'other_db_2'),
+                             2, "Object should have found two translations")
+            self.assertEqual(self.get_num_translations(None, 'other_db_2'),
+                             original_num_translations_db_2 + 2, "Should have found two extra translations")
+            self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR + "_CHANGE_1")
+
+            # Modify duplicated object and check it is modified in 'other_db_2'
+            obj.tr_title += "_CHANGE_2"
+            obj.save()
+            retrieved_obj = SimpleModel.objects.using('other_db_2').get(pk=obj.pk)
+            self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR + "_CHANGE_1_CHANGE_2")
+            # self.print_db_content(f"After changing/saving dupl object")
+
+            # Check original object is still unchanged, as expected
+            original_obj = SimpleModel.objects.using('other_db_1').get(pk=self.C_PK)
+            self.assertEqual(original_obj.tr_title, self.C_TRANS_FR)
+
+    @override_parler_settings(PARLER_ENABLE_CACHING=False)
+    def test_duplicate_within_same_db_no_cache(self):
+        self.check_duplicate_within_same_db()
+
+    def test_duplicate_within_same_db_with_cache(self):
+        self.check_duplicate_within_same_db()
+
+    def check_duplicate_within_same_db(self):
+        """ Retrieve model from DB and _duplicate it in the same database. All translations should be saved,
+            and unsaved changes should be saved as well.
+        """
+        with translation.override('fr'):
+            # retrieve object C with FR translation from other_db_1
+            # self.print_db_content(f"Before retrieving obj C (pk={self.C_PK}) in FR from other_db_1")
+            obj = SimpleModel.objects.using('other_db_1').get(pk=self.C_PK)
+            obj.tr_title += "_CHANGE_1"
+
+            # clear PK to force duplication
             obj.pk = None
-            obj.save(using='other_db_2')
-            self.print_db_content(f"After saving obj C (pk={self.C_PK}) in FR to other_db_2")
+            original_num_translations_db_1 = self.get_num_translations(None, 'other_db_1')
+            obj.save()
+            # self.print_db_content(f"After duplicating obj C (pk={self.C_PK}) into other_db_2")
+            self.assertEqual(obj._state.db, 'other_db_1')
+            self.assertNotEquals(obj.pk, self.C_PK)
 
-            retrieved_obj = SimpleModel.objects.using('other_db_2').get(pk=self.C_PK)
-            self.assertEqual(self.get_num_translations(self.C_PK, 'other_db_2'),
-                             2, "Should have found Two translations")
-            self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR)
+            retrieved_obj = SimpleModel.objects.using('other_db_1').get(pk=obj.pk)
+            self.assertEqual(self.get_num_translations(obj.pk, 'other_db_1'),
+                             2, "Object should have found two translations")
+            self.assertEqual(self.get_num_translations(None, 'other_db_1'),
+                             original_num_translations_db_1 + 2, "Should have found two extra translations")
+            self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR + "_CHANGE_1")
 
+            # Modify duplicated object and check it is modified in 'other_db_2'
+            obj.tr_title += "_CHANGE_2"
+            obj.save()
+            retrieved_obj = SimpleModel.objects.using('other_db_1').get(pk=obj.pk)
+            self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR + "_CHANGE_1_CHANGE_2")
+            # self.print_db_content(f"After changing/saving dupl object")
 
-    # TODO test copy_update_to_other_db
+            # Check original object is still unchanged, as expected
+            original_obj = SimpleModel.objects.using('other_db_1').get(pk=self.C_PK)
+            self.assertEqual(original_obj.tr_title, self.C_TRANS_FR)
 
-    def test_copy_all_translations_to_other_db(self):
-        # TODO: This will require an additional method on the translatable model. TBC
-        pass
+    def test_duplicate_precondition(self):
+        """ Test exception is raised when calling _duplicate() with never-saved object """
+
+        obj = SimpleModel(tr_title="xxx")
+        with self.assertRaises(ProgrammingError):
+            obj._duplicate()
+
+    def test_save_preconditions(self):
+        """ Test exceptions are raised when calling save() in unsupported configurations """
+
+        # Try to save new model in same DB with pk not in use (should work)
+        obj = SimpleModel(tr_title='abc')
+        obj.pk = self.C_PK + 10000
+        obj.save()
+
+        # Try to save in same DB with pk not in use (should work)
+        obj.pk = self.C_PK + 10001
+        obj.save()
+
+        # Try to save in other DB with pk not in use (should work)
+        obj.pk = self.C_PK + 10001
+        obj.save(using="other_db_2")
+
+        # Try to save in other db with existing pk to overwrite model.
+        obj.pk = self.C_PK + 10001
+        with self.assertRaises(NotImplementedError):
+            obj.save(using="default")
+
+        # Try to save new model with existing pk to overwrite model.
+        obj = SimpleModel(tr_title="xxx")
+        obj.pk = self.C_PK
+        with self.assertRaises(NotImplementedError):
+            obj.save(using="other_db_1")
 
     def test_delete_from_explicit_db(self):
         """ Delete object specifying database in delete().

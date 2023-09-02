@@ -117,7 +117,7 @@ if not settings.configured:
             },
             'loggers': {
                 'django.db.backends': {
-                    'level': 'DEBUG',  # set to DEBUG for a complete SQL trace,
+                    'level': 'WARNING',  # set to DEBUG for a complete SQL trace,
                                        # or to WARNING or ERROR for normal operation.
                     'handlers': ['console'],
                     'propagate': False,  # root logger sends to console. Don't propagate to avoid printing twice.
