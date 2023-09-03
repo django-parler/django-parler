@@ -12,7 +12,7 @@ jobs:
     name: "Python ${{ matrix.python }} Django ${{ matrix.django }}"
     runs-on: ubuntu-latest
     strategy:
-      # max-parallel: 8  # default is max available
+      # max-parallel: 8  # default is max available.
       fail-fast: false
       matrix:
         include:
