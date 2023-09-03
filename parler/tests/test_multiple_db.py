@@ -1,6 +1,6 @@
-from pprint import pprint
-
+from __future__ import annotations  # Support "|" syntax in type hints
 from django.core.cache import cache
+from pprint import pprint
 from django.test import override_settings
 from django.db import connections, ProgrammingError
 from django.utils import translation
@@ -404,7 +404,7 @@ class MultipleDbTest(AppTestCase):
             self.assertEqual(original_obj.tr_title, self.C_TRANS_FR)
 
     def test_duplicate_precondition(self):
-        """ Test exception is raised when calling _duplicate() with never-saved object """
+        """ Test exception is raised when calling _duplicate() with never-saved object. """
 
         obj = SimpleModel(tr_title="xxx")
         with self.assertRaises(ProgrammingError):
