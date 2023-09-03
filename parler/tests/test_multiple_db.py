@@ -1,4 +1,3 @@
-from __future__ import annotations  # Support "|" syntax in type hints
 from django.core.cache import cache
 from pprint import pprint
 from django.test import override_settings
@@ -128,15 +127,15 @@ class MultipleDbTest(AppTestCase):
         print("--------------------------------")
 
     @classmethod
-    def get_num_translations(cls, pk: int | None, using: str) -> int:
+    def get_num_translations(cls, pk: int, using: str) -> int:
         """ Count how many translation rows exist in database with provided alias,
             for SimpleModel with given pk.
-            :param pk: The id of the SimpleModel instance to consider. if None, all translations are counted.
+            :param pk: The id of the SimpleModel instance to consider. if 0, all translations are counted.
             :param using: The database alias to use.
         """
         with connections[using].cursor() as cursor:
             table = SimpleModel._meta.db_table + "_translation"
-            if pk is not None:
+            if pk != 0:
                 where_clause = f" WHERE master_id={pk}"
             else:
                 where_clause = ""
@@ -336,7 +335,7 @@ class MultipleDbTest(AppTestCase):
             obj.tr_title += "_CHANGE_1"
 
             # Do not clear PK for duplication (but it will be regenerated in new DB).
-            original_num_translations_db_2 = self.get_num_translations(None, 'other_db_2')
+            original_num_translations_db_2 = self.get_num_translations(0, 'other_db_2')
             obj._duplicate(using='other_db_2')
             # self.print_db_content(f"After duplicating obj C (pk={self.C_PK}) into other_db_2")
             self.assertEqual(obj._state.db, 'other_db_2')
@@ -345,7 +344,7 @@ class MultipleDbTest(AppTestCase):
             retrieved_obj = SimpleModel.objects.using('other_db_2').get(pk=obj.pk)
             self.assertEqual(self.get_num_translations(obj.pk, 'other_db_2'),
                              2, "Object should have found two translations")
-            self.assertEqual(self.get_num_translations(None, 'other_db_2'),
+            self.assertEqual(self.get_num_translations(0, 'other_db_2'),
                              original_num_translations_db_2 + 2, "Should have found two extra translations")
             self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR + "_CHANGE_1")
 
@@ -379,7 +378,7 @@ class MultipleDbTest(AppTestCase):
 
             # clear PK to force duplication
             obj.pk = None
-            original_num_translations_db_1 = self.get_num_translations(None, 'other_db_1')
+            original_num_translations_db_1 = self.get_num_translations(0, 'other_db_1')
             obj.save()
             # self.print_db_content(f"After duplicating obj C (pk={self.C_PK}) into other_db_2")
             self.assertEqual(obj._state.db, 'other_db_1')
@@ -388,7 +387,7 @@ class MultipleDbTest(AppTestCase):
             retrieved_obj = SimpleModel.objects.using('other_db_1').get(pk=obj.pk)
             self.assertEqual(self.get_num_translations(obj.pk, 'other_db_1'),
                              2, "Object should have found two translations")
-            self.assertEqual(self.get_num_translations(None, 'other_db_1'),
+            self.assertEqual(self.get_num_translations(0, 'other_db_1'),
                              original_num_translations_db_1 + 2, "Should have found two extra translations")
             self.assertEqual(retrieved_obj.tr_title, self.C_TRANS_FR + "_CHANGE_1")
 
