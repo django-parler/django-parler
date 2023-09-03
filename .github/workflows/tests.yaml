@@ -1,16 +1,18 @@
 name: CI Testing
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - master
   push:
     branches: [master, multiDB_support]
-  workflow_dispatch:
 
 jobs:
   test:
     name: "Python ${{ matrix.python }} Django ${{ matrix.django }}"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+      # AB, 09/2023 Changed from ubuntu-latest to ubuntu-20.04 because there is no py3.6 build for ubuntu-22.04
+      #             Ref: https://github.com/actions/setup-python/issues/544
     strategy:
       # max-parallel: 8  # default is max available.
       fail-fast: false
@@ -66,10 +68,10 @@ jobs:
         run: sudo apt-get install -y gettext
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
 
