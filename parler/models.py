@@ -812,9 +812,9 @@ class TranslatableModelMixin:
         This can be overwritten to implement any custom additions.
         This method calls :func:`save_translation` for every fetched language.
 
-        :param duplicating: if True, translations are save as part of the duplication of a
-                            translatable model: for each of them: the pk and the master_id must be set to none
-                            (they will be updated in save_translation()).
+        :param duplicating: if True, translations are saved as part of the duplication of a
+            translatable model: for each of them: the pk and the master_id must be set to none
+            (they will be updated in save_translation()).
         :param args: Any custom arguments to pass to :func:`save`.
         :param kwargs: Any custom arguments to pass to :func:`save`.
         """

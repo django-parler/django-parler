@@ -2,7 +2,7 @@ Duplicating instances, using multiple databases and more...
 ===========================================================
 
 .. versionchanged:: 2.x
-    In previous versions, the caching mechanism was common to all databases with nasty side-effects when managing instances of the same Model in several databases. Once fixed, tests revealed that a number of operations commonly performed on plain Models where either silently failing or resulting in unintuitive effects (compared to the effects described by Django documentation about plain Models. Hence this summary to clarify how typical Django operation are supported for translatable models.
+    In previous versions, the caching mechanism was common to all databases with nasty side-effects when managing instances of the same Model in several databases. Once fixed, tests revealed that a number of operations commonly performed on plain Models where either silently failing or resulting in unintuitive effects (compared to the effects described by Django documentation about plain Models). Hence this summary to clarify how typical Django operation are supported (or not) for translatable models.
 
 Overview
 --------
@@ -45,7 +45,7 @@ The sequence is strictly similar, and Django-parler saves all translations, just
 Retrieving a model from a non-default database
 ----------------------------------------------
 
-When retrieving a model from a non-default database (e.g with ``MyModel.objects.using("my_db").filter(...)``), we expect a subsequent database operation (e.g ``my_instance.save()`` or ``my_instance.delete()``, without an explicit ``using="my_db"`` argument) to be applied to the database the instance was retrieved from, and we expect *all* translations to be saved or deleted, together with the master model instance.  This is the standard behaviour for regular models, and is similarly implemented by translatable models:
+When retrieving a model from a non-default database (e.g with ``MyModel.objects.using("my_db").filter(...)``), we expect a subsequent database operation (e.g ``my_instance.save()`` or ``my_instance.delete()``, without an explicit ``using="my_db"`` argument) to be applied to the database the instance was retrieved from, and we expect *all* translations to be saved or deleted, together with the master model instance.  This is the standard behaviour for regular models, and is similarly implemented for translatable models:
 
 .. code-block:: python
 
@@ -81,8 +81,8 @@ Translatable models behave the same way, saving all translations, including poss
 
 .. warning:: As for any Model, when duplicating to a new database, relations to other Models must be carefully considered. Django-parler takes care of transparently duplicating the translations as required, but any other foreign key in your model must be carefully managed to avoid inadvertently referencing models using foreign keys which only make sense in the original database.
 
-Updating a model in another database by setting the primary key before saving
------------------------------------------------------------------------------
+Overwriting a model in the same or another database by setting the primary key before saving
+--------------------------------------------------------------------------------------------
 
 Regular models allow this possibly dangerous (and mostly not advisable operation): if ``my_other_db`` includes a model with pk=123, we can force the pk of any model (previously saved in another database or not) to this value, and save it to ``my_other_db`` in order to **overwrite** the existing model (Django will in this case perform and ``UPDATE`` instead of an ``INSERT``). This operation is OK with a model without any relation to other models, but becomes very tricky if relations to other models must be managed.
 
@@ -96,7 +96,7 @@ Regular models allow this possibly dangerous (and mostly not advisable operation
 
 Although possible, this operation requires some precautions to properly overwrite a translatable model: in the most general case, some translations must be overwritten (either with unsaved data or data from the database), some must be created (either with unsaved data or data from the database) and some must be deleted. This is currently NOT supported by django-parler. Attempting it raises a ``NomImplementedError``.
 
-The construct is nevertheless accepted if no model with the provided primary key exists in the target database (and is then just a way to control the primary key of a newly created master model.
+The construct is nevertheless accepted if no model with the provided primary key exists in the target database (and is then just a way to control the primary key of a newly created master model).
 
 .. note:: Overwriting an existing model can usually as easily be achieved by retrieving the model from the database, updating it and saving it back.
 

@@ -21,7 +21,7 @@ by adding :ref:`PARLER_CACHE_PREFIX = 'mysite' <PARLER_CACHE_PREFIX>` to the set
 Parler caching with multiple database
 -------------------------------------
 
-.. versionchanged 2.x:: The use the cache by Django-parler <= 2.3 caused cache overlap across databases with problematic side-effects.
+.. versionchanged 2.x:: The use of the cache by Django-parler <= 2.3 caused cache overlap across databases with problematic side-effects.
 
 Parler caching can be used safely when using multiple databases: models retrieved from different databases are now use distinct cache keys.
 

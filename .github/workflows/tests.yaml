@@ -5,7 +5,8 @@ on:
     branches:
       - master
   push:
-    branches: [master, multiDB_support]
+    branches:
+      - master
 
 jobs:
   test:
