@@ -4,8 +4,8 @@ on:
     branches:
       - master
   push:
-    branches:
-      - master
+    branches: [master, multiDB_support]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -46,7 +46,19 @@ jobs:
           - django: "3.2"
             python: "3.10"
           # Django 4.0
-          - django: "4.0b1"
+          - django: "4.0"
+            python: "3.9"
+          - django: "4.0"
+            python: "3.10"
+          # Django 4.1
+          - django: "4.1"
+            python: "3.9"
+          - django: "4.1"
+            python: "3.10"
+          # Django 4.2
+          - django: "4.2"
+            python: "3.9"
+          - django: "4.2"
             python: "3.10"
 
     steps:
