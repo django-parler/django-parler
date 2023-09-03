@@ -284,7 +284,7 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "https://docs.python.org/3/": None,
-    "https://docs.djangoproject.com/en/dev": "https://docs.djangoproject.com/en/dev/_objects/",
+    'python': ('https://docs.python.org/3', None),
     "polymorphic": ("https://django-polymorphic.readthedocs.io/en/latest/", None),
+    'django': ('http://docs.djangoproject.com/en/stable/', 'http://docs.djangoproject.com/en/stable/_objects/'),
 }

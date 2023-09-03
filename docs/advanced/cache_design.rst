@@ -1,3 +1,9 @@
+:orphan:
+
+..
+    NB :orphan: tag required because this document is not part of any toctree
+                but just included from another page. Without the tag, sphinx issues a warning
+
 Some technical considerations about caching
 ===========================================
 

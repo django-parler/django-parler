@@ -54,11 +54,12 @@ def get_object_cache_keys(instance):
 def get_translation_cache_key(db_alias, translated_model, master_id, language_code):
     """
     The low-level function to get the cache key for a translation.
-    In including the db alias in the cache key is required for multiple-database support, to avoid that cache
-    entries created when accessing one database, are reuse for an object with the same pk in another database.
-    :param db_alias: The alias associated with the model and its translations. It is expected to be
-                     always known when caching is relevant, and it maintained by Django ORM in the model's
-                     state (instance._state.db).
+
+    Including the db alias in the cache key is required for multiple-database support, to avoid that cache
+    entries created when accessing one database, are reused for an object with the same pk in another database.
+
+    :param db_alias: The alias associated with the model and its translations. It is expected to be always
+        known when caching is relevant, and is maintained by Django ORM in the model's state (instance._state.db).
     :param translated_model: The model class used by Parler to store the translations.
     :param master_id: The id of the instance to which the translation applies.
     :param language_code: The code of the language for which the translation will be cached.

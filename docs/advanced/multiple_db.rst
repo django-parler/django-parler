@@ -9,11 +9,15 @@ Overview
 
 When using single or multiple databases, we expect the behaviour of translatable models to be as close as possible to the behaviour of plain models (as described in Django documentation), when performing similar operations. This page reviews the main operations we can perform on Models, and clarifies how Django-parler provides the same behaviour for translatable models.
 
-.. note:: Django doc says (https://docs.djangoproject.com/en/4.2/topics/db/multi-db/)
+.. note:: Django documentation (https://docs.djangoproject.com/en/4.2/topics/db/multi-db/) states that
+
         "If you don’t specify using, the save() method will save into the default database allocated by the routers."
+
     and
+
         "By default, a call to delete an existing object will be executed on the same database that was used to retrieve the object in the first place."
-    After carefull checking and testing: delete() and save() BOTH determine the database to use the same way,
+
+    After careful checking and testing: delete() and save() BOTH determine the database to use the same way,
     and both use as default db, the database from which the object was retrieved. The statement above about ``save()`` is only valid if the object was never saved into a database before.
 
 
