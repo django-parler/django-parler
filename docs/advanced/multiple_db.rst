@@ -99,3 +99,5 @@ Although possible, this operation requires some precautions to properly overwrit
 The construct is nevertheless accepted if no model with the provided primary key exists in the target database (and is then just a way to control the primary key of a newly created master model.
 
 .. note:: Overwriting an existing model can usually as easily be achieved by retrieving the model from the database, updating it and saving it back.
+
+Technical design information can be found on :doc:`this page <multiple_db_design>`.

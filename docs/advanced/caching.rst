@@ -25,5 +25,5 @@ Parler caching with multiple database
 
 Parler caching can be used safely when using multiple databases: models retrieved from different databases are now use distinct cache keys.
 
-Internal design information can be found on :doc:`this page <cache_design>`.
+Technical design information can be found on :doc:`this page <cache_design>`.
 
