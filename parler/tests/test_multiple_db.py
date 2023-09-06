@@ -452,5 +452,28 @@ class MultipleDbTest(AppTestCase):
         self.assertEqual(self.get_num_translations(self.C_PK, 'other_db_1'),
                          0, "Should have deleted all translations")
 
+    def test_create_translation(self):
+        obj = SimpleModel.objects.using('other_db_1').get(pk=self.A_COMMON_PK)
+        num_translations_in_default = self.get_num_translations(0, "default")
+        num_translations_in_other_db_1 = self.get_num_translations(0, "other_db_1")
+        obj.create_translation("de", tr_title="Added DE translation in other_db_1")
+        self.assertEqual(self.get_num_translations(0, "other_db_1"),
+                         num_translations_in_other_db_1+1,
+                         "Translation should be inserted in 'other_db_1'")
+        self.assertEqual(self.get_num_translations(0, "default"),
+                         num_translations_in_default,
+                         "Translation should not have been inserted in default database.")
+
+    def test_delete_translation(self):
+        obj = SimpleModel.objects.using('other_db_1').get(pk=self.A_COMMON_PK)
+        num_translations_in_default = self.get_num_translations(0, "default")
+        num_translations_in_other_db_1 = self.get_num_translations(0, "other_db_1")
+        obj.delete_translation("fr")
+        self.assertEqual(self.get_num_translations(0, "other_db_1"),
+                         num_translations_in_other_db_1-1,
+                         "Translation should be deleted from 'other_db_1'")
+        self.assertEqual(self.get_num_translations(0, "default"),
+                         num_translations_in_default,
+                         "Translation should not have been deleted from default database.")
     # NB: Exposing multi-db models in Admin only relies on a custom ModelAdmin that
     #     makes use of the "using" features tested above.

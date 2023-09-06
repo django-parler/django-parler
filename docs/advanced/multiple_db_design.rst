@@ -23,19 +23,19 @@ First, we need to know whether the model is (i) new and being saved for the firs
 
 Next, the action is defined according to this table, based on the previous conclusion, the value of the model's primary key (which may have been tampered with by the caller), and the value of the primary key after the last save (``_last_saved_pk``, which is internal and reliable) :
 
-+--------------------------------------+--------------------+-------------------------+-------------------------+
-|                                      | For the 1st time   | In same DB              | In another DB           |
-+=============+========================+====================+=========================+=========================+
-| pk = None   | last_saved_pk = None   | Regular first save | *IMPOSSIBLE*            | *IMPOSSIBLE*            |
-|             +------------------------+--------------------+-------------------------+-------------------------+
-|             | last_saved_pk not None | *IMPOSSIBLE*       | Duplication in same DB  | Duplication in new DB   |
-+-------------+------------------------+--------------------+-------------------------+-------------------------+
-| pk not None | last_saved_pk = None   | Regular first save | *IMPOSSIBLE*            | *IMPOSSIBLE*            |
-|             +------------------------+--------------------+-------------------------+-------------------------+
-|             | last_saved_pk = pk     | *IMPOSSIBLE*       | Regular update          | Overwrite/Duplicate [1] |
-|             +------------------------+--------------------+-------------------------+-------------------------+
-|             | last_saved_pk != pk    | *IMPOSSIBLE*       | Overwrite/Duplicate [1] | Overwrite/Duplicate [1] |
-+-------------+------------------------+--------------------+-------------------------+-------------------------+
++--------------------------------------+--------------------+--------------------------+--------------------------+
+|                                      | For the 1st time   | In same DB               | In another DB            |
++=============+========================+====================+==========================+==========================+
+| pk = None   | last_saved_pk = None   | Regular first save | *IMPOSSIBLE*             | *IMPOSSIBLE*             |
+|             +------------------------+--------------------+--------------------------+--------------------------+
+|             | last_saved_pk not None | *IMPOSSIBLE*       | Duplication in same DB   | Duplication in new DB    |
++-------------+------------------------+--------------------+--------------------------+--------------------------+
+| pk not None | last_saved_pk = None   | Regular first save | *IMPOSSIBLE*             | *IMPOSSIBLE*             |
+|             +------------------------+--------------------+--------------------------+--------------------------+
+|             | last_saved_pk = pk     | *IMPOSSIBLE*       | Regular update           | Overwrite/Duplicate [1]_ |
+|             +------------------------+--------------------+--------------------------+--------------------------+
+|             | last_saved_pk != pk    | *IMPOSSIBLE*       | Overwrite/Duplicate [1]_ | Overwrite/Duplicate [1]_ |
++-------------+------------------------+--------------------+--------------------------+--------------------------+
 
 .. [1] This is an overwrite if the pk is already in use in the destination database (and this is **not** supported by Parler) and a duplication with forced primary key otherwise (which is accepted by Parler).
 
