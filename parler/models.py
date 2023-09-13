@@ -306,7 +306,7 @@ class TranslatableModelMixin:
     @classmethod
     def from_db(cls, db, field_names, values):
         obj = super().from_db(db, field_names, values)
-        cls._last_saved_pk = obj.pk
+        obj._last_saved_pk = obj.pk
         return obj
 
     def _set_translated_fields(self, language_code=None, **fields):
@@ -743,19 +743,27 @@ class TranslatableModelMixin:
             overwriting = (self.pk is not None
                            and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
         else:
-            duplicating = current_db is not None and self.pk is None
-            overwrite_existing_with_never_saved_model = \
-                (current_db is None and self.pk is not None
-                 and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
-            overwrite_existing_with_model_from_other_db = \
-                (self.pk is not None and current_db is not None and target_db != current_db
-                 and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
-            overwrite_existing_in_same_db = \
-                (self.pk is not None and self.pk != self._last_saved_pk and current_db == target_db
-                 and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
-            overwriting = (overwrite_existing_with_never_saved_model
-                           or overwrite_existing_with_model_from_other_db
-                           or overwrite_existing_in_same_db)
+            duplicating_with_no_pk = current_db is not None and self.pk is None
+            duplicating_selecting_pk = (target_db != current_db) \
+                and self.pk is not None \
+                and self.__class__.objects.using(target_db).filter(pk=self.pk).count() == 0
+            duplicating = duplicating_selecting_pk or duplicating_with_no_pk
+            if duplicating:
+                overwriting = False
+            else:
+                overwrite_existing_with_never_saved_model = \
+                    (current_db is None and self.pk is not None
+                     and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
+                overwrite_existing_with_model_from_other_db = \
+                    (self.pk is not None and current_db is not None and target_db != current_db
+                     and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
+                overwrite_existing_in_same_db = \
+                    (self.pk is not None and self.pk != self._last_saved_pk and current_db == target_db
+                     and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
+                overwriting = (overwrite_existing_with_never_saved_model
+                               or overwrite_existing_with_model_from_other_db
+                               or overwrite_existing_in_same_db)
+
 
         # ... and act accordingly
         if overwriting:
@@ -907,13 +915,18 @@ class TranslatableModelMixin:
         # 1. Make sure all translations are fetched
         #    get_available_languages(include_unsaved=False) will only return translations that are not
         #    already fetched and present in the local cache.
-        # Temporarily restore the pk to fetch all translations: the user calls save() after clearing the pk
+        # Temporarily restore the pk to fetch all translations: the user called save() after clearing the pk
+        # or after setting a pk that must be used to force the pk in the new database.
         # to trigger duplication.
+        # NB: This can fail because of race conditions, would the user not manage transactions properly.
+        #     This is consistent with Parler's design option not to manage any transaction and letting the user
+        #     in charge of that. This has been pointed out in the documentation.
+        forced_pk = self.pk
         self.pk = self._last_saved_pk
         for lng in self.get_available_languages(include_unsaved=False):
             self.get_translation(lng)
         # 2. Save model in new database to generate new PK
-        self.pk = None
+        self.pk = forced_pk
         super().save(*args, **kwargs)  # save only the master model.
         # 3. Save all translation (which are all prefetched), updating the master_id and generating new pk
         #    This loop is very similar to the one in save_translations, but we need:

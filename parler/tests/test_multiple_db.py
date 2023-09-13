@@ -90,7 +90,7 @@ class MultipleDbTest(AppTestCase):
         obj_a.tr_title = cls.A_TRANS_FR_OTHER_DB_2
         obj_a.save(using="other_db_2")
 
-        # cls.print_db_content("After configuring 'en' + 'fr' for obj A in 3 db.")
+        cls.print_db_content("After configuring 'en' + 'fr' for obj A in 3 db.")
 
         with translation.override('fr'):
             obj_b = SimpleModel(pk=cls.B_COMMON_PK, tr_title=cls.B_TRANS_FR_DEFAULT)
@@ -106,7 +106,7 @@ class MultipleDbTest(AppTestCase):
         obj_c.set_current_language('fr')
         obj_c.tr_title = cls.C_TRANS_FR
         obj_c.save()
-        # cls.print_db_content("After setUpTestData()")
+        cls.print_db_content("After setUpTestData()")
 
     @classmethod
     def print_db_content(cls, label: str):
@@ -330,13 +330,14 @@ class MultipleDbTest(AppTestCase):
         """
         with translation.override('fr'):
             # retrieve object C with FR translation from other_db_1
-            # self.print_db_content(f"Before retrieving obj C (pk={self.C_PK}) in FR from other_db_1")
+            self.print_db_content(f"Before retrieving obj C (pk={self.C_PK}) in FR from other_db_1")
             obj = SimpleModel.objects.using('other_db_1').get(pk=self.C_PK)
             obj.tr_title += "_CHANGE_1"
 
-            # Do not clear PK for duplication (but it will be regenerated in new DB).
+            # Clear PK to avoid forcing the pk to the same value in the new DB).
             original_num_translations_db_2 = self.get_num_translations(0, 'other_db_2')
-            obj._duplicate(using='other_db_2')
+            obj.pk = None
+            obj.save(using='other_db_2')
             # self.print_db_content(f"After duplicating obj C (pk={self.C_PK}) into other_db_2")
             self.assertEqual(obj._state.db, 'other_db_2')
             self.assertNotEquals(obj.pk, self.C_PK)

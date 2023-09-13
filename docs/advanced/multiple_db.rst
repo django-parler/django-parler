@@ -77,7 +77,7 @@ Translatable models behave the same way, saving all translations, including poss
     obj.pk = None
     obj.save()  #  or obj.save(using="another_db") This saves all translations, including edits.
 
-.. warning:: Unsaved changes to the original model are saved in the duplicate in the target database, but are **NOT** saved in the original model in the original database.
+.. warning:: Unsaved changes to the original model are saved in the duplicate obj, in the target database, but are **NOT** saved in the original model in the original database.
 
 .. warning:: As for any Model, when duplicating to a new database, relations to other Models must be carefully considered. Django-parler takes care of transparently duplicating the translations as required, but any other foreign key in your model must be carefully managed to avoid inadvertently referencing models using foreign keys which only make sense in the original database.
 
@@ -97,6 +97,8 @@ Regular models allow this possibly dangerous (and mostly not advisable operation
 Although possible, this operation requires some precautions to properly overwrite a translatable model: in the most general case, some translations must be overwritten (either with unsaved data or data from the database), some must be created (either with unsaved data or data from the database) and some must be deleted. This is currently NOT supported by django-parler. Attempting it raises a ``NomImplementedError``.
 
 The construct is nevertheless accepted if no model with the provided primary key exists in the target database (and is then just a way to control the primary key of a newly created master model).
+
+.. warning:: Forcing the PK when duplicating an object can result in corrupted data due to race conditions (for translatable models just as for plain models): would the PK be used in the target database between the moment parler checked it was not in use, and the moment parler actually saved the model with this PK, it would result in an unwanted overwrite, and a possibly inconsistent object (e.g. with a mix of translations from both instances using the PK). It is the user's responsibility to use transactions to guarantee this cannot happen, and this is consistent with the general design of Parler, which put the responsibility for managing transactions to the user.
 
 .. note:: Overwriting an existing model can usually as easily be achieved by retrieving the model from the database, updating it and saving it back.
 
