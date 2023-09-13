@@ -873,8 +873,15 @@ class TranslatableModelMixin:
     def _overwrite_model(self, *args, **kwargs):
         """ Save a model overwriting an existing one in the target database. This is currently not supported.
         """
+        current_db = self._state.db
+        if current_db is None:
+            target_db = kwargs.get("using", router.db_for_write(self.__class__, instance=self))
+        else:
+            target_db = kwargs.get("using", current_db)
+
         raise NotImplementedError("Django-parler currently does not support overwriting an existing model in "
-                                  "the destination database. To update an existing translatable model, retrieve "
+                                  f"the destination database (current db = '{current_db}', target db = '{target_db}'). "
+                                  "To update an existing translatable model, retrieve "
                                   "it from the DB, update it, and save() it. ")
 
     def _duplicate(self, *args, **kwargs):
