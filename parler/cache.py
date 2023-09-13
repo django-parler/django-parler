@@ -41,23 +41,37 @@ def get_object_cache_keys(instance):
 
     keys = []
     tr_models = instance._parler_meta.get_all_models()
+    db = instance._state.db
 
     # TODO: performs a query to fetch the language codes. Store that in memcached too.
     for language in instance.get_available_languages():
         for tr_model in tr_models:
-            keys.append(get_translation_cache_key(tr_model, instance.pk, language))
+            keys.append(get_translation_cache_key(db, tr_model, instance.pk, language))
 
     return keys
 
 
-def get_translation_cache_key(translated_model, master_id, language_code):
+def get_translation_cache_key(db_alias, translated_model, master_id, language_code):
     """
     The low-level function to get the cache key for a translation.
+
+    Including the db alias in the cache key is required for multiple-database support, to avoid that cache
+    entries created when accessing one database, are reused for an object with the same pk in another database.
+
+    :param db_alias: The alias associated with the model and its translations. It is expected to be always
+        known when caching is relevant, and is maintained by Django ORM in the model's state (instance._state.db).
+    :param translated_model: The model class used by Parler to store the translations.
+    :param master_id: The id of the instance to which the translation applies.
+    :param language_code: The code of the language for which the translation will be cached.
     """
+    if not db_alias:
+        raise RuntimeError("db_alias not specified in get_translation_cache_key().")
+
     # Always cache the entire object, as this already produces
     # a lot of queries. Don't go for caching individual fields.
     prefix = f"{appsettings.PARLER_CACHE_PREFIX}." if appsettings.PARLER_CACHE_PREFIX else ""
-    return f"{prefix}parler.{translated_model._meta.app_label}.{translated_model.__name__}.{master_id}.{language_code}"
+    return (f"{prefix}parler.{db_alias}.{translated_model._meta.app_label}."
+            f"{translated_model.__name__}.{master_id}.{language_code}")
 
 
 def get_cached_translation(instance, language_code=None, related_name=None, use_fallback=False):
@@ -112,7 +126,7 @@ def _get_cached_values(instance, translated_model, language_code, use_fallback=F
     if not appsettings.PARLER_ENABLE_CACHING or not instance.pk or instance._state.adding:
         return None
 
-    key = get_translation_cache_key(translated_model, instance.pk, language_code)
+    key = get_translation_cache_key(instance._state.db, translated_model, instance.pk, language_code)
     values = cache.get(key)
     if not values:
         return None
@@ -157,7 +171,7 @@ def _cache_translation(translation, timeout=cache.default_timeout):
         values[name] = getattr(translation, name)
 
     key = get_translation_cache_key(
-        translation.__class__, translation.master_id, translation.language_code
+        translation._state.db, translation.__class__, translation.master_id, translation.language_code
     )
     cache.set(key, values, timeout=timeout)
 
@@ -172,7 +186,8 @@ def _cache_translation_needs_fallback(
         return
 
     tr_model = instance._parler_meta.get_model_by_related_name(related_name)
-    key = get_translation_cache_key(tr_model, instance.pk, language_code)
+    db = instance._state.db
+    key = get_translation_cache_key(db, tr_model, instance.pk, language_code)
     cache.set(key, {"__FALLBACK__": True}, timeout=timeout)
 
 
@@ -187,6 +202,6 @@ def _delete_cached_translation(translation):
     # Delete a cached translation
     # For internal usage, object parameters are not suited for outside usage.
     key = get_translation_cache_key(
-        translation.__class__, translation.master_id, translation.language_code
+        translation._state.db, translation.__class__, translation.master_id, translation.language_code
     )
     cache.delete(key)

@@ -56,6 +56,7 @@ The manager and queryset objects of django-parler can work together with django-
 import sys
 import warnings
 from collections import OrderedDict, defaultdict
+from pprint import pprint
 
 from django.conf import settings
 from django.core.exceptions import (
@@ -64,7 +65,7 @@ from django.core.exceptions import (
     ObjectDoesNotExist,
     ValidationError,
 )
-from django.db import models, router
+from django.db import models, router, ProgrammingError
 from django.db.models.base import ModelBase
 from django.db.models.fields.related_descriptors import (
     ForwardManyToOneDescriptor,
@@ -110,7 +111,7 @@ __all__ = (
     "TranslatedFieldsModel",
     "TranslatedFieldsModelBase",
     "TranslationDoesNotExist",
-    #'create_translations_model',
+    # 'create_translations_model',
 )
 
 
@@ -269,6 +270,8 @@ class TranslatableModelMixin:
 
     #: Access to the language code
     language_code = LanguageCodeDescriptor()
+    #: Cache the primary key: needed to duplicate the translations when the user sets the pk to None before saving.
+    _last_saved_pk = None
 
     def __init__(self, *args, **kwargs):
         # Still allow to pass the translated fields (e.g. title=...) to this function.
@@ -299,6 +302,12 @@ class TranslatableModelMixin:
 
         if translated_kwargs:
             self._set_translated_fields(self._current_language, **translated_kwargs)
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        obj = super().from_db(db, field_names, values)
+        obj._last_saved_pk = obj.pk
+        return obj
 
     def _set_translated_fields(self, language_code=None, **fields):
         """
@@ -707,14 +716,75 @@ class TranslatableModelMixin:
         return languages_seen
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        # Some (rare) operations require some precautions:
+        #   - Duplicating a translatable model, along with all its translation by setting its pk to None
+        #     before saving it.
+        #     This is supported, both in the same and in a different database.
+        #   - Saving a never-saved model *with* a provided pk, in an attempt to overwrite an existing model
+        #     and all its translations.
+        #     This is currently not supported, although forcing the pk value to a value currently not in use
+        #     in the target database is accepted.
+        #   - Saving a model into another database preserving its pk (or with another pk), in an attempt to
+        #     overwrite an existing model and all its translations.
+        #     This is currently not supported, although forcing the pk value  to a value currently not in use
+        #     in the target database is accepted.
+        #   - Saving an existing model in the same database after setting its pk to a new value, in an attempt
+        #     to overwrite an existing model and all its translations.
+        #     This is currently not supported, although forcing the pk value  to a value currently not in use
+        #     in the target database is accepted.
+        # Let's detect those particular situations...
+        current_db = self._state.db
+        if current_db is None:
+            target_db = kwargs.get("using", router.db_for_write(self.__class__, instance=self))
+        else:
+            target_db = kwargs.get("using", current_db)
+        if self._state.adding:
+            duplicating = False
+            overwriting = (self.pk is not None
+                           and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
+        else:
+            duplicating_with_no_pk = current_db is not None and self.pk is None
+            duplicating_selecting_pk = (target_db != current_db) \
+                and self.pk is not None \
+                and self.__class__.objects.using(target_db).filter(pk=self.pk).count() == 0
+            duplicating = duplicating_selecting_pk or duplicating_with_no_pk
+            if duplicating:
+                overwriting = False
+            else:
+                overwrite_existing_with_never_saved_model = \
+                    (current_db is None and self.pk is not None
+                     and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
+                overwrite_existing_with_model_from_other_db = \
+                    (self.pk is not None and current_db is not None and target_db != current_db
+                     and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
+                overwrite_existing_in_same_db = \
+                    (self.pk is not None and self.pk != self._last_saved_pk and current_db == target_db
+                     and self.__class__.objects.using(target_db).filter(pk=self.pk).count() != 0)
+                overwriting = (overwrite_existing_with_never_saved_model
+                               or overwrite_existing_with_model_from_other_db
+                               or overwrite_existing_in_same_db)
 
-        # Makes no sense to add these for translated model
-        # Even worse: mptt 0.7 injects this parameter when it avoids updating the lft/rgt fields,
-        # but that misses all the translated fields.
-        kwargs.pop("update_fields", None)
 
-        self.save_translations(*args, **kwargs)
+        # ... and act accordingly
+        if overwriting:
+            self._overwrite_model(*args, **kwargs)
+        elif duplicating:
+            self._duplicate(*args, **kwargs)
+        else:
+            # save() of a never-saved model or save() of a model in its original database, this is the
+            # most common case.
+            super().save(*args, **kwargs)
+
+            # Makes no sense to add these for translated model
+            # Even worse: mptt 0.7 injects this parameter when it avoids updating the lft/rgt fields,
+            # but that misses all the translated fields.
+            kwargs.pop("update_fields", None)
+
+            self.save_translations(*args, **kwargs)
+
+        # Cache the pk before returning, in case the user next clears it to duplicate the model.
+        # For duplication, we'll need to temporarily restore the original pk (see _duplicate).
+        self._last_saved_pk = self.pk
 
     def delete(self, using=None):
         _delete_cached_translations(self)
@@ -744,12 +814,15 @@ class TranslatableModelMixin:
         if errors:
             raise ValidationError(errors)
 
-    def save_translations(self, *args, **kwargs):
+    def save_translations(self, duplicating:bool = False, *args, **kwargs):
         """
         The method to save all translations.
         This can be overwritten to implement any custom additions.
         This method calls :func:`save_translation` for every fetched language.
 
+        :param duplicating: if True, translations are saved as part of the duplication of a
+            translatable model: for each of them: the pk and the master_id must be set to none
+            (they will be updated in save_translation()).
         :param args: Any custom arguments to pass to :func:`save`.
         :param kwargs: Any custom arguments to pass to :func:`save`.
         """
@@ -766,6 +839,9 @@ class TranslatableModelMixin:
                 if is_missing(translation):  # Skip fallback markers
                     continue
 
+                if duplicating:
+                    translation.pk = None
+                    translation.master_id = None
                 self.save_translation(translation, *args, **kwargs)
 
     def save_translation(self, translation, *args, **kwargs):
@@ -801,6 +877,63 @@ class TranslatableModelMixin:
             for fieldname, value in deferred_many_to_many.items():
                 getattr(translation, fieldname).set(value)
             translation.save()
+
+    def _overwrite_model(self, *args, **kwargs):
+        """ Save a model overwriting an existing one in the target database. This is currently not supported.
+        """
+        current_db = self._state.db
+        if current_db is None:
+            target_db = kwargs.get("using", router.db_for_write(self.__class__, instance=self))
+        else:
+            target_db = kwargs.get("using", current_db)
+
+        raise NotImplementedError("Django-parler currently does not support overwriting an existing model in "
+                                  f"the destination database (current db = '{current_db}', target db = '{target_db}'). "
+                                  "To update an existing translatable model, retrieve "
+                                  "it from the DB, update it, and save() it. ")
+
+    def _duplicate(self, *args, **kwargs):
+        """ Save a model, which already exists in a database, as a new instance in the destination database
+            (either the same one or another one specified with ``using="db_alias"``).
+
+            This method creates a new instance of the translatable model in the destination database and saves all
+            existing translation of the model, including possible unsaved changes, into the destination database.
+
+            After duplication, the translatable model is a proxy to the new instance, created in the
+            destination database, and is no longer coupled with the original database instance.
+            Changes that were unsaved at duplication time, are NOT saved in the original instance.
+
+            :raises ProgrammingError: If this method is called on a model, which was never saved to a database
+
+            .. versionadded 2.x::
+        """
+        # Check preconditions
+        if self._state.db is None:
+            raise ProgrammingError("Method _duplicate() can only be called on a model previously saved "
+                                   "in a database. For a new model, just call save()")
+
+        # 1. Make sure all translations are fetched
+        #    get_available_languages(include_unsaved=False) will only return translations that are not
+        #    already fetched and present in the local cache.
+        # Temporarily restore the pk to fetch all translations: the user called save() after clearing the pk
+        # or after setting a pk that must be used to force the pk in the new database.
+        # to trigger duplication.
+        # NB: This can fail because of race conditions, would the user not manage transactions properly.
+        #     This is consistent with Parler's design option not to manage any transaction and letting the user
+        #     in charge of that. This has been pointed out in the documentation.
+        forced_pk = self.pk
+        self.pk = self._last_saved_pk
+        for lng in self.get_available_languages(include_unsaved=False):
+            self.get_translation(lng)
+        # 2. Save model in new database to generate new PK
+        self.pk = forced_pk
+        super().save(*args, **kwargs)  # save only the master model.
+        # 3. Save all translation (which are all prefetched), updating the master_id and generating new pk
+        #    This loop is very similar to the one in save_translations, but we need:
+        #       1. To force insertion by setting pk to None
+        #       2. To update master_id
+        self.save_translations(duplicating=True, *args, **kwargs)
+
 
     def safe_translation_getter(self, field, default=None, language_code=None, any_language=False):
         """

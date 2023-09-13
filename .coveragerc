@@ -3,3 +3,5 @@ source = example/article,parler
 omit =
     */south_migrations/*
     */migrations/*
+    */tests/*
+    */example/*
