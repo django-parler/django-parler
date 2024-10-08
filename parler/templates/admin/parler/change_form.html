@@ -63,13 +63,17 @@
         })
         function suggestTranslations(data) {
             for (const property in data.translations) {
-                document.getElementById(`id_${property}`).value = data.translations[property];
+                let field = document.getElementById(`id_${property}`);
+                field.value = data.translations[property];
+                field.dispatchEvent(new CustomEvent('change'));
             }
             for (const inline in data.inline_translations) {
                 value = data.inline_translations[inline];
                 for (const index in value) {
                     for (const property in value[index]) {
-                        document.getElementById(`id_${inline}s-${index}-${property}`).value = value[index][property];
+                        let field = document.getElementById(`id_${inline}s-${index}-${property}`);
+                        field.value = value[index][property];
+                        field.dispatchEvent(new CustomEvent('change'));
                     }
 
                 }
