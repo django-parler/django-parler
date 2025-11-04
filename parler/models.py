@@ -95,6 +95,7 @@ from parler.fields import (
 )
 from parler.managers import TranslatableManager
 from parler.utils import compat
+from parler.utils.db import get_related_translation_annotation_name
 from parler.utils.i18n import (
     get_language,
     get_language_settings,
@@ -530,43 +531,52 @@ class TranslatableModelMixin:
             # 2. No cache, need to query
             # Check that this object already exists, would be pointless otherwise to check for a translation.
             if not self._state.adding and self.pk is not None:
-                prefetch = self._get_prefetched_translations(meta=meta)
-                if prefetch is not None:
-                    # 2.1, use prefetched data
-                    # If the object is not found in the prefetched data (which contains all translations),
-                    # it's pointless to check for memcached (2.2) or perform a single query (2.3)
-                    for object in prefetch:
-                        if object.language_code == language_code:
-                            local_cache[language_code] = object
-                            _cache_translation(object)  # Store in memcached
-                            return object
+                # 2.1, use annotated data from TranslatableQuerySet.select_translation()
+                annotation_name = get_related_translation_annotation_name(meta.rel_name, language_code)
+                if hasattr(self, annotation_name):
+                    related_translation = getattr(self, annotation_name)
+                    if isinstance(related_translation, TranslatedFieldsModel):
+                        local_cache[language_code] = related_translation
+                        return related_translation
+                    # else: don't try caches or db, since there is no translation
                 else:
-                    # 2.2, fetch from memcached
-                    object = get_cached_translation(
-                        self, language_code, related_name=meta.rel_name, use_fallback=use_fallback
-                    )
-                    if object is not None:
-                        # Track in local cache
-                        if object.language_code != language_code:
-                            local_cache[language_code] = MISSING  # Set fallback marker
-                        local_cache[object.language_code] = object
-                        return object
-                    elif is_missing(local_cache.get(language_code, None)):
-                        # If get_cached_translation() explicitly set the "does not exist" marker,
-                        # there is no need to try a database query.
-                        pass
+                    prefetch = self._get_prefetched_translations(meta=meta)
+                    if prefetch is not None:
+                        # 2.2, use prefetched data
+                        # If the object is not found in the prefetched data (which contains all translations),
+                        # it's pointless to check for memcached (2.2) or perform a single query (2.3)
+                        for object in prefetch:
+                            if object.language_code == language_code:
+                                local_cache[language_code] = object
+                                _cache_translation(object)  # Store in memcached
+                                return object
                     else:
-                        # 2.3, fetch from database
-                        try:
-                            object = self._get_translated_queryset(meta).get(
-                                language_code=language_code
-                            )
-                        except meta.model.DoesNotExist:
+                        # 2.3, fetch from memcached
+                        object = get_cached_translation(
+                            self, language_code, related_name=meta.rel_name, use_fallback=use_fallback
+                        )
+                        if object is not None:
+                            # Track in local cache
+                            if object.language_code != language_code:
+                                local_cache[language_code] = MISSING  # Set fallback marker
+                            local_cache[object.language_code] = object
+                            return object
+                        elif is_missing(local_cache.get(language_code, None)):
+                            # If get_cached_translation() explicitly set the "does not exist" marker,
+                            # there is no need to try a database query.
                             pass
                         else:
-                            local_cache[language_code] = object
-                            _cache_translation(object)  # Store in memcached
-                            return object
+                            # 2.4, fetch from database
+                            try:
+                                object = self._get_translated_queryset(meta).get(
+                                    language_code=language_code
+                                )
+                            except meta.model.DoesNotExist:
+                                pass
+                            else:
+                                local_cache[language_code] = object
+                                _cache_translation(object)  # Store in memcached
+                                return object
 
         # Not in cache, or default.
         # Not fetched from DB

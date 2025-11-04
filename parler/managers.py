@@ -4,11 +4,13 @@ Custom generic managers
 import django
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
-from django.db.models.query import QuerySet
+from django.db.models import Q
+from django.db.models.query import FilteredRelation, ModelIterable, QuerySet
 from django.utils.translation import get_language
 
 from parler import appsettings
 from parler.utils import get_active_language_choices
+from parler.utils.db import get_related_translation_annotation_name
 
 
 class TranslatableQuerySet(QuerySet):
@@ -22,10 +24,12 @@ class TranslatableQuerySet(QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._language = None
+        self._related_translation_annotations = set()
 
     def _clone(self):
         c = super()._clone()
         c._language = self._language
+        c._related_translation_annotations = self._related_translation_annotations.copy()
         return c
 
     def create(self, **kwargs):
@@ -122,6 +126,66 @@ class TranslatableQuerySet(QuerySet):
         # Alternative: (language,)          when hide_untranslated == True
         language_codes = get_active_language_choices(language_code)
         return self.translated(*language_codes, **translated_fields)
+
+    def select_translation(self, language_code=None, related_name=None):
+        """
+        This method uses ``.select_related()`` to fetch the translation model within the same query.
+
+        For example: if the relation name is "translations" and the language "de", the translation model can
+        be accessed with ``model.translations_de``. The attribute is ``None`` if no translation has been found.
+        """
+        if language_code is None:
+            language_code = get_language()
+
+        if related_name is None:
+            related_name = self.model._parler_meta.root_rel_name
+
+        language_code_path = f"{related_name}__language_code"
+        annotation_name = get_related_translation_annotation_name(related_name, language_code)
+
+        if annotation_name in self._related_translation_annotations:
+            return self
+
+        # This information will be used by the SelectTranslationIterable to ensure that the annotation attributes are set.
+        self._related_translation_annotations.add(annotation_name)
+
+        clone = self._clone()
+        clone._iterable_class = SelectTranslationIterable
+
+        return clone.annotate(**{
+            annotation_name: FilteredRelation(related_name, condition=Q(**{language_code_path: language_code}))
+        }).select_related(annotation_name)
+
+    def select_active_translation(self, language_code=None, related_name=None):
+        """
+        Uses ``.select_translation()`` to fetch both the active and the fallback language (if available) within
+        the same query.
+        """
+        language_codes = get_active_language_choices(language_code)
+
+        if related_name is None:
+            related_name = self.model._parler_meta.root_rel_name
+
+        language_code_path = f"{related_name}__language_code"
+
+        queryset = self.select_translation(language_code=language_codes[0], related_name=related_name)
+
+        if len(language_codes) == 2:
+            queryset = queryset.select_translation(language_code=language_codes[1], related_name=related_name)
+
+        return queryset
+
+
+class SelectTranslationIterable(ModelIterable):
+    def __iter__(self):
+        for obj in super().__iter__():
+            # select_related() used by select_translation() won't set anything, if no related object has been found.
+            # To avoid querying the translation models again in TranslatableModelMixin._get_translated_model(),
+            # we ensure that the attribute is always present.
+            for annotation_name in self.queryset._related_translation_annotations:
+                if not hasattr(obj, annotation_name):
+                    setattr(obj, annotation_name, None)
+            yield obj
 
 
 class TranslatableManager(models.Manager.from_queryset(TranslatableQuerySet)):
