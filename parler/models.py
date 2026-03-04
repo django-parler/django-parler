@@ -716,9 +716,9 @@ class TranslatableModelMixin:
 
         self.save_translations(*args, **kwargs)
 
-    def delete(self, using=None):
+    def delete(self, *args, **kwargs):
         _delete_cached_translations(self)
-        return super().delete(using)
+        return super().delete(*args, **kwargs)
 
     def validate_unique(self, exclude=None):
         """
@@ -985,15 +985,15 @@ class TranslatedFieldsModelMixin:
                 using=using,
             )
 
-    def delete(self, using=None):
+    def delete(self, *args, **kwargs):
         # Send pre-delete signal
-        using = using or router.db_for_write(self.__class__, instance=self)
+        using = kwargs.get("using", router.db_for_write(self.__class__, instance=self))
         if not self._meta.auto_created:
             signals.pre_translation_delete.send(
                 sender=self.shared_model, instance=self, using=using
             )
 
-        super().delete(using=using)
+        super().delete(*args, **kwargs)
         _delete_cached_translation(self)
 
         # Send post-delete signal
