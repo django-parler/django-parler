@@ -146,10 +146,11 @@ class TranslatableQuerySet(QuerySet):
         if annotation_name in self._related_translation_annotations:
             return self
 
-        # This information will be used by the SelectTranslationIterable to ensure that the annotation attributes are set.
-        self._related_translation_annotations.add(annotation_name)
-
         clone = self._clone()
+
+        # This information will be used by the SelectTranslationIterable to ensure that the annotation attributes are set.
+        clone._related_translation_annotations.add(annotation_name)
+
         clone._iterable_class = SelectTranslationIterable
 
         return clone.annotate(**{
@@ -165,8 +166,6 @@ class TranslatableQuerySet(QuerySet):
 
         if related_name is None:
             related_name = self.model._parler_meta.root_rel_name
-
-        language_code_path = f"{related_name}__language_code"
 
         queryset = self.select_translation(language_code=language_codes[0], related_name=related_name)
 
