@@ -1,6 +1,7 @@
 from django.utils import translation
 
 from parler.models import TranslationDoesNotExist
+from parler.utils.db import get_related_translation_annotation_name
 
 from .testapp.models import AnyLanguageModel, EmptyModel, NotRequiredModel, SimpleModel
 from .utils import AppTestCase
@@ -340,3 +341,65 @@ class ModelAttributeTests(AppTestCase):
         self.assertTrue(created)
         self.assertEqual(y.get_current_language(), "nl")
         self.assertEqual(y.tr_title, "TRANS_TITLE")
+
+    def test_select_translation_with_fallback(self):
+        """
+        Test whether the fallback works as expected and no additional queries are executed.
+        """
+        x = SimpleModel()
+        x.set_current_language(self.conf_fallback)
+        x.tr_title = "TITLE_FALLBACK"
+
+        x.set_current_language(self.other_lang1)
+        x.tr_title = "TITLE_XX"
+        x.save()
+
+        with self.assertNumQueries(1):
+            with translation.override(self.other_lang1):
+                x = SimpleModel.objects.select_active_translation().get(pk=x.pk)
+                self.assertEqual(x.tr_title, "TITLE_XX")
+
+            x.set_current_language(self.conf_fallback)
+            self.assertEqual(x.tr_title, "TITLE_FALLBACK")
+
+        with self.assertNumQueries(1):
+            with translation.override(self.other_lang2):
+                x = SimpleModel.objects.select_active_translation().get(pk=x.pk)
+                self.assertEqual(x.tr_title, "TITLE_FALLBACK")
+
+        # The models returned by select_(active_)translation() should be editable as expected.
+        with translation.override(self.other_lang1):
+            x = SimpleModel.objects.select_active_translation().get(pk=x.pk)
+            x.tr_title = "TITLE_XY"
+            x.save()
+
+            x = SimpleModel.objects.select_active_translation().get(pk=x.pk)
+            self.assertEqual(x.tr_title, "TITLE_XY")
+
+    def test_ordering_with_select_translation_query(self):
+        """
+        Test the usage of annotated columns.
+        """
+        x1 = SimpleModel()
+        x1.set_current_language(self.conf_fallback)
+        x1.tr_title = "B (FALLBACK)"
+        x1.set_current_language(self.other_lang1)
+        x1.tr_title = "A (LANG1)"
+        x1.save()
+
+        x2 = SimpleModel()
+        x2.set_current_language(self.conf_fallback)
+        x2.tr_title = "A (FALLBACK)"
+        x2.set_current_language(self.other_lang1)
+        x2.tr_title = "B (LANG1)"
+        x2.save()
+
+        with self.assertNumQueries(1):
+            with translation.override(self.conf_fallback):
+                titles = [x.tr_title for x in SimpleModel.objects.select_active_translation().order_by(get_related_translation_annotation_name("translations", self.conf_fallback))]
+                self.assertEqual(titles, ["B (FALLBACK)", "A (FALLBACK)"])
+
+        with self.assertNumQueries(1):
+            with translation.override(self.other_lang1):
+                titles = [x.tr_title for x in SimpleModel.objects.select_active_translation().order_by(get_related_translation_annotation_name("translations", self.other_lang1))]
+                self.assertEqual(titles, ["A (LANG1)", "B (LANG1)"])
