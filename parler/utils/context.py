@@ -1,6 +1,7 @@
 """
 Context managers for temporary switching the language.
 """
+
 from django.utils.translation import activate, get_language
 
 __all__ = (

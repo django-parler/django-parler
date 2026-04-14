@@ -21,6 +21,7 @@ Use them like any regular form widget::
             }
 
 """
+
 import copy
 
 from django import forms

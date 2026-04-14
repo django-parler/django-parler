@@ -5,6 +5,7 @@ To run additional code after saving, consider overwriting
 :func:`~parler.models.TranslatableModel.save_translation` instead.
 Use the signals as last resort, or to maintain separation of concerns.
 """
+
 from django.dispatch import Signal
 
 pre_translation_init = Signal()
