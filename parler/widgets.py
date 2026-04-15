@@ -83,7 +83,7 @@ class SortedSelectMixin:
                     # Avoid thread safety issues with other languages.
                     choices = copy.deepcopy(choices)
                     made_copy = True
-                    choice = choices[i]
+                choice = choices[i]
 
                 choice[1].sort(key=_choicesorter)
 

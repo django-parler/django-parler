@@ -1,6 +1,19 @@
 Changelog
 =========
 
+Changes in 2.4 (2026-04-15)
+----------------------------
+
+* Added Django 6.0 support.
+* Added Python 3.13 support.
+* Replaced removed ``csrf_protect_m`` decorator with ``@method_decorator(csrf_protect)`` in the admin.
+* Replaced removed ``iri_to_uri`` usage with ``request.path`` in the admin.
+* Replaced deprecated ``unique_together`` with ``models.UniqueConstraint`` in the translated fields model.
+* Updated ``log_deletion()`` call to the renamed ``log_deletions()`` with its new signature (Django 6).
+* Expanded test matrix: Django 4.2, 5.0, 5.1, 5.2, 6.0 × Python 3.10–3.13.
+* Achieved 100% test coverage across all modules.
+
+
 Changes in 2.3 (2021-11-18)
 ---------------------------
 

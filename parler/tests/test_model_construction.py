@@ -21,13 +21,13 @@ from .testapp.models import (
 from .utils import AppTestCase
 
 
-def clear_app_registry(func):
+def clear_app_registry(func):  # pragma: no cover
     """
     Decorator for unit tests that corrupt the global app registry, and therefore need a reset.
     """
 
     @wraps(func)
-    def _clearing_dec(*args, **kwargs):
+    def _clearing_dec(*args, **kwargs):  # pragma: no cover
         from django.apps import apps
 
         try:
@@ -36,7 +36,7 @@ def clear_app_registry(func):
             # TODO: this doens't yet work.
             apps.clear_cache()
 
-    return _clearing_dec
+    return _clearing_dec  # pragma: no cover
 
 
 class ModelConstructionTests(AppTestCase):
