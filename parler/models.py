@@ -848,7 +848,8 @@ class TranslatableModelMixin:
     def refresh_from_db(self, *args, **kwargs):
         super().refresh_from_db(*args, **kwargs)
         _delete_cached_translations(self)
-        self._translations_cache.clear()
+        if self._translations_cache:
+            self._translations_cache.clear()
 
     refresh_from_db.alters_data = True
 
