@@ -185,6 +185,19 @@ And a function to query just a specific field:
 
     model.safe_translation_getter('title', language_code='fr')
 
+Auto translation using DEEPL
+-----------------
+Django parler can be configured to use DEEPL API to suggest translations with a click.
+You can get a free or pro deepl api key and start translating with a click in your admin dashboard.
+
+.. code-block:: python
+
+    PARLER_ALLOW_AUTO_TRANSLATION = True
+    DEEPL_API_KEY = 'your-deepl-api-key'
+
+Add these settings in your django settings file and parler should show buttons for translation suggestions.
+
+Attention: This feature requires python requests library.
 
 Advanced Features
 -----------------

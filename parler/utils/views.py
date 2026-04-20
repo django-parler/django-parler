@@ -1,8 +1,8 @@
 """
 Internal DRY functions.
 """
-from django.conf import settings
 
+from django.conf import settings
 from parler import appsettings
 from parler.utils import get_language_title, is_multilingual_project, normalize_language_code
 
@@ -38,6 +38,7 @@ def get_language_tabs(request, current_language, available_languages, css_class=
     tab_languages = []
 
     site_id = getattr(settings, "SITE_ID", None)
+
     for lang_dict in appsettings.PARLER_LANGUAGES.get(site_id, ()):
         code = lang_dict["code"]
         title = get_language_title(code)
@@ -67,7 +68,7 @@ def get_language_tabs(request, current_language, available_languages, css_class=
                     status = "available"
 
                 tabs.append((url, get_language_title(code), code, status))
-
+    tabs.available_languages = available_languages
     tabs.current_is_translated = current_language in available_languages
     tabs.allow_deletion = len(available_languages) > 1
     return tabs
@@ -78,4 +79,28 @@ class TabsList(list):
         self.css_class = css_class
         self.current_is_translated = False
         self.allow_deletion = False
+        self.available_languages = []
         super().__init__(seq)
+
+
+def translate_by_deepl(texts, source_language, target_language, auth_key):
+    import requests
+
+    if auth_key.lower().endswith(":fx"):
+        endpoint = "https://api-free.deepl.com"
+    else:
+        endpoint = "https://api.deepl.com"
+
+    r = requests.post(
+        f"{endpoint}/v2/translate",
+        headers={"Authorization": f"DeepL-Auth-Key {auth_key}"},
+        data={
+            "target_lang": target_language.upper(),
+            "source_lang": source_language.upper(),
+            "text": texts,
+        },
+    )
+    if r.status_code == 200:
+        return r.json()
+    else:
+        return {}

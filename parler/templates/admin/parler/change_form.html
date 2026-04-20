@@ -1,6 +1,85 @@
 {% extends default_change_form_template|default:"admin/change_form.html" %}
+{% load i18n %}
+
+
+{% block extrahead %}
+{{block.super}}
+{% if suggest_translations %}    
+<style>
+    .object-tools li {
+        float:right;
+    }
+    .object-tools li.new-row {
+        float: none;
+        clear: both;
+        margin-top: 2.5rem;
+    }
+</style>
+{% endif %}
+{% endblock extrahead %}
+
+    
+
+
+{% block object-tools-items %}
+{{block.super}}
+{% if suggest_translations %}    
+<li class="new-row">
+    <span style="float: left;line-height: 1.65rem;margin-right: 0.5rem;">Copy translations from:</span>
+    {% for url,name,code,status in language_tabs %}
+        {% if status == "available" %}
+            <a href="./suggest-translation/{{ code }}/" class="copy-translations-link" style="margin-left: 0.25rem">
+                {{code}}
+            </a>
+        {% endif %}
+    {% endfor %}   
+</li>
+{% endif %}
+{% endblock %}
 
 {% block field_sets %}
 {% if language_tabs %}{% include "admin/parler/language_tabs.html" %}{% endif %}
 {{ block.super }}
+{% endblock %}
+
+
+{% block admin_change_form_document_ready %}
+{{block.super}}
+{% if suggest_translations %}
+    <script>
+        
+        {% for url,name,code,status in language_tabs %}
+            {% if status == "current" %}
+                let targetLanguage = "{{code}}";
+            {% endif %}
+        {% endfor %} 
+        document.addEventListener("click", (e) => {
+            if (e.target.classList.contains("copy-translations-link")) {
+                e.preventDefault();
+                fetch(`${e.target.href}?targetLanguage=${targetLanguage}`)
+                .then(res => res.json())
+                .then(data => suggestTranslations(data))
+            }
+        })
+        function suggestTranslations(data) {
+            for (const property in data.translations) {
+                let field = document.getElementById(`id_${property}`);
+                field.value = data.translations[property];
+                field.dispatchEvent(new CustomEvent('change'));
+            }
+            for (const inline in data.inline_translations) {
+                value = data.inline_translations[inline];
+                for (const index in value) {
+                    for (const property in value[index]) {
+                        let field = document.getElementById(`id_${inline}s-${index}-${property}`);
+                        field.value = value[index][property];
+                        field.dispatchEvent(new CustomEvent('change'));
+                    }
+
+                }
+                
+            }
+        }
+    </script>
+{% endif %}
 {% endblock %}

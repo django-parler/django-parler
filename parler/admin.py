@@ -36,6 +36,7 @@ While almost every admin feature just works, there are a few special cases to ta
 
 See the :ref:`admin compatibility page <admin-compat>` for details.
 """
+
 import django
 from django.conf import settings
 from django.contrib import admin
@@ -55,7 +56,7 @@ from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
-
+from django.http import JsonResponse
 from parler import appsettings
 from parler.forms import TranslatableBaseInlineFormSet, TranslatableModelForm
 from parler.managers import TranslatableQuerySet
@@ -323,7 +324,12 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                     r"^(.+)/change/delete-translation/(.+)/$",
                     self.admin_site.admin_view(self.delete_translation),
                     name="{}_{}_delete_translation".format(*info),
-                )
+                ),
+                re_path(
+                    r"^(.+)/change/suggest-translation/(.+)/$",
+                    self.admin_site.admin_view(self.suggest_translations),
+                    name="{}_{}_suggest_translation".format(*info),
+                ),
             ] + urlpatterns
 
     def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
@@ -337,6 +343,9 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             available_languages = self.get_available_languages(obj)
             language_tabs = self.get_language_tabs(request, obj, available_languages)
             context["language_tabs"] = language_tabs
+            context["suggest_translations"] = (
+                appsettings.PARLER_ALLOW_AUTO_TRANSLATION and appsettings.PARLER_DEEPL_API_KEY
+            )
             if language_tabs:
                 context["title"] = "{} ({})".format(context["title"], lang)
             if not language_tabs.current_is_translated:
@@ -400,6 +409,68 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 delimiter = "&" if len(redirect_parts) > 1 else "?"
                 redirect["Location"] += f"{delimiter}{self.query_language_key}={language}"
         return redirect
+
+    def _get_translations_for_model(self, model, source_language, target_language):
+        from parler.utils.views import translate_by_deepl
+
+        fields_to_exclude = ["master", "id", "language_code"]
+        fields_to_translate = []
+        values_to_translate = []
+        for field in model._meta.fields:
+            if field.name not in fields_to_exclude:
+                if getattr(model, field.name):
+                    fields_to_translate.append(field.name)
+                    values_to_translate.append(getattr(model, field.name))
+
+        if len(values_to_translate):
+            # Deepl api takes a list of sentences and returns translations in the same order.
+            translations = translate_by_deepl(
+                values_to_translate,
+                source_language=source_language,
+                target_language=target_language,
+                auth_key=appsettings.PARLER_DEEPL_API_KEY,
+            )
+            if translations and len(translations.get("translations")) == len(fields_to_translate):
+                data = zip(
+                    fields_to_translate,
+                    [translation.get("text") for translation in translations.get("translations")],
+                )
+            return {tr[0]: tr[1] for tr in data}
+        return {}
+
+    def suggest_translations(self, request, object_id, language_code):
+        """
+        The 'suggest translation' ajax endpoint for this object. Requires external api key.
+        """
+        from parler import appsettings
+
+        if not appsettings.PARLER_DEEPL_API_KEY:
+            return JsonResponse({"status": 0, "message": _("Missing DEEPL api key")})
+        root_model = self.model._parler_meta.root_model
+        # Get object and translation
+        shared_obj = self.get_object(request, unquote(object_id))
+        if shared_obj is None:
+            raise Http404
+
+        shared_obj.set_current_language(language_code)
+        try:
+            model = root_model.objects.get(master=shared_obj, language_code=language_code)
+        except root_model.DoesNotExist:
+            raise Http404
+        translations = self._get_translations_for_model(
+            model, language_code, request.GET.get("targetLanguage")
+        )
+        inline_translations = {}
+        for inline, qs in self._get_inline_translations(request, language_code, obj=shared_obj):
+            inline_translations[inline.model.__name__.lower()] = [
+                self._get_translations_for_model(
+                    inline_model, language_code, request.GET.get("targetLanguage")
+                )
+                for inline_model in qs
+            ]
+        return JsonResponse(
+            {"status": 0, "translations": translations, "inline_translations": inline_translations}
+        )
 
     @csrf_protect_m
     @transaction.atomic
