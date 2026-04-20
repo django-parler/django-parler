@@ -1,8 +1,6 @@
 """
 Internal DRY functions.
 """
-from django.conf import settings
-
 from parler import appsettings
 from parler.utils import get_language_title, is_multilingual_project, normalize_language_code
 
@@ -37,8 +35,7 @@ def get_language_tabs(request, current_language, available_languages, css_class=
     get = request.GET.copy()  # QueryDict object
     tab_languages = []
 
-    site_id = getattr(settings, "SITE_ID", None)
-    for lang_dict in appsettings.PARLER_LANGUAGES.get(site_id, ()):
+    for lang_dict in appsettings.PARLER_LANGUAGES.get_site_language_dicts():
         code = lang_dict["code"]
         title = get_language_title(code)
         get["language"] = code

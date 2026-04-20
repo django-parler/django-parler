@@ -172,6 +172,29 @@ class LanguagesSetting(dict):
         else:
             return None
 
+    def get(self, site_id, default=None):
+        """
+        Return the language settings for the current site.
+        If not found, return the first defined setting.
+        Useful for dynamic multi-site configurations.
+        """
+        site_language_setting = super().get(site_id, default)
+        if not site_language_setting and isinstance(site_id, int) and not default:
+            return next((value for key, value in self.items() if isinstance(key, int)), None)
+        return site_language_setting
+
+    def __getitem__(self, site_id):
+        """
+        Return the language settings for the current site.
+        If not found, return the first defined setting.
+        Useful for dynamic multi-site configurations.
+        """
+        return self.get(site_id, None)
+
+    def get_site_language_dicts(self):
+        site_id = getattr(settings, "SITE_ID", None)
+        return self.get(site_id)
+
     def get_default_language(self):
         """
         Return the default language.

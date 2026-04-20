@@ -105,7 +105,7 @@ def is_multilingual_project(site_id=None):
     if site_id is None:
         site_id = getattr(settings, "SITE_ID", None)
     return (
-        appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS or site_id in appsettings.PARLER_LANGUAGES
+        appsettings.PARLER_SHOW_EXCLUDED_LANGUAGE_TABS or appsettings.PARLER_LANGUAGES.get(site_id)
     )
 
 
