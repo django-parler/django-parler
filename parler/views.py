@@ -13,6 +13,7 @@ The following views are available:
 * :class:`TranslatableCreateView` - The :class:`~django.views.generic.edit.CreateView` with :class:`TranslatableModelFormMixin` support.
 * :class:`TranslatableUpdateView` - The :class:`~django.views.generic.edit.UpdateView` with :class:`TranslatableModelFormMixin` support.
 """
+
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponsePermanentRedirect

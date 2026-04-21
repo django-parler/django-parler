@@ -1,14 +1,24 @@
 Changelog
 =========
 
-Changes in 2.x (date TBD)
--------------------------
 
-Added support for multiple databases:
+Changes in 2.4 (2026-04-15)
+----------------------------
 
-- Fixed cache overlap issue when using multiple database: cache key now includes the database alias.
-- Now properly support multiple databases and translatable models duplication (fully documented on page `Duplicating instances, using multiple databases and more...`).
-- Now clearly identify some marginal case django-parler does not support, and raise an exception instead of silently failing and possibly corrupting the database.
+* Added Django 6.0 support.
+* Added Python 3.13 support.
+* Dropped Django 4.2 LTS support (end of extended support, April 2026).
+* Replaced removed ``csrf_protect_m`` decorator with ``@method_decorator(csrf_protect)`` in the admin.
+* Replaced deprecated ``unique_together`` with ``models.UniqueConstraint`` in the translated fields model.
+* Added a ``validate_constraints()`` call alongside ``validate_unique()`` in form validation so ``UniqueConstraint`` violations surface through the form.
+* Updated ``log_deletion()`` call to the renamed ``log_deletions()`` with its new signature (Django 6).
+* Fixed a thread-safety bug in ``SortedSelectMixin.sort_choices()`` where the deep-copy guard was skipped for the second and later optgroups, causing ``.sort()`` to mutate the caller's choices list.
+* Expanded the test suite with new modules covering admin views, cache, forms, managers, model construction, template tags, views, and widgets.
+* Test matrix: Django 5.0, 5.1, 5.2, 6.0 × Python 3.10–3.13.
+* Added support for multiple databases:
+  - Fixed cache overlap issue when using multiple database: cache key now includes the database alias.
+  - Now properly support multiple databases and translatable models duplication (fully documented on page `Duplicating instances, using multiple databases and more...`).
+  - Now clearly identify some marginal case django-parler does not support, and raise an exception instead of silently failing and possibly corrupting the database.
 
 
 Changes in 2.3 (2021-11-18)

@@ -56,7 +56,12 @@ class CleanFieldModelTranslation(TranslatedFieldsModel):
     tr_title = CleanCharField("Translated Title", max_length=200)
 
     class Meta:
-        unique_together = ("language_code", "master")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["language_code", "master"],
+                name="cleanfieldmodeltranslation_uniq_lang",
+            )
+        ]
 
     def clean(self):
         self.tr_title += "_cleantrans"
@@ -131,11 +136,11 @@ class UniqueTogetherModel(TranslatableModel):
     translations = TranslatedFields(
         slug=models.SlugField(),
         meta={
-            "unique_together": [
-                (
-                    "slug",
-                    "language_code",
-                ),
+            "constraints": [
+                models.UniqueConstraint(
+                    fields=["slug", "language_code"],
+                    name="uniquetogethermodel_translation_uniq_slug_lang",
+                )
             ]
         },
     )

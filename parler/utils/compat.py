@@ -1,6 +1,7 @@
 """
 Django compatibility features
 """
+
 from django.db import models
 
 __all__ = ("HideChoicesCharField",)

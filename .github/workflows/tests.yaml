@@ -2,8 +2,6 @@ name: CI Testing
 on:
   workflow_dispatch:
   pull_request:
-    branches:
-      - master
   push:
     branches:
       - master
@@ -19,60 +17,44 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Django 2.2
-          - django: "2.2"
-            python: "3.6"
-          - django: "2.2"
-            python: "3.7"
-          - django: "2.2"
-            python: "3.8"
-          - django: "2.2"
-            python: "3.9"
-          # Django 3.1
-          - django: "3.1"
-            python: "3.6"
-          - django: "3.1"
-            python: "3.7"
-          - django: "3.1"
-            python: "3.8"
-          - django: "3.1"
-            python: "3.9"
-          # Django 3.2
-          - django: "3.2"
-            python: "3.6"
-          - django: "3.2"
-            python: "3.7"
-          - django: "3.2"
-            python: "3.8"
-          - django: "3.2"
-            python: "3.9"
-          - django: "3.2"
+          # Django 5.0
+          - django: "5.0"
             python: "3.10"
-          # Django 4.0
-          - django: "4.0"
-            python: "3.9"
-          - django: "4.0"
+          - django: "5.0"
+            python: "3.11"
+          - django: "5.0"
+            python: "3.12"
+          # Django 5.1
+          - django: "5.1"
             python: "3.10"
-          # Django 4.1
-          - django: "4.1"
-            python: "3.9"
-          - django: "4.1"
+          - django: "5.1"
+            python: "3.11"
+          - django: "5.1"
+            python: "3.12"
+          # Django 5.2
+          - django: "5.2"
             python: "3.10"
-          # Django 4.2
-          - django: "4.2"
-            python: "3.9"
-          - django: "4.2"
-            python: "3.10"
+          - django: "5.2"
+            python: "3.11"
+          - django: "5.2"
+            python: "3.12"
+          - django: "5.2"
+            python: "3.13"
+          # Django 6.0
+          - django: "6.0"
+            python: "3.12"
+          - django: "6.0"
+            python: "3.13"
 
     steps:
       - name: Install gettext
         run: sudo apt-get install -y gettext
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python ${{ matrix.python }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
@@ -86,4 +68,4 @@ jobs:
           echo "Python ${{ matrix.python }} / Django ${{ matrix.django }}"
           coverage run --rcfile=.coveragerc runtests.py
           codecov
-        continue-on-error: ${{ contains(matrix.django, '4.0') }}
+        continue-on-error: ${{ contains(matrix.django, '6.0') }}

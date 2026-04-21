@@ -53,6 +53,7 @@ the :func:`~django.db.models.Model.save` method, or add new methods yourself.
 The translated model is compatible with django-hvad, making the transition between both projects relatively easy.
 The manager and queryset objects of django-parler can work together with django-mptt and django-polymorphic.
 """
+
 import sys
 import warnings
 from collections import OrderedDict, defaultdict
@@ -167,7 +168,12 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     meta["app_label"] = shared_model._meta.app_label
     meta["db_tablespace"] = shared_model._meta.db_tablespace
     meta["managed"] = shared_model._meta.managed
-    meta["unique_together"] = list(meta.get("unique_together", [])) + [("language_code", "master")]
+    meta["constraints"] = list(meta.get("constraints", [])) + [
+        models.UniqueConstraint(
+            fields=["language_code", "master"],
+            name=f"{shared_model._meta.db_table}_translation_uniq_lang",
+        )
+    ]
     meta.setdefault("db_table", f"{shared_model._meta.db_table}_translation")
     meta.setdefault("verbose_name", _lazy_verbose_name(shared_model))
 
@@ -241,7 +247,7 @@ class TranslatedFields:
                 translations = TranslatedFields(
                     title = models.CharField("Title", max_length=200),
                     slug = models.SlugField("Slug"),
-                    meta = {'unique_together': [('language_code', 'slug')]},
+                    meta = {'constraints': [models.UniqueConstraint(fields=['language_code', 'slug'], name='mymodel_translation_uniq_lang_slug')]},
                 )
 
     """
@@ -405,7 +411,7 @@ class TranslatableModelMixin:
 
     def set_current_language(self, language_code, initialize=False):
         """
-        Switch the currently activate language of the object.
+        Switch the currently active language of the object.
         """
         self._current_language = normalize_language_code(language_code or get_language())
 
@@ -786,9 +792,9 @@ class TranslatableModelMixin:
         # For duplication, we'll need to temporarily restore the original pk (see _duplicate).
         self._last_saved_pk = self.pk
 
-    def delete(self, using=None):
+    def delete(self, *args, **kwargs):
         _delete_cached_translations(self)
-        return super().delete(using)
+        return super().delete(*args, **kwargs)
 
     def validate_unique(self, exclude=None):
         """
@@ -981,7 +987,8 @@ class TranslatableModelMixin:
     def refresh_from_db(self, *args, **kwargs):
         super().refresh_from_db(*args, **kwargs)
         _delete_cached_translations(self)
-        self._translations_cache.clear()
+        if self._translations_cache:
+            self._translations_cache.clear()
 
     refresh_from_db.alters_data = True
 
@@ -1118,15 +1125,15 @@ class TranslatedFieldsModelMixin:
                 using=using,
             )
 
-    def delete(self, using=None):
+    def delete(self, *args, **kwargs):
         # Send pre-delete signal
-        using = using or router.db_for_write(self.__class__, instance=self)
+        using = kwargs.get("using", router.db_for_write(self.__class__, instance=self))
         if not self._meta.auto_created:
             signals.pre_translation_delete.send(
                 sender=self.shared_model, instance=self, using=using
             )
 
-        super().delete(using=using)
+        super().delete(*args, **kwargs)
         _delete_cached_translation(self)
 
         # Send post-delete signal

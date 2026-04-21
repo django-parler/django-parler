@@ -137,7 +137,9 @@ class AdminArticleTestCase(TestMixin, TestCase):
         resp = self.client.get(reverse("admin:article_article_add"))
         self.assertEqual(200, resp.status_code)
 
-        if django.VERSION >= (3, 0):
+        if django.VERSION >= (5, 0):
+            self.assertInContent("<h1>Ajout de Article (Néerlandais)</h1>", resp)
+        elif django.VERSION >= (3, 0):
             self.assertInContent("<h1>Ajout de Article (Hollandais)</h1>", resp)
         else:
             self.assertInContent("<h1>Ajout Article (Hollandais)</h1>", resp)

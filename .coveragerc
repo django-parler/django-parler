@@ -5,3 +5,4 @@ omit =
     */migrations/*
     */tests/*
     */example/*
+    */testapp/invalid_models.py
