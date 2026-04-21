@@ -146,3 +146,14 @@ PARLER_DEFAULT_ACTIVATE
     PARLER_DEFAULT_ACTIVATE = True
 
 Setting, which allows to display translated texts in the default language even through ``translation.activate()`` is not called yet.
+
+
+PARLER_PERMIT_FIELD_NAME_CONFLICTS
+----------------------------------
+
+::
+
+    PARLER_PERMIT_FIELD_NAME_CONFLICTS = False
+
+Setting which enables translation models to have the same field names as the parent model by not creating proxy fields. This should
+only be enabled when writing migrating existing fields.

@@ -34,3 +34,7 @@ PARLER_LANGUAGES = add_default_language_settings(PARLER_LANGUAGES)
 
 # Activate translations by default. Flag to compensate for Django >= 1.8 default `get_language` behavior
 PARLER_DEFAULT_ACTIVATE = getattr(settings, "PARLER_DEFAULT_ACTIVATE", False)
+
+# Permit the models and translation models to have conflicting keys (advertently does not instantiate proxy fields).
+# This is useful for migrating existing fields with data. 
+PARLER_PERMIT_FIELD_NAME_CONFLICTS = getattr(settings, "PARLER_PERMIT_FIELD_NAME_CONFLICTS", False)

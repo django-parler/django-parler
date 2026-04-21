@@ -32,6 +32,11 @@ First create the translatable fields::
               name=models.CharField(max_length=123),
         )
 
+
+Then enable ``PARLER_PERMIT_FIELD_NAME_CONFLICTS`` in your project settings:
+
+    PARLER_PERMIT_FIELD_NAME_CONFLICTS = True
+
 Now create the migration::
 
     manage.py makemigrations myapp --name "add_translation_model"
@@ -117,6 +122,10 @@ The example model now looks like::
 Create the database migration, it will simply remove the original field::
 
     manage.py makemigrations myapp --name "remove_untranslated_fields"
+
+Disable ``PARLER_PERMIT_FIELD_NAME_CONFLICTS`` in your project settings:
+
+    PARLER_PERMIT_FIELD_NAME_CONFLICTS = False
 
 
 Updating code

@@ -44,6 +44,16 @@ class CleanFieldModel(TranslatableModel):
     def clean(self):
         self.shared += "_cleanshared"
 
+class FileFieldModel(TranslatableModel):
+    translations = TranslatedFields(
+        tr_file=models.FileField(
+            default="",
+            blank=True,
+        )
+    )
+
+    def __str__(self):
+        return self.tr_file
 
 class CleanFieldModelTranslation(TranslatedFieldsModel):
     master = TranslationsForeignKey(
