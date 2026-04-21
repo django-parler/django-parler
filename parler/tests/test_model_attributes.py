@@ -20,7 +20,8 @@ class ModelAttributeTests(AppTestCase):
         except Exception as e:
             self.assertIsInstance(e, TranslationDoesNotExist)
             self.assertIsInstance(e, AttributeError)
-        else:            self.fail(f"Expected exception from reading untranslated title, got {repr(value)}.")
+        else:
+            self.fail(f"Expected exception from reading untranslated title, got {repr(value)}.")
 
         # Raising attribute error gives some additional benefits:
         self.assertEqual(getattr(SimpleModel(), "tr_title", "FOO"), "FOO")
@@ -302,7 +303,8 @@ class ModelAttributeTests(AppTestCase):
         # now fetch it from db
         try:
             SimpleModel.objects.get(pk=x.pk)
-        except TranslationDoesNotExist:            self.fail("zero pk is not supported!")
+        except TranslationDoesNotExist:
+            self.fail("zero pk is not supported!")
 
     def test_translatedfieldsmodel_str(self):
         """Test converting TranslatedFieldsModel to string"""
@@ -318,7 +320,8 @@ class ModelAttributeTests(AppTestCase):
         # Try to get str() of the TranslatedFieldsModel instance.
         try:
             translation_as_str = str(obj.translations.get())
-        except KeyError:            self.fail("Converting translation to string raises KeyError")
+        except KeyError:
+            self.fail("Converting translation to string raises KeyError")
 
         # Check that we get language code as a fallback, when language is
         # not configured.

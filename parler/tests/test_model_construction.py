@@ -21,12 +21,14 @@ from .testapp.models import (
 from .utils import AppTestCase
 
 
-def clear_app_registry(func):    """
+def clear_app_registry(func):
+    """
     Decorator for unit tests that corrupt the global app registry, and therefore need a reset.
     """
 
     @wraps(func)
-    def _clearing_dec(*args, **kwargs):        from django.apps import apps
+    def _clearing_dec(*args, **kwargs):
+        from django.apps import apps
 
         try:
             func(*args, **kwargs)
@@ -35,6 +37,7 @@ def clear_app_registry(func):    """
             apps.clear_cache()
 
     return _clearing_dec
+
 
 class ModelConstructionTests(AppTestCase):
     """

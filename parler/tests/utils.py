@@ -15,7 +15,8 @@ from parler import appsettings
 User = get_user_model()
 
 
-def clear_cache():    """
+def clear_cache():
+    """
     Clear internal cache of apps loading
     """
     apps.clear_cache()
@@ -64,7 +65,8 @@ class AppTestCase(TestCase):
             # When running this app via `./manage.py test fluent_pages`, auto install the test app + models.
             run_syncdb = False
             for appname in cls.install_apps:
-                if appname not in settings.INSTALLED_APPS:                    print(f"Adding {appname} to INSTALLED_APPS")
+                if appname not in settings.INSTALLED_APPS:
+                    print(f"Adding {appname} to INSTALLED_APPS")
                     settings.INSTALLED_APPS = (appname,) + tuple(settings.INSTALLED_APPS)
                     run_syncdb = True
 
@@ -75,7 +77,8 @@ class AppTestCase(TestCase):
                         os.path.join(os.path.dirname(testapp.__file__), "templates"),
                     )
 
-            if run_syncdb:                call_command("syncdb", verbosity=0)  # may run south's overlaid version
+            if run_syncdb:
+                call_command("syncdb", verbosity=0)  # may run south's overlaid version
 
         # Create basic objects
         # Django does not create site automatically with the defined SITE_ID

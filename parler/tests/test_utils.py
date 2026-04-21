@@ -91,7 +91,8 @@ class UtilTestCase(TestCase):
         language_code = "xx"
         try:
             self.assertEqual(get_language_title(language_code), language_code)
-        except KeyError:            self.fail("get_language_title() raises KeyError for missing language")
+        except KeyError:
+            self.fail("get_language_title() raises KeyError for missing language")
 
     @override_parler_settings(PARLER_DEFAULT_ACTIVATE=False)
     def test_get_language_no_fallback(self):

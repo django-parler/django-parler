@@ -44,7 +44,8 @@ class TestMixin:
 
     def assertHTMLInContent(self, html_tag, resp):
         find_html = parse_html(html_tag)
-        if find_html.children:            raise ValueError("Can only look for single tags")
+        if find_html.children:
+            raise ValueError("Can only look for single tags")
         tag_name = find_html.name
         find_attrs = dict(find_html.attributes)
 
@@ -60,7 +61,8 @@ class TestMixin:
                 if node.children:
                     queue.extend(node.children)
 
-        raise AssertionError(            "Element <{html_tag}> not found in {html}".format(
+        raise AssertionError(
+            "Element <{html_tag}> not found in {html}".format(
                 html_tag=html_tag,
                 html=html,
             )
@@ -139,7 +141,8 @@ class AdminArticleTestCase(TestMixin, TestCase):
             self.assertInContent("<h1>Ajout de Article (Néerlandais)</h1>", resp)
         elif django.VERSION >= (3, 0):
             self.assertInContent("<h1>Ajout de Article (Hollandais)</h1>", resp)
-        else:            self.assertInContent("<h1>Ajout Article (Hollandais)</h1>", resp)
+        else:
+            self.assertInContent("<h1>Ajout Article (Hollandais)</h1>", resp)
 
         translation.activate("en")
 
