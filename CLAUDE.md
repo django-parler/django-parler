@@ -5,7 +5,7 @@ Reusable Django library that adds model-level translation support via a separate
 ## Tech Stack
 
 - **Language**: Python 3.10–3.13
-- **Framework**: Django 4.2 LTS / 5.0 / 5.1 / 5.2 / 6.0 (min `Django>=4.2` in `setup.py`)
+- **Framework**: Django 5.0 / 5.1 / 5.2 LTS / 6.0 (min `Django>=5.0` in `setup.py`; 4.2 LTS dropped April 2026)
 - **Formatting**: black (line-length 99) + isort (profile=black)
 - **Testing**: Django test runner via `runtests.py` (not pytest)
 - **Coverage**: coverage + codecov (`.coveragerc`)
@@ -30,7 +30,7 @@ python runtests.py article
 # Coverage
 coverage run --rcfile=.coveragerc runtests.py && coverage report
 
-# Full tox matrix (Python 3.10-3.13 × Django 4.2-6.0)
+# Full tox matrix (Python 3.10-3.13 × Django 5.0-6.0)
 tox
 
 # Format

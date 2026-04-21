@@ -3,7 +3,7 @@ Django compatibility
 
 This package has been tested with:
 
-* Django versions 4.2 up to 6.0
+* Django versions 5.0 up to 6.0
 * Python versions 3.10 and up
 
 See the `the tox.ini file <https://github.com/django-parler/django-parler/blob/master/tox.ini>`_

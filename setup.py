@@ -39,7 +39,7 @@ setup(
     version=find_version("parler", "__init__.py"),
     license="Apache 2.0",
     install_requires=[
-        "Django>=4.2",
+        "Django>=5.0",
     ],
     description="Simple Django model translations without nasty hacks, featuring nice admin integration.",
     long_description=read("README.rst"),
@@ -64,7 +64,6 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
         "Framework :: Django",
-        "Framework :: Django :: 4.2",
         "Framework :: Django :: 5.0",
         "Framework :: Django :: 5.1",
         "Framework :: Django :: 5.2",
