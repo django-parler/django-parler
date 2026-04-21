@@ -9,6 +9,7 @@ but may be added explicitly as well. This also allows to set the ``any_language`
 It's also useful for abstract models; add a :class:`TranslatedField` to
 indicate that the derived model is expected to provide that translatable field.
 """
+
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor

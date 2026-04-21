@@ -5,6 +5,7 @@ These functions are used internally by django-parler to fetch model data.
 Since all calls to the translation table are routed through our model descriptor fields,
 cache access and expiry is rather simple to implement.
 """
+
 from django.core.cache import cache
 
 from parler import appsettings
