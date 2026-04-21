@@ -16,9 +16,7 @@ PARLER_SHOW_EXCLUDED_LANGUAGE_TABS = getattr(settings, "PARLER_SHOW_EXCLUDED_LAN
 PARLER_LANGUAGES = getattr(settings, "PARLER_LANGUAGES", {})
 
 if not PARLER_LANGUAGES:
-    if hasattr(settings, "CMS_LANGUAGES"):  # pragma: no cover
-        PARLER_LANGUAGES = get_parler_languages_from_django_cms(getattr(settings, "CMS_LANGUAGES"))  # pragma: no cover
-
+    if hasattr(settings, "CMS_LANGUAGES"):        PARLER_LANGUAGES = get_parler_languages_from_django_cms(getattr(settings, "CMS_LANGUAGES"))
 PARLER_ENABLE_CACHING = getattr(settings, "PARLER_ENABLE_CACHING", True)
 
 # Prefix for sites that share the same cache. For example Aldryn News & Blog.

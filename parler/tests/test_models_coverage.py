@@ -232,8 +232,7 @@ class ValidateUniqueTests(AppTestCase):
         # validate_unique should complete without error (MISSING is skipped)
         try:
             obj.validate_unique()
-        except Exception as e:  # pragma: no cover
-            self.fail(f"validate_unique raised unexpectedly: {e}")
+        except Exception as e:            self.fail(f"validate_unique raised unexpectedly: {e}")
 
     def test_translation_unique_constraint_raises(self):
         """ValidationError raised from translation.validate_unique() (lines 747-751)."""

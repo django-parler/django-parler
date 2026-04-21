@@ -157,8 +157,7 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     if not meta:
         meta = {}
 
-    if shared_model._meta.abstract:  # pragma: no cover
-        # This can't be done, because `master = ForeignKey(shared_model)` would fail.
+    if shared_model._meta.abstract:        # This can't be done, because `master = ForeignKey(shared_model)` would fail.
         raise TypeError(
             f"Can't create TranslatedFieldsModel for abstract class {shared_model.__name__}"
         )
@@ -381,8 +380,7 @@ class TranslatableModelMixin:
             # Clear other local caches
             try:
                 del self._translations_cache[meta.model][language_code]
-            except KeyError:  # pragma: no cover
-                pass
+            except KeyError:                pass
             try:
                 del self._prefetched_objects_cache[meta.rel_name]
             except (AttributeError, KeyError):
@@ -734,8 +732,7 @@ class TranslatableModelMixin:
         errors = {}
         try:
             super().validate_unique(exclude=exclude)
-        except ValidationError as e:  # pragma: no cover
-            errors = e.error_dict
+        except ValidationError as e:            errors = e.error_dict
 
         for local_cache in self._translations_cache.values():
             for translation in local_cache.values():
@@ -843,8 +840,7 @@ class TranslatableModelMixin:
             if translation is not None:
                 try:
                     return getattr(translation, field)
-                except KeyError:  # pragma: no cover
-                    pass
+                except KeyError:                    pass
 
         if callable(default):
             return default()
@@ -889,15 +885,13 @@ class TranslatedFieldsModelBase(ModelBase):
     def __new__(mcs, name, bases, attrs):
 
         new_class = super().__new__(mcs, name, bases, attrs)
-        if bases[0] == models.Model:  # pragma: no cover
-            return new_class
+        if bases[0] == models.Model:            return new_class
 
         # No action in abstract models.
         if new_class._meta.abstract or new_class._meta.proxy:
             return new_class
 
-        if not isinstance(getattr(new_class.master, "field"), TranslationsForeignKey):  # pragma: no cover
-            warnings.warn(
+        if not isinstance(getattr(new_class.master, "field"), TranslationsForeignKey):            warnings.warn(
                 "Please change {}.master to a parler.fields.TranslationsForeignKey field to support translations in "
                 "data migrations.".format(new_class._meta.model_name),
                 DeprecationWarning,
@@ -1048,8 +1042,7 @@ class TranslatedFieldsModelMixin:
         # This is checked for None as some migration files don't use bases=TranslatableModel instead
         try:
             base = shared_model._parler_meta
-        except AttributeError:  # pragma: no cover
-            raise TypeError(
+        except AttributeError:            raise TypeError(
                 f"Translatable model {shared_model} does not appear to inherit from TranslatableModel"
             )
 
@@ -1087,8 +1080,7 @@ class TranslatedFieldsModelMixin:
             else:
                 # Currently not allowing to replace existing model fields with translatable fields.
                 # That would be a nice feature addition however.
-                if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)):  # pragma: no cover
-                    raise TypeError(
+                if not isinstance(shared_field, (models.Field, TranslatedFieldDescriptor)):                    raise TypeError(
                         f"The model '{shared_model.__name__}' already has a field named '{name}'"
                     )
 
@@ -1164,8 +1156,7 @@ class ParlerOptions:
     """
 
     def __init__(self, base, shared_model, translations_model, related_name):
-        if translations_model is None is not issubclass(translations_model, TranslatedFieldsModel):  # pragma: no cover
-            raise TypeError("Expected a TranslatedFieldsModel")
+        if translations_model is None is not issubclass(translations_model, TranslatedFieldsModel):            raise TypeError("Expected a TranslatedFieldsModel")
 
         self.base = base
         self.inherited = False
