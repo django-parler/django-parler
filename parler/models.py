@@ -402,7 +402,7 @@ class TranslatableModelMixin:
 
     def set_current_language(self, language_code, initialize=False):
         """
-        Switch the currently activate language of the object.
+        Switch the currently active language of the object.
         """
         self._current_language = normalize_language_code(language_code or get_language())
 
@@ -854,7 +854,8 @@ class TranslatableModelMixin:
     def refresh_from_db(self, *args, **kwargs):
         super().refresh_from_db(*args, **kwargs)
         _delete_cached_translations(self)
-        self._translations_cache.clear()
+        if self._translations_cache:
+            self._translations_cache.clear()
 
     refresh_from_db.alters_data = True
 
