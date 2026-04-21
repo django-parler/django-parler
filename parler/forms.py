@@ -277,7 +277,9 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                     error_messages = (
                         getattr(form_new_meta, "error_messages", form_meta.error_messages) or ()
                     )
-                    formfield_callback = getattr(form_new_meta, "formfield_callback", None)
+                    formfield_callback = attrs.get(
+                        "formfield_callback", getattr(form_new_meta, "formfield_callback", None)
+                    )
 
                     if fields == "__all__":
                         fields = None
