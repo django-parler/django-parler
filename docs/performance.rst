@@ -3,7 +3,7 @@ Performance guidelines
 
 The translations of each model is stored in a separate table.
 In some cases, this may cause in N-query issue.
-*django-parler* offers two ways to handle the performance of the dabase.
+*django-parler* offers two ways to handle the performance of the database.
 
 Caching
 -------

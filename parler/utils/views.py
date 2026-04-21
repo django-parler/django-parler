@@ -1,6 +1,7 @@
 """
 Internal DRY functions.
 """
+
 from django.conf import settings
 
 from parler import appsettings

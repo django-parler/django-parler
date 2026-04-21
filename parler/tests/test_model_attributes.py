@@ -246,7 +246,7 @@ class ModelAttributeTests(AppTestCase):
             )
             self.assertIs(
                 x.safe_translation_getter("tr_title", "DEFAULT"), "DEFAULT"
-            )  # No lanuage, gives default
+            )  # No language, gives default
             self.assertEqual(
                 x.safe_translation_getter("tr_title", any_language=True), "TITLE_XX"
             )  # Even though there is no current language, there is a value.
