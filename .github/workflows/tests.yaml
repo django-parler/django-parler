@@ -61,11 +61,17 @@ jobs:
       - name: Install Packages
         run: |
           python -m pip install -U pip
-          python -m pip install "Django~=${{ matrix.django }}" codecov -e .[tests]
+          python -m pip install "Django~=${{ matrix.django }}" coverage -e .[tests]
 
       - name: Run Tests
         run: |
           echo "Python ${{ matrix.python }} / Django ${{ matrix.django }}"
           coverage run --rcfile=.coveragerc runtests.py
-          codecov
+          coverage xml
         continue-on-error: ${{ contains(matrix.django, '6.0') }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
