@@ -53,6 +53,7 @@ the :func:`~django.db.models.Model.save` method, or add new methods yourself.
 The translated model is compatible with django-hvad, making the transition between both projects relatively easy.
 The manager and queryset objects of django-parler can work together with django-mptt and django-polymorphic.
 """
+
 import sys
 import warnings
 from collections import OrderedDict, defaultdict
@@ -166,7 +167,12 @@ def create_translations_model(shared_model, related_name, meta, **fields):
     meta["app_label"] = shared_model._meta.app_label
     meta["db_tablespace"] = shared_model._meta.db_tablespace
     meta["managed"] = shared_model._meta.managed
-    meta["unique_together"] = list(meta.get("unique_together", [])) + [("language_code", "master")]
+    meta["constraints"] = list(meta.get("constraints", [])) + [
+        models.UniqueConstraint(
+            fields=["language_code", "master"],
+            name=f"{shared_model._meta.db_table}_translation_uniq_lang",
+        )
+    ]
     meta.setdefault("db_table", f"{shared_model._meta.db_table}_translation")
     meta.setdefault("verbose_name", _lazy_verbose_name(shared_model))
 
@@ -240,7 +246,7 @@ class TranslatedFields:
                 translations = TranslatedFields(
                     title = models.CharField("Title", max_length=200),
                     slug = models.SlugField("Slug"),
-                    meta = {'unique_together': [('language_code', 'slug')]},
+                    meta = {'constraints': [models.UniqueConstraint(fields=['language_code', 'slug'], name='mymodel_translation_uniq_lang_slug')]},
                 )
 
     """

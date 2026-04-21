@@ -3,3 +3,4 @@ source = example/article,parler
 omit =
     */south_migrations/*
     */migrations/*
+    */testapp/invalid_models.py

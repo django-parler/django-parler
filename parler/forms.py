@@ -172,6 +172,10 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                 translation.validate_unique()
             except ValidationError as e:
                 self._update_errors(e)
+            try:
+                translation.validate_constraints()
+            except ValidationError as e:
+                self._update_errors(e)
 
     @cached_property
     def _translated_fields(self):

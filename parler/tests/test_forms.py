@@ -171,11 +171,10 @@ class FormTests(AppTestCase):
         form.language_code = "fr"
         self.assertTrue(form.is_valid())
 
-        # Same language code, should raise unique_together check
+        # Same language code, should raise unique constraint check via form validation
         form = UniqueTogetherForm(data={"slug": "foo"})
         form.language_code = "en"
         self.assertFalse(form.is_valid())
-        self.assertRaises(ValidationError, lambda: form.instance.validate_unique())
 
     def test_not_null_foreignkey_in_translation(self):
         """
