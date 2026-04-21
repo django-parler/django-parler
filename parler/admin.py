@@ -49,7 +49,7 @@ from django.http import Http404, HttpRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import re_path, reverse
 from django.utils.decorators import method_decorator
-from django.utils.encoding import force_str
+from django.utils.encoding import force_str, iri_to_uri
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, escape
 from django.utils.http import urlencode
@@ -376,7 +376,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
         if redirect.status_code not in (301, 302):
             return redirect  # a 200 response likely.
 
-        uri = request.path
+        uri = iri_to_uri(request.path)
         opts = self.model._meta
         info = opts.app_label, opts.model_name
 
