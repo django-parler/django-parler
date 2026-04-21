@@ -10,7 +10,7 @@ PARLER_DEFAULT_LANGUAGE_CODE
 The language code for the fallback language.
 This language is used when a translation for the currently selected language does not exist.
 
-By default, it's the same as :django:setting:`LANGUAGE_CODE`.
+By default, it's the same as :setting:`LANGUAGE_CODE`.
 
 This value is used as input for ``PARLER_LANGUAGES['default']['fallback']``.
 
@@ -66,7 +66,7 @@ The following entries are available:
 Multi-site support
 ~~~~~~~~~~~~~~~~~~
 
-When using the sites framework (:mod:`django.contrib.sites`) and the :django:setting:`SITE_ID`
+When using the sites framework (:mod:`django.contrib.sites`) and the ::setting:`SITE_ID`
 setting, the dict can contain entries for every site ID. The special ``None`` key is no longer used::
 
     PARLER_LANGUAGES = {
@@ -134,7 +134,7 @@ PARLER_SHOW_EXCLUDED_LANGUAGE_TABS
 
     PARLER_SHOW_EXCLUDED_LANGUAGE_TABS = False
 
-By default, the admin tabs are limited to the language codes found in :django:setting:`LANGUAGES`.
+By default, the admin tabs are limited to the language codes found in ::setting:`LANGUAGES`.
 If the models have other translations, they can be displayed by setting this value to ``True``.
 
 

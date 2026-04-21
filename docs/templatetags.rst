@@ -10,7 +10,7 @@ All translated fields can be read like normal fields, just using like:
     {{ object.fieldname }}
 
 When a translation is not available for the field,
-an empty string (or :django:setting:`TEMPLATE_STRING_IF_INVALID`) will be outputted.
+an empty string (or ::setting:`TEMPLATE_STRING_IF_INVALID`) will be outputted.
 The Django template system safely ignores the :class:`~parler.models.TranslationDoesNotExist`
 exception that would normally be emitted in code;
 that's because that exception inherits from :class:`~exceptions.AttributeError`.
