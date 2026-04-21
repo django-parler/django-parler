@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Changes in 2.4.1 (unreleased)
+-----------------------------
+
+* Dropped Django 5.0 support. 2.4 advertised Django 5.0 compatibility, but the
+  admin's ``delete_translation`` view calls ``ModelAdmin.log_deletions``, which
+  was introduced in Django 5.1 — so translation deletion raised
+  ``AttributeError`` on 5.0. The install requirement is now ``Django>=5.1``
+  and the CI/tox matrices no longer include 5.0.
+
+
 Changes in 2.4 (2026-04-15)
 ----------------------------
 
