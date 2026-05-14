@@ -27,6 +27,8 @@ jobs:
         pip install
         build
         --user
+    - name: Install gettext
+      run: apt get install gettext
     - name: Build a binary wheel and a source tarball
       run: >-
         python -m
