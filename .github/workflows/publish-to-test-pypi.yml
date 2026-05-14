@@ -23,6 +23,7 @@ jobs:
     - name: Install pypa/build
       run: >-
         python -m
+        pip install Django
         pip install
         build
         --user
