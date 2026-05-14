@@ -1,9 +1,8 @@
 Changelog
 =========
 
-Changes in 2.4 (unreleased)
+Changes in 2.4 (2026-05-14)
 ----------------------------
-
 * Added Django 6.0 support.
 * Added Python 3.13 support.
 * Dropped Django 4.2 LTS support (end of extended support, April 2026).
