@@ -1,6 +1,7 @@
 """
 Utils for translations
 """
+
 from django.conf import settings
 from django.conf.global_settings import LANGUAGES as ALL_LANGUAGES
 from django.utils.translation import get_language as dj_get_language

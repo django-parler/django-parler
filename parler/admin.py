@@ -36,10 +36,10 @@ While almost every admin feature just works, there are a few special cases to ta
 
 See the :ref:`admin compatibility page <admin-compat>` for details.
 """
-import django
+
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.admin.options import BaseModelAdmin, InlineModelAdmin, csrf_protect_m
+from django.contrib.admin.options import BaseModelAdmin, InlineModelAdmin
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.contrib.admin.utils import get_deleted_objects, quote, unquote
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
@@ -48,6 +48,7 @@ from django.forms import Media
 from django.http import Http404, HttpRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import re_path, reverse
+from django.utils.decorators import method_decorator
 from django.utils.encoding import force_str, iri_to_uri
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, escape
@@ -55,6 +56,7 @@ from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.csrf import csrf_protect
 
 from parler import appsettings
 from parler.forms import TranslatableBaseInlineFormSet, TranslatableModelForm
@@ -401,7 +403,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 redirect["Location"] += f"{delimiter}{self.query_language_key}={language}"
         return redirect
 
-    @csrf_protect_m
+    @method_decorator(csrf_protect)
     @transaction.atomic
     def delete_translation(self, request, object_id, language_code):
         """
@@ -452,13 +454,8 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             else:
                 qs_opts = qs.model._meta
 
-            if django.VERSION >= (2, 1):
-                deleted_result = get_deleted_objects(qs, request, self.admin_site)
-            else:
-                deleted_result = get_deleted_objects(
-                    qs, qs_opts, request.user, self.admin_site, using
-                )
-            (del2, model_counts, perms2, protected2) = deleted_result
+            deleted_result = get_deleted_objects(qs, request, self.admin_site)
+            del2, model_counts, perms2, protected2 = deleted_result
 
             deleted_objects += del2
             perms_needed = perms_needed or perms2
@@ -471,7 +468,7 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
                 lang, force_str(translation)
             )  # in hvad: (translation.master)
 
-            self.log_deletion(request, translation, obj_display)
+            self.log_deletions(request, [translation])
             self.delete_model_translation(request, translation)
             self.message_user(
                 request,

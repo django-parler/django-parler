@@ -172,6 +172,10 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                 translation.validate_unique()
             except ValidationError as e:
                 self._update_errors(e)
+            try:
+                translation.validate_constraints()
+            except ValidationError as e:
+                self._update_errors(e)
 
     @cached_property
     def _translated_fields(self):
@@ -273,7 +277,9 @@ class TranslatableModelFormMetaclass(ModelFormMetaclass):
                     error_messages = (
                         getattr(form_new_meta, "error_messages", form_meta.error_messages) or ()
                     )
-                    formfield_callback = attrs.get("formfield_callback", None)
+                    formfield_callback = attrs.get(
+                        "formfield_callback", getattr(form_new_meta, "formfield_callback", None)
+                    )
 
                     if fields == "__all__":
                         fields = None

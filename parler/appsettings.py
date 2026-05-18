@@ -1,6 +1,7 @@
 """
 Overview of all settings which can be customized.
 """
+
 from django.conf import settings
 
 from parler.utils import get_parler_languages_from_django_cms, normalize_language_code
