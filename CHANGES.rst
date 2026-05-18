@@ -3,6 +3,9 @@ Changelog
 
 Changes in 2.4 (2026-05-14)
 ----------------------------
+
+Attention: **django-parler 2.4 induces migrations to translated models by replacing `unique_together` be a unique constraint.** This missing migration can show up as a warning.
+
 * Added Django 6.0 support.
 * Added Python 3.13 support.
 * Dropped Django 4.2 LTS support (end of extended support, April 2026).
