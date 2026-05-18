@@ -1,13 +1,15 @@
 Changelog
 =========
 
-
-Changes in 2.4 (2026-04-15)
+Changes in 2.4 (2026-05-14)
 ----------------------------
-
 * Added Django 6.0 support.
 * Added Python 3.13 support.
 * Dropped Django 4.2 LTS support (end of extended support, April 2026).
+* Dropped Django 5.0 support. The admin's ``delete_translation`` view calls
+  ``ModelAdmin.log_deletions``, which was introduced in Django 5.1 — so
+  translation deletion raised ``AttributeError`` on 5.0. The install
+  requirement is now ``Django>=5.1``.
 * Replaced removed ``csrf_protect_m`` decorator with ``@method_decorator(csrf_protect)`` in the admin.
 * Replaced deprecated ``unique_together`` with ``models.UniqueConstraint`` in the translated fields model.
 * Added a ``validate_constraints()`` call alongside ``validate_unique()`` in form validation so ``UniqueConstraint`` violations surface through the form.

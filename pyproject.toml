@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61", "wheel", "Django>=5.2"]
+build-backend = "setuptools.build_meta"
+
 [tool.isort]
 profile = "black"
 line_length = 99
