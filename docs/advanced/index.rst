@@ -14,5 +14,6 @@ Advanced usage patterns
    rest-framework
    multisite
    caching
+   multiple_db
    manual-models
    custom-settings

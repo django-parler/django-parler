@@ -13,7 +13,7 @@ SECRET_KEY = "foo"
 SITE_ID = 1
 
 INSTALLED_APPS = [
-    "parser",
+    "parler",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

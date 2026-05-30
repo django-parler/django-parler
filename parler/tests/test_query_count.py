@@ -113,8 +113,9 @@ class QueryCountTests(AppTestCase):
         with override_parler_settings(PARLER_CACHE_PREFIX=""):
             model = SimpleModel.objects.first()
             field = model.translations.first()
-            key = get_translation_cache_key(field.__class__, 1, "en")
-        self.assertEqual(key, "parler.testapp.SimpleModelTranslation.1.en")
+            db = field._state.db
+            key = get_translation_cache_key(db, field.__class__, 1, "en")
+        self.assertEqual(key, "parler.default.testapp.SimpleModelTranslation.1.en")
 
     def test_get_translation_cache_key_with_prefix(self):
         """
@@ -123,5 +124,6 @@ class QueryCountTests(AppTestCase):
         with override_parler_settings(PARLER_CACHE_PREFIX="mysite"):
             model = SimpleModel.objects.first()
             field = model.translations.first()
-            key = get_translation_cache_key(field.__class__, 1, "en")
-        self.assertEqual(key, "mysite.parler.testapp.SimpleModelTranslation.1.en")
+            db = field._state.db
+            key = get_translation_cache_key(db, field.__class__, 1, "en")
+        self.assertEqual(key, "mysite.parler.default.testapp.SimpleModelTranslation.1.en")

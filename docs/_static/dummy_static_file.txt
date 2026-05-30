@@ -1,0 +1,3 @@
+This file is just present to make sure docs/_static is part of the repository.
+If this folder is missing, recent versions of Sphinx (e.g. 7.2.5) issue a warning,
+which becomes an error when the documentation build is run by tox.

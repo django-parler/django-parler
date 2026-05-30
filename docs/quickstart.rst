@@ -130,5 +130,5 @@ Optionally, the admin tabs can be configured too::
         }
     }
 
-Replace ``None`` with the :django:setting:`SITE_ID` when you run a multi-site project with the sites framework.
-Each :django:setting:`SITE_ID` can be added as additional entry in the dictionary.
+Replace ``None`` with the ::setting:`SITE_ID` when you run a multi-site project with the sites framework.
+Each ::setting:`SITE_ID` can be added as additional entry in the dictionary.

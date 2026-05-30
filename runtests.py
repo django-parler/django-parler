@@ -3,7 +3,6 @@ import sys
 from os import path
 
 import django
-from django.conf import global_settings as default_settings
 from django.conf import settings
 from django.core.management import execute_from_command_line
 
@@ -21,7 +20,11 @@ if not settings.configured:
 
     settings.configure(
         DEBUG=False,  # will be False anyway by DjangoTestRunner.
-        DATABASES={"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}},
+        DATABASES={
+            "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"},
+            "other_db_1": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"},
+            "other_db_2": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"},
+            },
         DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
         CACHES={
             # By explicit since many tests also need the caching support
@@ -91,6 +94,35 @@ if not settings.configured:
             "default": {
                 "fallbacks": ["en"],
             },
+        },
+        # Install logging to easily activate the tracing of SQL (see below)
+        LOGGING={
+            'version': 1,
+            'disable_existing_loggers': False,
+            'filters': {
+                'require_debug_false': {
+                    '()': 'django.utils.log.RequireDebugFalse'
+                }
+            },
+            # All messages, always to console.
+            'root': {
+                'level': 'DEBUG',
+                'handlers': ['console'],
+            },
+            'handlers': {
+                'console': {
+                    'level': 'DEBUG',
+                    'class': 'logging.StreamHandler',
+                },
+            },
+            'loggers': {
+                'django.db.backends': {
+                    'level': 'WARNING',  # set to DEBUG for a complete SQL trace,
+                                       # or to WARNING or ERROR for normal operation.
+                    'handlers': ['console'],
+                    'propagate': False,  # root logger sends to console. Don't propagate to avoid printing twice.
+                },
+            }
         },
     )
 
