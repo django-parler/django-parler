@@ -36,7 +36,9 @@ def find_version(*parts):
 
 setup(
     name="django-parler",
-    version=find_version("parler", "__init__.py"),
+    # PARLER_VERSION_DEV lets .github/workflows/publish-to-test-pypi.yml suffix
+    # the version with a dev segment to test the release process.
+    version=find_version("parler", "__init__.py") + os.environ.get("PARLER_VERSION_DEV", ""),
     license="Apache 2.0",
     install_requires=[
         "Django>=5.1",
