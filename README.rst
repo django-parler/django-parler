@@ -230,6 +230,30 @@ If you have any other valuable contribution, suggestion or idea,
 please let us know as well because we will look into it.
 Pull requests are welcome too. :-)
 
+Development
+-----------
+
+Setting up a development environment:
+
+.. code-block:: bash
+
+    python -m venv venv
+    source venv/bin/activate
+    pip install -e . tox
+
+Running the tests:
+
+.. code-block:: bash
+
+    tox -e py313-django52
+
+Building the documentation:
+
+.. code-block:: bash
+
+    tox -e docs
+    open .tox/docs/tmp/html/index.html
+
 
 .. _django-hvad: https://github.com/kristianoellegaard/django-hvad
 .. _django-mptt: https://github.com/django-mptt/django-mptt
