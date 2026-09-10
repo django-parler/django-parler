@@ -125,3 +125,15 @@ class QueryCountTests(AppTestCase):
             field = model.translations.first()
             key = get_translation_cache_key(field.__class__, 1, "en")
         self.assertEqual(key, "mysite.parler.testapp.SimpleModelTranslation.1.en")
+
+    def test_select_translation_queries(self):
+        """
+        Test that .select_translation() works
+        """
+        with override_parler_settings(PARLER_ENABLE_CACHING=False):
+            self.assertNumTranslatedQueries(
+                1, SimpleModel.objects.select_translation()
+            )
+            self.assertNumTranslatedQueries(
+                1, SimpleModel.objects.select_active_translation()
+            )
