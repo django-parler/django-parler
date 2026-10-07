@@ -1,5 +1,5 @@
 # for readthedocs
 # Remaining requirements are picked up from setup.py
-Django==5.2.16
+Django==5.2.17
 djangorestframework==3.15.2
 sphinxcontrib-django == 2.5
