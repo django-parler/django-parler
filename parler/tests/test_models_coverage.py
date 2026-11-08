@@ -324,6 +324,50 @@ class RefreshFromDbTests(AppTestCase):
         total_entries = sum(len(v) for v in obj._translations_cache.values())
         self.assertEqual(total_entries, 0)
 
+    def test_full_refresh_reloads_translations(self):
+        """A full refresh drops unsaved and cached translations, and reads the database."""
+        obj = SimpleModel.objects.language("en").create(shared="rfd-full", tr_title="Original")
+        tr_model = obj._parler_meta.root.model
+        obj.tr_title = "Unsaved"
+        # Change the row behind the shared cache, which still holds "Original".
+        tr_model.objects.filter(master=obj).update(tr_title="Updated")
+        obj.refresh_from_db()
+        self.assertEqual(obj.tr_title, "Updated")
+
+    def test_deferred_field_load_keeps_unsaved_translations(self):
+        """Loading a deferred field doesn't drop translations that are not saved yet."""
+        obj = SimpleModel.objects.language("en").create(shared="rfd-deferred", tr_title="Original")
+        tr_model = obj._parler_meta.root.model
+        obj = SimpleModel.objects.language("en").defer("shared").get(pk=obj.pk)
+        self.assertEqual(obj.get_deferred_fields(), {"shared"})
+        obj.tr_title = "Changed"
+        # Django loads the deferred field with refresh_from_db(fields=["shared"])
+        self.assertEqual(obj.shared, "rfd-deferred")
+        self.assertEqual(obj.tr_title, "Changed")
+        obj.save()
+        translation = tr_model.objects.get(master=obj, language_code="en")
+        self.assertEqual(translation.tr_title, "Changed")
+
+    def test_partial_refresh_keeps_unsaved_translations(self):
+        """A refresh of shared fields keeps unsaved translations, also when passed positionally."""
+        obj = SimpleModel.objects.language("en").create(shared="rfd-partial", tr_title="Original")
+        SimpleModel.objects.filter(pk=obj.pk).update(shared="rfd-partial-updated")
+        obj.tr_title = "Changed"
+        # Positional arguments, as in the override example of the Django docs.
+        obj.refresh_from_db(None, ["shared"])
+        self.assertEqual(obj.shared, "rfd-partial-updated")
+        self.assertEqual(obj.tr_title, "Changed")
+
+    def test_refresh_of_translations_relation_reloads_translations(self):
+        """Naming the translations relation in fields drops the prefetched translations."""
+        obj = SimpleModel.objects.language("en").create(shared="rfd-relation", tr_title="Original")
+        tr_model = obj._parler_meta.root.model
+        obj = SimpleModel.objects.language("en").prefetch_related("translations").get(pk=obj.pk)
+        self.assertEqual(obj.tr_title, "Original")
+        tr_model.objects.filter(master=obj).update(tr_title="Updated")
+        obj.refresh_from_db(fields=["translations"])
+        self.assertEqual(obj.tr_title, "Updated")
+
 
 # ---------------------------------------------------------------------------
 # TranslatedFieldsModelMixin properties / __repr__

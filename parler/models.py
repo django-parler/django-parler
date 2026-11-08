@@ -851,11 +851,19 @@ class TranslatableModelMixin:
         else:
             return default
 
-    def refresh_from_db(self, *args, **kwargs):
-        super().refresh_from_db(*args, **kwargs)
-        _delete_cached_translations(self)
-        if self._translations_cache:
-            self._translations_cache.clear()
+    def refresh_from_db(self, using=None, fields=None, from_queryset=None):
+        if fields is not None:
+            fields = set(fields)  # Any iterable is allowed, it's read twice.
+
+        super().refresh_from_db(using=using, fields=fields, from_queryset=from_queryset)
+
+        # Django also loads a deferred field with refresh_from_db(fields=[...]).
+        # Only drop the translations when they are refreshed too,
+        # otherwise translated values that are not saved yet are lost.
+        if fields is None or any(self._parler_meta._has_translations_field(f) for f in fields):
+            _delete_cached_translations(self)
+            if self._translations_cache:
+                self._translations_cache.clear()
 
     refresh_from_db.alters_data = True
 
