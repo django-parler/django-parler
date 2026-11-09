@@ -257,6 +257,14 @@ class DeleteTranslationViewTests(AppTestCase):
             response = ma.delete_translation(req, str(article.pk), "en")
         self.assertEqual(response.status_code, 200)
 
+    def test_delete_translation_passes_delete_confirmation_max_display(self):
+        """Django 6.1's delete_confirmation.html reads delete_confirmation_max_display"""
+        article = self._make_bilingual_article("max-display")
+        with mock.patch.object(ArticleAdmin, "delete_confirmation_max_display", 0, create=True):
+            response = self.client.get(self._del_url(article.pk))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["delete_confirmation_max_display"], 0)
+
 
 class GetTranslationObjectsTests(AppTestCase):
     """Lines 579-580, 585: get_translation_objects generator paths"""

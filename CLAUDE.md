@@ -5,11 +5,11 @@ Reusable Django library that adds model-level translation support via a separate
 ## Tech Stack
 
 - **Language**: Python 3.10–3.13
-- **Framework**: Django 5.1 / 5.2 LTS / 6.0 (min `Django>=5.1` in `setup.py`; 4.2 LTS dropped April 2026, 5.0 dropped because it lacks `ModelAdmin.log_deletions`)
+- **Framework**: Django 5.1 / 5.2 LTS / 6.0 / 6.1 (min `Django>=5.1` in `setup.py`; 4.2 LTS dropped April 2026, 5.0 dropped because it lacks `ModelAdmin.log_deletions`)
 - **Formatting**: black (line-length 99) + isort (profile=black)
 - **Testing**: Django test runner via `runtests.py` (not pytest)
 - **Coverage**: coverage + codecov (`.coveragerc`)
-- **CI**: GitHub Actions matrix `.github/workflows/tests.yaml` (Django 6.0 jobs are `continue-on-error`)
+- **CI**: GitHub Actions matrix `.github/workflows/tests.yaml`; each job installs `Django~=X.Y.0`, so it tests the minor it names
 - **Docs**: Sphinx + RTD theme (`docs/`)
 - **Changelog**: `CHANGES.rst` (not `CHANGELOG.md`)
 - **Version**: bumped in `parler/__init__.py` (`__version__`), read by `setup.py`
@@ -30,7 +30,7 @@ python runtests.py article
 # Coverage
 coverage run --rcfile=.coveragerc runtests.py && coverage report
 
-# Full tox matrix (Python 3.10-3.13 × Django 5.1-6.0)
+# Full tox matrix (Python 3.10-3.13 × Django 5.1-6.1)
 tox
 
 # Format
