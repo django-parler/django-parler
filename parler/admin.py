@@ -505,6 +505,10 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             "protected": protected,
             "opts": opts,
             "app_label": opts.app_label,
+            # Django 6.1's delete_confirmation.html passes it to truncated_unordered_list.
+            "delete_confirmation_max_display": getattr(
+                self, "delete_confirmation_max_display", None
+            ),
         }
 
         # Small hack for django-polymorphic-tree.
