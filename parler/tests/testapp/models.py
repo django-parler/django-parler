@@ -28,6 +28,12 @@ class SimpleModel(TranslatableModel):
         return self.tr_title
 
 
+class FileModel(TranslatableModel):
+    translations = TranslatedFields(
+        tr_file=models.FileField(upload_to="translations/", blank=True),
+    )
+
+
 class CleanCharField(models.CharField):
     def clean(self, value, model_instance):
         super().clean(value, model_instance)

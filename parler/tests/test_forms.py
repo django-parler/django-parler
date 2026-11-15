@@ -1,11 +1,14 @@
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms import inlineformset_factory
+from django.test import override_settings
 from django.utils import translation
 
 from parler.forms import TranslatableModelForm
 
 from .testapp.models import (
     CleanFieldModel,
+    FileModel,
     ForeignKeyTranslationModel,
     IntegerPrimaryKeyModel,
     IntegerPrimaryKeyRelatedModel,
@@ -23,6 +26,12 @@ class SimpleForm(TranslatableModelForm):
     class Meta:
         model = SimpleModel
         fields = "__all__"
+
+
+class FileForm(TranslatableModelForm):
+    class Meta:
+        model = FileModel
+        fields = ("tr_file",)
 
 
 class CleanFieldForm(TranslatableModelForm):
@@ -266,6 +275,52 @@ class FormTests(AppTestCase):
         obj.set_current_language("en")
         self.assertEqual(obj.tr_title, "TRANS")
         self.assertEqual(obj.translated_many_to_many.all()[0], regular_one)
+
+
+@override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}})
+class FileFormTests(AppTestCase):
+    def setUp(self):
+        super().setUp()
+        self.instance = FileModel.objects.language("en").create(
+            tr_file=SimpleUploadedFile("original.txt", b"original")
+        )
+        self.original_name = self.instance.tr_file.name
+
+    def test_clear_translated_file(self):
+        self.instance.create_translation("nl", tr_file=SimpleUploadedFile("dutch.txt", b"dutch"))
+        form = FileForm(data={"tr_file-clear": "on"}, instance=self.instance)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+
+        reloaded = FileModel.objects.language("en").get(pk=self.instance.pk)
+        self.assertEqual(reloaded.tr_file.name, "")
+        reloaded.set_current_language("nl")
+        with reloaded.tr_file.open() as uploaded:
+            self.assertEqual(uploaded.read(), b"dutch")
+
+    def test_unchanged_translated_file(self):
+        form = FileForm(data={}, instance=self.instance)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+
+        reloaded = FileModel.objects.language("en").get(pk=self.instance.pk)
+        self.assertEqual(reloaded.tr_file.name, self.original_name)
+        with reloaded.tr_file.open() as uploaded:
+            self.assertEqual(uploaded.read(), b"original")
+
+    def test_replace_translated_file(self):
+        form = FileForm(
+            data={},
+            files={"tr_file": SimpleUploadedFile("replacement.txt", b"replacement")},
+            instance=self.instance,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+
+        reloaded = FileModel.objects.language("en").get(pk=self.instance.pk)
+        self.assertNotEqual(reloaded.tr_file.name, self.original_name)
+        with reloaded.tr_file.open() as uploaded:
+            self.assertEqual(uploaded.read(), b"replacement")
 
 
 class InlineFormTests(AppTestCase):
