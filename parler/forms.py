@@ -143,6 +143,10 @@ class BaseTranslatableModelForm(forms.BaseModelForm):
                 value = self.cleaned_data[field]
             except KeyError:  # Field has a ValidationError
                 continue
+            # FileField uses False to clear an existing file. The model field
+            # stores an empty string for that form value.
+            if isinstance(self.fields[field], forms.FileField) and value is False:
+                value = ""
             fields[field] = value
 
         # Set the field values on their relevant models

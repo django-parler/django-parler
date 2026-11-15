@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Fixed clearing a translated file through a model form.
+
 Changes in 2.4 (2026-05-14)
 ----------------------------
 
